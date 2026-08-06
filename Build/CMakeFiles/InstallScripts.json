@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/SurgeonsLab/EmboNav/Build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

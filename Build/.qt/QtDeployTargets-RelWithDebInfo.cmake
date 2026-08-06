@@ -1,0 +1,8 @@
+set(__QT_DEPLOY_TARGET_embonav_core_FILE C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo/embonav_core.lib)
+set(__QT_DEPLOY_TARGET_embonav_core_TYPE STATIC_LIBRARY)
+set(__QT_DEPLOY_TARGET_embonav_cli_FILE C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo/embonav_cli.exe)
+set(__QT_DEPLOY_TARGET_embonav_cli_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_embonav_cli_RUNTIME_DLLS C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6Core.dll)
+set(__QT_DEPLOY_TARGET_EmboNav_FILE C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo/EmboNav.exe)
+set(__QT_DEPLOY_TARGET_EmboNav_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_EmboNav_RUNTIME_DLLS C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6OpenGLWidgets.dll;C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6Widgets.dll;C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6OpenGL.dll;C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6Gui.dll;C:/Software/Qt/6.8.3/msvc2022_64/bin/Qt6Core.dll)
