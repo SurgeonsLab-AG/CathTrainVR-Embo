@@ -385,6 +385,29 @@ void CarmView::paintGL() {
 
     m_prog->release();
 
+<<<<<<< HEAD
+    // ── Console read-out cluster, above the C-arm render ─────────────────────
+    //
+    // One row, four equal columns, each a small label above a large value,
+    // spanning the width of the panel - not the previous right-anchored,
+    // uneven-width two-row cluster (LAO/CRAN/SID on row 1, Magnification/
+    // TIME hanging under row 2). TIME mm:ss is removed from this display
+    // entirely per request; the underlying tracking (m_fluoroSec,
+    // m_fluoroClock, the public fluoroSeconds() accessor MainWindow's own
+    // status bar reads) is completely untouched - only this HUD's own
+    // display of it is gone.
+    //
+    //   LAO      CRAN     SID cm   Magnification
+    //   51°      14°      100      32 cm
+    //
+    // Columns are now four EQUAL divisions of the available width, not
+    // measured-text-width columns - a value growing a digit no longer
+    // shifts the cluster at all, since each column's centre is fixed
+    // regardless of its own content's width.
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+=======
     // ── Console read-out cluster, top-right ──────────────────────────────────
     //
     // Laid out as on a real C-arm console: three columns, each a small label
@@ -409,6 +432,7 @@ void CarmView::paintGL() {
         shownSec += m_fluoroClock.elapsed() / 1000.0;
     const int totalSec = int(shownSec);
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const QString sLao  = m_lao  >= 0 ? QString("%1°").arg( m_lao,  0, 'f', 0)
                                     : QString("%1°").arg(-m_lao,  0, 'f', 0);
     const QString sCran = m_cran >= 0 ? QString("%1°").arg( m_cran, 0, 'f', 0)
@@ -420,6 +444,35 @@ void CarmView::paintGL() {
 
     const QString sSid  = QString::number(int(m_sidCm));
     const QString sMag  = QStringLiteral("%1 cm").arg(int(m_magCm));
+<<<<<<< HEAD
+
+    QFont valueFont("Titillium Web", 20, QFont::Bold);
+    valueFont.setStyleHint(QFont::SansSerif);
+    QFont labelFont("Titillium Web", 8);
+    labelFont.setStyleHint(QFont::SansSerif);
+    const QFontMetrics fl(labelFont), fv(valueFont);
+
+    const int margin = 10;
+    const int rowGap = 6;
+
+    // Anchored to the TOP edge: the label baseline sits one ascent below the
+    // margin, growing downward, so the cluster stays put when the panel is
+    // resized vertically.
+    const int rowLabel = margin + fl.ascent();
+    const int rowValue = rowLabel + rowGap + fv.ascent();
+
+    const int usableW = std::max(width() - 2 * margin, 4);
+    const int colW    = usableW / 4;
+    const int c1 = margin + colW * 0 + colW / 2;
+    const int c2 = margin + colW * 1 + colW / 2;
+    const int c3 = margin + colW * 2 + colW / 2;
+    const int c4 = margin + colW * 3 + colW / 2;
+
+    drawReadout(p, c1, rowLabel, rowValue, lLao,  sLao,  labelFont, valueFont);
+    drawReadout(p, c2, rowLabel, rowValue, lCran, sCran, labelFont, valueFont);
+    drawReadout(p, c3, rowLabel, rowValue, QStringLiteral("SID cm"), sSid, labelFont, valueFont);
+    drawReadout(p, c4, rowLabel, rowValue, QStringLiteral("Magnification"), sMag, labelFont, valueFont);
+=======
     const QString sTime = QStringLiteral("%1:%2")
                               .arg(totalSec / 60, 2, 10, QLatin1Char('0'))
                               .arg(totalSec % 60, 2, 10, QLatin1Char('0'));
@@ -465,6 +518,7 @@ void CarmView::paintGL() {
     // Row 2 — nothing under the LAO column, matching the reference.
     drawReadout(p, c2, row2Label, row2Value, QStringLiteral("Magnification"), sMag,  labelFont, valueFont);
     drawReadout(p, c3, row2Label, row2Value, QStringLiteral("TIME mm:ss"),    sTime, labelFont, valueFont);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 // Centres a small label over a large value at `centreX`. Returns the column

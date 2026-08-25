@@ -30,7 +30,11 @@ QuadPanel::QuadPanel(QWidget *parent) : QWidget(parent) {
     // ── View 1: Fluoro (Angiographic) ────────────────────────────────────
     m_viewFluoro = new VesselView(this);
     m_viewFluoro->setPalette(VesselView::Palette::Angiographic);
+<<<<<<< HEAD
+    m_viewFluoro->setWallOpacity(0.35f);   // vessel now visible in fluoro (was 0.0 - hidden - per prior request)
+=======
     m_viewFluoro->setWallOpacity(0.0f);   // old project: vessel hidden by default in fluoro
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // frontalLock removed — camera sync handles position sharing between views
 
     // FluoroOverlay: grain + vignette (doc spec)
@@ -39,9 +43,21 @@ QuadPanel::QuadPanel(QWidget *parent) : QWidget(parent) {
     m_viewFluoro->installEventFilter(fluoroOverlay);
     fluoroOverlay->show();
 
+<<<<<<< HEAD
+    // Softness — real detector/scatter blur. Cut hard from 1.4: with the DRR
+    // accumulation buffer now at full resolution (VesselView.cpp,
+    // ensureXrayFbo) it contributes no softness of its own any more, so this
+    // is the only blur left in the pipeline, and it needs to be light enough
+    // that bone/muscle/vessel stay clearly, individually visible — a
+    // realistic detector still isn't perfectly crisp, but this is a hint of
+    // that, not a meaningful softening.
+    auto *fluoroBlur = new QGraphicsBlurEffect(m_viewFluoro);
+    fluoroBlur->setBlurRadius(0.5);
+=======
     // Subtle blur — real detector softness
     auto *fluoroBlur = new QGraphicsBlurEffect(m_viewFluoro);
     fluoroBlur->setBlurRadius(1.0);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_viewFluoro->setGraphicsEffect(fluoroBlur);
 
     // Mesh and DSA are NOT separate views — they are states of the 3D/fluoro

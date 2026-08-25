@@ -95,9 +95,17 @@ void CarmController::applyToCarmView() {
 void CarmController::rotateLinkedCamerasIncremental(double dLao, double dCran) {
     for (VesselView *v : m_linkedViews) {
         if (!v) continue;
+<<<<<<< HEAD
+        // setCarmAngles() stores these as an ABSOLUTE rig offset (see its
+        // own comment in VesselView.cpp), not a delta from its previous
+        // call - every linked view given the same (lao, cran) here ends up
+        // at the same C-arm orientation regardless of what it was doing
+        // before, which is what keeps them from drifting apart.
+=======
         // setCarmAngles uses the same incremental pattern internally —
         // it computes the delta from the previous state and adds it to
         // the camera's current azimuth/elevation.
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         v->setCarmAngles(static_cast<float>(m_laoAngle),
                          static_cast<float>(m_cranAngle));
     }

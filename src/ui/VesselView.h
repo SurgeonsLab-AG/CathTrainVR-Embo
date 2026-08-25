@@ -1,14 +1,26 @@
 #pragma once
 
 #include <QOpenGLWidget>
+<<<<<<< HEAD
+#include <QShowEvent>
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QMatrix4x4>
+<<<<<<< HEAD
+#include <QVector2D>
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QVector3D>
 #include <QVector4D>
 #include <QString>
 #include <QTimer>
+<<<<<<< HEAD
+#include <QElapsedTimer>
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <memory>
 #include <vector>
 
@@ -17,8 +29,16 @@
 #include "core/SheathManager.h"
 #include "core/CardiacCycle.h"
 #include "core/StlMesh.h"
+<<<<<<< HEAD
+#include "core/EmbolizationModel.h"
+#include "core/ContrastInjectionModel.h"
 
 class QOpenGLShaderProgram;
+class QOpenGLFramebufferObject;
+=======
+
+class QOpenGLShaderProgram;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 /// Vessel viewport.
 ///
@@ -81,6 +101,65 @@ public:
     void setMesh(const cn::StlMesh *mesh);
     void setGraph(const cn::CenterlineGraph *graph);
     void setDevice(const cn::CatheterModel *device);
+<<<<<<< HEAD
+    /// Tells this view whether the currently active device (m_device) is a
+    /// microcatheter, purely for Fluoro colour selection - CatheterModel
+    /// itself has no notion of device class (that lives one level up, in
+    /// CatheterCatalog::DeviceClass), so the caller has to say so explicitly
+    /// rather than this view trying to infer it. Doing nothing in the 3D
+    /// view: role (active vs. parked host) is already colour-coded there,
+    /// and the microcatheter's genuinely thinner radius (its own real
+    /// catalogue OD) is what actually distinguishes it visually - a second
+    /// colour dimension for device TYPE was not asked for there and would
+    /// compete with the existing active/host colour convention.
+    void setDeviceIsMicrocatheter(bool v) { m_deviceIsMicrocatheter = v; update(); }
+    /// The active device's 3D View display colour (CatheterSpec::colour),
+    /// used to tint the shaft/tip in the non-Fluoro palette - Fluoro is
+    /// unaffected, it always renders every device in its own grayscale/
+    /// radiopaque tones regardless of this. Defaults to the same blue every
+    /// device used before per-device colour existed, matching
+    /// CatheterSpec::colour's own default.
+    void setDeviceColor(const QVector3D &c) { m_deviceColor = c; update(); }
+    /// Arc length (model units, same as CatheterModel::State::insertionDepth)
+    /// the ACTIVE device's shaft should not render before, i.e. the host
+    /// catheter's own current tip depth when telescoped through one - 0
+    /// means "render the full shaft" (a device not telescoped through
+    /// anything). Without this, a microcatheter's rendered shaft extends
+    /// all the way back to the access site (its node chain's proximal end
+    /// is arc-length zero, not the host's tip - CatheterModel itself has no
+    /// notion of "telescoped through a host" at all), rendering as if it
+    /// occupied the exact same length the host catheter is already drawn
+    /// along. Host/parked devices are never clipped - only the active
+    /// device passes this through in buildDeviceInto/rebuildDeviceBatches.
+    void setDeviceHiddenBehindDepth(float depth) { m_deviceHiddenBehindDepth = depth; update(); }
+    /// Real SID/magnification, read from CarmView's own live state
+    /// (CarmView::sid()/magnification()) rather than this view guessing its
+    /// own independent default - the two were previously out of sync
+    /// (CarmView's real default is 32cm magnification; the Fluoroscopy HUD
+    /// below had separately hardcoded 25cm), which is exactly the kind of
+    /// inconsistency a single shared source of truth prevents by
+    /// construction.
+    void setDetectorInfo(float sidCm, float magCm) { m_hudSidCm = sidCm; m_hudMagCm = magCm; update(); }
+
+    /// Same shared-instance pattern as setDevice(): the caller owns one
+    /// EmbolizationModel and hands the same pointer to every VesselView, so
+    /// whatever cast is visible in one view is exactly what every other view
+    /// computes too - there is nothing here that could diverge per view,
+    /// because no view ever grows the cast itself, only renders it.
+    void setEmbolization(const cn::EmbolizationModel *emb);
+    /// Call after every begin()/inject()/reset() on the shared model, the
+    /// same way refreshDevice() is called after the catheter moves.
+    void refreshEmbolization();
+
+    /// Same shared-instance pattern for the Contrast Injection module.
+    void setContrastInjection(const cn::ContrastInjectionModel *contrast);
+    /// Call after every beginPhase()/inject()/tick()/reset() on the shared
+    /// model - tick() in particular needs this every frame it runs, since
+    /// contrast decays (and therefore visibly shrinks) even with no operator
+    /// action at all.
+    void refreshContrastInjection();
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     /// Drive the pulsating vessel wall from the console's cardiac clock. The
     /// same clock feeds the ECG, so the wall distends on the beat the trace is
@@ -177,6 +256,18 @@ public:
     bool showCenterline() const { return m_showCenterline; }
     void setWallOpacity(float v) { m_wallOpacity = v; update(); }
 
+<<<<<<< HEAD
+    /// The circle-and-crosshair markers (with lumen/takeoff-angle labels) and
+    /// the "BIFURCATION — LEFT/RIGHT" banner drawn at a pending branch
+    /// choice. Off by default: with keyboard/arrow navigation there is
+    /// nothing here the operator needs read off-screen, and the markers sit
+    /// on top of the fluoroscopy image exactly where the vessel anatomy is.
+    /// Wall-contact feedback and every other overlay read-out are unaffected.
+    void setShowBranchMarkers(bool v) { m_showBranchMarkers = v; update(); }
+    bool showBranchMarkers() const { return m_showBranchMarkers; }
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Load Muscular.stl and Skeletal.stl for the body-layer background.
     ///
     /// These two meshes and the vessel STL are authored in ONE coordinate frame
@@ -208,6 +299,87 @@ public:
     /// dialling an unfamiliar asset in. Emits nothing; call from a shortcut.
     void nudgeBodyLayers(float dz, float dScale = 0.f);
 
+<<<<<<< HEAD
+    /// Every parameter in the X-Ray Calibration dialog (MainWindow), read
+    /// by kFragmentShader's uXrayMode==2 branch. Defaults match the
+    /// requested calibration table. Changing any of these only affects the
+    /// Fluoro palette instance (m_palette == Angiographic); the Vessel View
+    /// / 3D / Mesh / DSA paths never read this struct at all.
+    ///
+    /// There is no real lighting anywhere in this pipeline (deliberately —
+    /// see kFragmentShader's uXrayMode branches), so Ambient/Diffuse/
+    /// Specular are NOT the lighting terms their VTK-derived names suggest.
+    /// They are repurposed as a density-response shape, which is the closest
+    /// honest equivalent in a projection with no light source:
+    ///   Ambient  — weight on a fast-saturating "is this material present
+    ///              at all here" signal. High ambient reads as a flatter,
+    ///              more solid-looking presence.
+    ///   Diffuse  — weight on the original slow, graduated response to
+    ///              accumulated density (thin crossings look different from
+    ///              thick/overlapping ones). High diffuse reads as more
+    ///              gradient, less solid.
+    ///   Specular — a small grain-correlated glint, off at 0. Deliberately
+    ///              NOT view- or normal-dependent (that would reintroduce
+    ///              the "lit 3D model" look this pipeline exists to avoid);
+    ///              it only ever modulates existing per-fragment texture.
+    struct XrayTuning {
+        // Every value below is the operator's own final tuning, read off the
+        // live X-Ray Calibration dialog (Save/Apply) and set here as the new
+        // default so a fresh session opens already looking like the tuned
+        // result, rather than requiring the dialog to be re-run each time.
+        // Nothing here is derived or re-justified — these are the numbers
+        // that were actually dialed in and confirmed to look right.
+        QVector3D backgroundColor{0.0f, 0.0f, 0.0f};
+
+        QVector3D boneColor{0.90f, 0.88f, 0.82f};
+        float boneOpacity  = 0.50f;
+        float boneAmbient  = 0.25f;
+        float boneDiffuse  = 0.75f;
+        float boneSpecular = 0.0f;
+
+        QVector3D muscleColor{0.60f, 0.60f, 0.58f};
+        float muscleOpacity  = 0.15f;
+        float muscleAmbient  = 0.90f;
+        float muscleDiffuse  = 0.15f;
+        float muscleSpecular = 0.0f;
+
+        /// Global post-processing, applied to the combined image after the
+        /// per-material shape/colour is resolved — the same order a photo
+        /// editor applies them: gamma, then contrast (pivoted at 0.5, so it
+        /// can't shift the black point), then a final brightness multiply.
+        /// Brightness set to 0.80 per explicit request — an overall dimming
+        /// of the whole Fluoro image, down from the previous 1.08.
+        float gamma      = 1.03f;
+        float contrast   = 0.75f;
+        float brightness = 0.80f;
+
+        /// Extra scalars multiplying each material's shape after its own
+        /// Ambient/Diffuse/Opacity — the final, coarsest "make bone/soft
+        /// tissue brighter or dimmer" knobs.
+        float boneIntensityMult = 1.15f;
+        float softTissueMult    = 1.0f;
+
+        /// Independent per-material brightness — genuinely separate from
+        /// Bone/Soft-Tissue Multiplier above and from each other: each one
+        /// is a single scalar multiplying only its own material's final
+        /// value, so raising Muscle Brightness cannot move Bone Brightness
+        /// or anything else, and vice versa.
+        float boneBrightness   = 1.20f;
+        float muscleBrightness = 1.50f;
+
+        /// Vessel colour/opacity for the Fluoro view specifically. Values are
+        /// the operator's own tuning from the live Calibration dialog: a
+        /// neutral mid-gray (0.50/0.50/0.50) at a low 0.05 opacity — a
+        /// subtle, faint vessel presence rather than the brighter, higher-
+        /// opacity gray this was first added with.
+        QVector3D vesselColor{0.50f, 0.50f, 0.50f};
+        float     vesselOpacity = 0.05f;
+    };
+    void setXrayTuning(const XrayTuning &t) { m_xrayTuning = t; update(); }
+    const XrayTuning &xrayTuning() const { return m_xrayTuning; }
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Legacy per-axis bounding-box fit: stretches each body mesh so its bbox
     /// matches the vessel's. Off by default. Only useful when a body mesh comes
     /// from a different source than the vessel and genuinely needs fitting; on
@@ -235,6 +407,16 @@ public:
 
     /// Frame the entire tree, frontal and upright. The startup view.
     void showWholeVessel();
+<<<<<<< HEAD
+    /// Frame the rib cage specifically — closer than showWholeVessel(), and
+    /// centred on the heart/aortic-root region rather than the whole mesh's
+    /// bounding box. Uses the same Z-offset reasoning as the Fluoro rib-cage
+    /// dampening (kFragmentShader): ribs surround the heart at roughly its
+    /// own level, so no separate anatomical query is needed beyond
+    /// heartCentre(), which is already computed from the loaded centerline.
+    void focusRibCage();
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     /// Vertical field of view for the current palette, in degrees.
     ///
@@ -246,6 +428,20 @@ public:
     // the old project's frameOnFace() + parallel-scale zoom.
     void showFluoroDefault();
 
+<<<<<<< HEAD
+    /// Close sagittal (lateral) view of the head and cerebral vasculature.
+    ///
+    /// Looks along the patient's X axis rather than the AP direction the other
+    /// framings use, so the circle of Willis, the carotid siphon and the
+    /// vertebrobasilar system separate instead of overlapping each other.
+    ///
+    /// The crop is taken from the model: above Z = 1401 mm the tree narrows to
+    /// +/-103 mm in X and holds two thirds of the mesh's vertices, which is the
+    /// cerebral region proper.
+    void showHeadSagittal();
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Copy camera state from another VesselView so all views share the same position.
     void syncCameraFrom(const VesselView &other);
 
@@ -302,6 +498,19 @@ protected:
     void mouseMoveEvent(QMouseEvent *e) override;
     void wheelEvent(QWheelEvent *e) override;
     void keyPressEvent(QKeyEvent *e) override;
+<<<<<<< HEAD
+    /// Snaps the follow/endoluminal camera to its current goal the instant
+    /// this view becomes visible again (see the .cpp implementation's own
+    /// comment for the exact bug this fixes: paintGL() - the only place
+    /// updateFollowFrame()/updateEndoluminalFrame() ever run - is never
+    /// called for a hidden QStackedWidget page, so a view left in follow
+    /// mode while hidden has a stale m_followTarget/m_followDistance the
+    /// moment it's shown again, and would otherwise visibly ease from that
+    /// stale position toward the correct one over the next several frames
+    /// instead of already being there).
+    void showEvent(QShowEvent *e) override;
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 private:
     struct Batch {
@@ -345,9 +554,58 @@ private:
     void rebuildMeshBatch();
     void rebuildCenterlineBatch();
     void rebuildDeviceBatches();
+<<<<<<< HEAD
+    void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth = 0.f);
+    /// One from/to graph-node pair with a 0..1 fill fraction along it -
+    /// the common shape both EmbolizationModel::CastLink and
+    /// ContrastInjectionModel::ContrastLink reduce to for rendering
+    /// purposes, so one tube-builder can serve both instead of duplicating
+    /// the frustum geometry code for each.
+    struct CastSpan { int32_t from = -1, to = -1; float frac = 0.f; };
+    /// Builds a tube mesh from graph geometry directly - one frustum per
+    /// span, tapered between the two nodes' own lumen radii and capped at
+    /// the fill fraction so a partially-filled span's leading edge visibly
+    /// stops mid-vessel. Deliberately built from graph geometry (not from
+    /// CatheterModel::buildTubeMesh, which is tied to a single ordered node
+    /// chain) since either a cast or a contrast column can branch across
+    /// several links at once, unlike a catheter's own single-file chain.
+    void buildTubesFromSpans(const cn::CenterlineGraph *graph,
+                             const std::vector<CastSpan> &spans, Batch &out);
+    /// Extracts spans from the shared EmbolizationModel and builds them.
+    void buildEmboliInto(const cn::EmbolizationModel *emb, Batch &out);
+    /// Extracts spans from the shared ContrastInjectionModel and builds them
+    /// into kContrastBuckets separate batches, one per concentration tier
+    /// (ContrastInjectionModel::ContrastLink::level, already 0..1 per link -
+    /// low = the advancing leading edge, high = an established column).
+    /// Fluoro draws each bucket at a different brightness/opacity, which is
+    /// what turns one flat grey block into a genuine tapered-intensity
+    /// bolus; the 3D view draws every bucket with the SAME single colour it
+    /// always used, so splitting the geometry this way changes nothing
+    /// about its appearance.
+    static constexpr int kContrastBuckets = 5;
+    void buildContrastInto(const cn::ContrastInjectionModel *contrast,
+                           Batch (&buckets)[kContrastBuckets]);
+    void rebuildBodyMeshBatch(const QString &path, Batch &batch, const BodyAlign &align);
+
+    /// Creates (or resizes) the offscreen accumulation buffer the Fluoro
+    /// X-ray pass renders into, matching the widget's own resolution (see
+    /// paintGL). Downscaling this buffer was tried as a source of
+    /// softness, twice, and both times anatomy ended up harder to make out
+    /// than intended — softness comes only from the widget-level
+    /// QGraphicsBlurEffect (QuadPanel.cpp) now.
+    void ensureXrayFbo(int w, int h);
+    /// One big clip-space triangle, built once and reused every frame. Used
+    /// only by the Fluoro X-ray pass's final compositing step (paintGL):
+    /// drawn with uViewProj forced to identity so its vertices land
+    /// directly in clip space instead of going through the scene camera,
+    /// covering the whole viewport regardless of where that camera is.
+    void ensureXrayQuad();
+
+=======
     void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b);
     void rebuildBodyMeshBatch(const QString &path, Batch &batch, const BodyAlign &align);
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     void updateEndoluminalFrame();
     void updateFollowFrame();
     void rebuildBalloonBatch();
@@ -362,11 +620,45 @@ private:
     const cn::StlMesh *m_mesh = nullptr;
     const cn::CenterlineGraph *m_graph = nullptr;
     const cn::CatheterModel *m_device = nullptr;
+<<<<<<< HEAD
+    /// See setDeviceIsMicrocatheter() - Fluoro colour only.
+    bool m_deviceIsMicrocatheter = false;
+    /// See setDeviceColor() - 3D View only. Default matches
+    /// CatheterSpec::colour's own default (0.36, 0.72, 0.94).
+    QVector3D m_deviceColor{0.36f, 0.72f, 0.94f};
+    /// See setDeviceHiddenBehindDepth() - active device shaft clipping only.
+    float m_deviceHiddenBehindDepth = 0.f;
+    /// See setDetectorInfo(). Defaults match CarmView's own defaults, so
+    /// nothing looks different until MainWindow actually wires the real
+    /// value through - see buildUi().
+    float m_hudSidCm = 100.f;
+    float m_hudMagCm = 32.f;
+    const cn::EmbolizationModel *m_emboli = nullptr;
+    Batch m_emboliBatch;
+    bool  m_emboliDirty = true;
+    const cn::ContrastInjectionModel *m_contrast = nullptr;
+    Batch m_contrastBatches[kContrastBuckets];
+    bool  m_contrastDirty = true;
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     Overlay m_overlay;
 
     std::unique_ptr<QOpenGLShaderProgram> m_program;
     Batch m_meshBatch, m_centerlineBatch;
     Batch m_muscularBatch, m_skeletalBatch;   // body layer meshes (Muscular + Skeletal)
+<<<<<<< HEAD
+    Batch m_xrayQuadBatch;   // fullscreen triangle, Fluoro compositing pass
+    /// Offscreen render target the Fluoro X-ray pass accumulates raw,
+    /// unclamped attenuation into (R=muscle, G=bone, B=vessel), before a
+    /// final pass reads it back, sums the channels, and applies the actual
+    /// Beer-Lambert exponential exactly once. Floating-point format is what
+    /// makes the "unclamped" part possible — a normal [0,1] framebuffer
+    /// would clip a dense stack of overlapping anatomy long before this
+    /// buffer ever does.
+    std::unique_ptr<QOpenGLFramebufferObject> m_xrayFbo;
+    XrayTuning m_xrayTuning;
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     std::unique_ptr<DeviceBatches> m_deviceBatches;
     std::vector<const cn::CatheterModel *> m_hostDevices;
     std::vector<std::unique_ptr<DeviceBatches>> m_hostBatches;
@@ -400,6 +692,13 @@ private:
     bool m_frontalLock = false;  // orbit enabled in all views by default
     float m_carmLAO = 0.f;   /// degrees, drives azimuth offset
     float m_carmCRAN = 0.f;  /// degrees, drives elevation offset
+<<<<<<< HEAD
+    /// Backs the Fluoroscopy HUD's TIME read-out (paintOverlay()) - started
+    /// once in the constructor, so it is genuinely live elapsed time, not a
+    /// static placeholder like the HUD's other fixed-default fields.
+    QElapsedTimer m_fluoroClock;
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     QVector3D m_target;
     QPoint m_lastMouse;
 
@@ -420,7 +719,20 @@ private:
     /// deliberately left alone — its rig framing is set in CarmView::loadPart.
     static constexpr float kAnatomyFrameMargin = 1.25f;
 
+<<<<<<< HEAD
+    /// Where the cerebral region starts, as a fraction of the model's Z span.
+    /// 0.82 = Z 1401 mm on this model, above which the tree narrows to +/-103 mm.
+    static constexpr float kHeadCropFraction = 0.82f;
+    /// Tighter than kAnatomyFrameMargin: this framing is meant to be close.
+    static constexpr float kHeadFrameMargin  = 1.06f;
+
     bool m_showWall = true, m_showCenterline = false;
+    /// See setShowBranchMarkers() - off by default, since keyboard/arrow
+    /// navigation needs no on-screen circle-and-crosshair prompt.
+    bool m_showBranchMarkers = false;
+=======
+    bool m_showWall = true, m_showCenterline = false;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // ── Cardiac pulsation ─────────────────────────────────────────────────
     static const int kPulseLutSize = 64;

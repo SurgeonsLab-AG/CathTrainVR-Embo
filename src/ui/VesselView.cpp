@@ -1,6 +1,12 @@
 #include "VesselView.h"
 
+<<<<<<< HEAD
+#include <QDebug>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLFramebufferObject>
+=======
+#include <QOpenGLShaderProgram>
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -38,9 +44,27 @@ uniform float uPwv;        // pulse wave velocity, model units/second
 uniform float uStrain;     // peak fractional radius increase; 0 disables
 uniform int   uPulsatile;  // 1 ONLY for the vessel wall; 0 for everything else
 uniform float uPulseLUT[64];
+<<<<<<< HEAD
+// Arc length from the root within which transit delay is NOT applied — see
+// the comment in main() below for why this exists.
+uniform float uHeartTravelExempt;
 
 out vec3 vNormal;
 out vec3 vWorld;
+// Fluoro's heart-region accumulation (see kFragmentShader, uXrayIsVessel)
+// reuses this exact per-vertex value as a mask for "is this part of the
+// vessel the heart/great-vessel region" — it is already precisely that:
+// aPulseAmp is computed in rebuildWallBatch as localRadius * spatialWeight
+// * calibreWeight * superiorWeight, and superiorWeight is what multiplies
+// it down to zero above the aortic arch, which is what already keeps the
+// carotids from physically pulsing. The same product works unchanged as a
+// visibility mask, with no separate centerline query needed.
+out float vHeartMask;
+=======
+
+out vec3 vNormal;
+out vec3 vWorld;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 // The pressure pulse is defined once, in cn::CardiacCycle, and handed to the
 // shader as 64 samples. Duplicating the waveform in GLSL would guarantee the
@@ -59,11 +83,35 @@ void main() {
     if (uPulsatile == 1 && uStrain > 0.0 && aPulseAmp > 0.0) {
         // The pressure wave travels: a vertex 1 m down the tree distends about
         // 170 ms after the aortic root at 6 m/s, which is a fifth of a cycle.
+<<<<<<< HEAD
+        // That transit-delay model is correct for the downstream ARTERIAL
+        // tree, where a real elastic-wall pressure wave genuinely does take
+        // time to propagate. It is NOT correct for the heart itself: cardiac
+        // contraction spreads through the myocardium via electrical
+        // conduction, effectively simultaneously across the whole chamber at
+        // this scale - so applying the arterial transit-delay formula inside
+        // the heart region too (root vs. an adjoining coronary origin only
+        // millimetres away) made those points bulge at a visibly different
+        // moment, reading as two separate, uncoordinated pumps rather than
+        // one - which is the actual reason a vessel near/adjoining the heart
+        // could look like it "pumps separately". uHeartTravelExempt (set to
+        // HeartRegion::coreRadius + falloff from C++) removes exactly that:
+        // every vertex within the heart region shares zero relative delay,
+        // so the whole region moves as one synchronized pump; only distance
+        // travelled BEYOND it accrues real transit delay.
+        float travelDist = max(aRootDist - uHeartTravelExempt, 0.0);
+        float delayed = uPhase - (travelDist / uPwv) / max(uCycleSec, 1e-4);
+=======
         float delayed = uPhase - (aRootDist / uPwv) / max(uCycleSec, 1e-4);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         pos += normalize(aNormal) * (aPulseAmp * uStrain * pulseAt(delayed));
     }
     vNormal = aNormal;
     vWorld  = pos;
+<<<<<<< HEAD
+    vHeartMask = aPulseAmp;
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     gl_Position = uViewProj * vec4(pos, 1.0);
 }
 )";
@@ -71,8 +119,16 @@ void main() {
 const char *kFragmentShader = R"(#version 330 core
 in vec3 vNormal;
 in vec3 vWorld;
+<<<<<<< HEAD
+in float vHeartMask;   // see kVertexShader — only meaningful when uXrayIsVessel==1
 uniform vec4  uColor;
 uniform vec3  uCameraPos;
+uniform float uHeartCentreZ;   // world Z of the heart/aortic-root centre — anatomical anchor for mode 1's regional dampening
+uniform float uLiveTime;       // mode 2: continuously increasing, for genuinely time-varying (flickering) grain — see paintGL for how this is derived
+=======
+uniform vec4  uColor;
+uniform vec3  uCameraPos;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 uniform vec3  uLightDir;
 uniform vec3  uSheen;
 uniform float uSpecular;
@@ -82,9 +138,526 @@ uniform float uDiffuse;    // 0.88 default (vessel), 0.75 for 3D bone, 0.30 for 
 uniform float uFalloff;
 uniform int   uShaded;
 uniform int   uHeadlight;
+<<<<<<< HEAD
+// Fluoro X-ray projection is two passes now, both using this same program:
+//
+//   uXrayMode == 1 ("accumulate"): drawn into an offscreen floating-point
+//   buffer (see paintGL/ensureXrayFbo), one material at a time, with
+//   glColorMask restricting each draw to its own channel (R=muscle/soft
+//   tissue, G=bone — Skeletal.stl and Muscular.stl are this simulation's
+//   only two body-attenuation materials; there is no separate "soft
+//   tissue" mesh, Muscular.stl IS the soft-tissue/muscle envelope) and
+//   GL_ONE/GL_ONE additive blending. A float target never clamps, so these
+//   raw sums stay exact no matter how many overlapping fragments a ray
+//   crosses — the thing that made every earlier attempt at this either
+//   invisible or blown out to solid white. Vessel is NOT accumulated here;
+//   it is drawn as a separate overlay on top of the finished projection,
+//   the same way the catheter and guidewire already are (see paintGL,
+//   right after Pass 2).
+//
+//   uXrayMode == 2 ("composite"): a single full-screen triangle samples
+//   that buffer and resolves it against VesselView::XrayTuning — see the
+//   X-Ray Calibration dialog (MainWindow) for the live-adjustable controls
+//   these uniforms are set from every frame.
+uniform int   uXrayMode;
+uniform int   uXrayIsVessel;   // mode 1: 1 while accumulating the heart-region vessel wall, 0 for muscle/bone
+uniform sampler2D uXrayTex;    // mode 2: the accumulated buffer
+uniform vec2  uViewportPx;     // mode 2: viewport size, for gl_FragCoord -> UV
+
+uniform vec3  uBackgroundColor;
+
+uniform vec3  uBoneColor;
+uniform float uBoneOpacity;
+uniform float uBoneAmbient;
+uniform float uBoneDiffuse;
+uniform float uBoneSpecular;
+
+uniform vec3  uMuscleColor;
+uniform float uMuscleOpacity;
+uniform float uMuscleAmbient;
+uniform float uMuscleDiffuse;
+uniform float uMuscleSpecular;
+
+uniform float uGammaG;
+uniform float uContrastG;
+uniform float uBrightnessG;
+uniform float uBoneIntensityMult;
+uniform float uSoftTissueMult;
+uniform float uBoneBrightness;
+uniform float uMuscleBrightness;
+// Contrast + embolic material — accumulated into the alpha channel (see
+// paintGL Pass 1) rather than drawn as a separate lit/alpha-blended layer
+// on top of the finished projection. uForeignDensityScale is set PER DRAW
+// CALL in Pass 1 (different for contrast vs. each embolic agent, since
+// their real radiopacity differs); uForeignOpacity is the shared Beer-
+// Lambert response coefficient, set once in Pass 2.
+uniform float uForeignDensityScale;
+uniform float uForeignOpacity;
+uniform float uForeignGrainAmount;
+out vec4 fragColor;
+
+// Cheap deterministic hash, 0..1. Textures bone/muscle with grain instead of
+// a perfectly flat color (mode 1: tissue/film-grain texture, keyed off world
+// position so it's baked onto the anatomy and stable from any angle), and
+// separately textures the final image with detector noise (mode 2: keyed off
+// screen position instead, since that's a property of the imaging chain, not
+// the anatomy).
+float hash13(vec3 p) {
+    // Multiply/fract based, not sin()-based: the previous version
+    // (fract(sin(dot(p, magic)) * large_constant)) is a well-known GLSL
+    // hash trick, but it breaks down once the argument to sin() gets
+    // large — GPU sine implementations have much less precise range
+    // reduction than a CPU's, so for large inputs the result stops being
+    // effectively random and starts showing structured, repeating
+    // patterns instead. gl_FragCoord.xy (mode 2's screen-space grain, used
+    // for the whole background as well as the anatomy) reaches into the
+    // thousands for any realistic viewport size, squarely in the range
+    // where that showed up as visible dotted/patterned artifacts rather
+    // than genuine noise. This formula never calls a transcendental
+    // function at all, so it has no equivalent large-argument failure mode.
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+void main() {
+    if (uXrayMode == 1) {
+        // View-independent contribution — deliberately NOT a function of the
+        // surface normal at all, for either material. Any dependence on
+        // which way a triangle faces the camera is shading, full stop, and
+        // that's what kept an earlier attempt (a per-fragment grazing-angle
+        // boost for bone) reading as a subtly lit 3D model. The
+        // cortical/medullary bright-rim/dark-centre effect that attempt was
+        // for is now done in mode 2, as pure screen-space processing on the
+        // already-accumulated density map — the same kind of edge
+        // enhancement real radiographic image processing uses, with no
+        // dependence on 3D surface geometry at all, and (unlike the
+        // per-fragment version) not something that gets diluted by
+        // averaging into a sum before this shader's own exp() saturates it.
+        //
+        // This stage only accumulates raw, grain-textured crossing counts —
+        // every brightness/contrast decision (Ambient, Diffuse, Opacity,
+        // intensity multipliers, colour, cortical/medullary contrast)
+        // happens once in mode 2 below, reading VesselView::XrayTuning,
+        // rather than being split across both passes.
+        float grain = hash13(vWorld * 41.0);
+        // Reduced from a 0.7 swing: in thin/sparse regions (a single bone
+        // edge, few overlapping fragments) that much per-fragment variance
+        // wasn't being averaged out by much else, and read as speckling on
+        // top of the anatomy even with the hash function itself fixed.
+        float v = 1.0 + 0.45 * (grain - 0.5);
+
+        if (uXrayIsVessel == 0) {
+            // Brightness reduction for the rib cage and mouth/jaw regions,
+            // so they blend more naturally with the surrounding anatomy
+            // instead of standing out. Identified by world Z position
+            // relative to the heart/aortic-root centre — robust to camera
+            // movement and C-arm rotation, unlike a screen-space
+            // heuristic, since it's anchored to the actual loaded anatomy
+            // rather than the current view. Honest caveat: the two Z-
+            // offsets and band widths below are anatomically-reasoned
+            // ESTIMATES (typical adult proportions relative to the aortic
+            // root — ribs surrounding the heart at roughly its own level,
+            // the mouth roughly a neck-plus-face height above it) rather
+            // than values read back from labelled regions in this specific
+            // model. If they don't land exactly on the rib cage/mouth once
+            // rendered, these four numbers are what to adjust.
+            //
+            // Rib cage dampening raised substantially (0.90 -> 0.30 at the
+            // band's centre) two rounds ago: the ribcage's own physics is
+            // why it reads so much brighter than, say, the hand — a chest
+            // X-ray ray crosses many overlapping ribs plus the spine and
+            // sternum, while a hand/wrist ray crosses far fewer bone
+            // layers, so the ribcage sits much further into the
+            // Beer-Lambert curve's saturating region. That centre value is
+            // unchanged here (it was calibrated directly against a hand-
+            // bone brightness target and the request this round is
+            // explicit about leaving that untouched) — only the band's
+            // width is widened (220 -> 320), since a bright wash was still
+            // visible in the chest-wall area surrounding the rib cage,
+            // meaning the falloff wasn't reaching far enough out. Mouth
+            // dampening (mild, unflagged this round) is unchanged.
+            float dz = vWorld.z - uHeartCentreZ;
+            float ribDist   = abs(dz - 0.0)   / 320.0;
+            float mouthDist = abs(dz - 380.0) / 55.0;
+            float ribDampen   = mix(0.30, 1.0, clamp(ribDist,   0.0, 1.0));
+            float mouthDampen = mix(0.90, 1.0, clamp(mouthDist, 0.0, 1.0));
+            v *= ribDampen * mouthDampen;
+        }
+
+        if (uXrayIsVessel == 1) {
+            // vHeartMask (== aPulseAmp from the vertex shader) is already
+            // exactly the right signal: large near the aortic root/heart,
+            // smoothly fading with distance, and driven to zero above the
+            // arch by superiorWeight — which is the same product that
+            // already keeps the carotids from physically pulsing. Reusing
+            // it here as a visibility gate means the carotids contribute
+            // nothing to this channel with no separate region query needed.
+            // The thresholds below are a reasoned estimate (aPulseAmp is in
+            // model units, roughly a few mm near a ~15 mm aortic root)
+            // rather than a value read back from the actual geometry.
+            // smoothstep with a floor, not a plain linear ramp: a linear
+            // ramp from zero lets even a small residual mask value (from
+            // m_heart.peripheralFraction, present beyond the core but
+            // still below the superior cutoff) contribute a faint signal —
+            // scattered along distant vessel branches, that read as stray
+            // dots rather than a clean heart-region highlight. Requiring
+            // the mask to clearly clear a threshold before contributing
+            // anything keeps this to the core region only.
+            //
+            // Loosened again (was smoothstep(0.5, 1.5, ...), then
+            // smoothstep(0.3, 1.0, ...)): this gate only controls how much
+            // of the heart region shows up at all, not the pulsation motion
+            // itself (that's genuine vertex displacement, driven by the
+            // same uPulsatile mechanism as the 3D View, and untouched here).
+            // Widening it further is about making the visible region larger
+            // so the actual motion has more area to read clearly across.
+            v *= smoothstep(0.15, 0.6, vHeartMask);
+        }
+
+        if (uXrayIsVessel == 2) {
+            // Contrast/embolic material — a real substance sitting inside the
+            // vessel lumen, not anatomy, so neither the rib/mouth dampening
+            // above (a skeletal-anatomy correction) nor the heart-region
+            // pulsation mask applies. Grain-textured the same way bone and
+            // muscle are (the same base grain computed above, before either
+            // of those anatomy-specific corrections), for the same reason:
+            // a perfectly flat density value reads as a painted graphic, not
+            // an actual X-ray-attenuating substance.
+            //
+            // uForeignGrainAmount RESCALES that base grain specifically for
+            // this material, set per draw call alongside uForeignDensityScale
+            // in Pass 1 (paintGL) - this is what actually gives each embolic
+            // agent its own visual CHARACTER rather than only a different
+            // brightness: Onyx/SQUID (viscous, cohesive, deliberately
+            // injected under control) use a low value for a smooth, dense,
+            // uniform cast; Glue (thin, fast-polymerizing, the least
+            // controllable of the four) uses a high value for a visibly
+            // irregular, patchy deposit; PHIL sits between the two; plain
+            // contrast keeps the grain essentially at its shared default -
+            // a flowing liquid bolus, not a textured solid.
+            float agentGrain = 1.0 + uForeignGrainAmount * 0.45 * (grain - 0.5);
+            float fv = agentGrain * uForeignDensityScale;
+            fragColor = vec4(0.0, 0.0, 0.0, fv);
+            return;
+        }
+        fragColor = vec4(v, v, v, 1.0);
+        return;
+    }
+
+    if (uXrayMode == 2) {
+        vec2 uv = gl_FragCoord.xy / max(uViewportPx, vec2(1.0));
+        // r=muscle/soft tissue (accumulated in mode 1, from Muscular.stl),
+        // g=bone (from Skeletal.stl), b=heart-region vessel wall (from the
+        // vessel mesh, masked to the heart/great-vessel region only — see
+        // uXrayIsVessel in mode 1 above), a=contrast/embolic material (from
+        // whichever of those the shared ContrastInjectionModel/
+        // EmbolizationModel instances currently have active — see
+        // uXrayIsVessel==2 in mode 1 above).
+        vec4 acc = texture(uXrayTex, uv);
+
+        // Screen-space processing on the already-accumulated density map —
+        // the same kind of edge enhancement real radiographic image
+        // processing applies, not anything dependent on 3D surface
+        // geometry. One pixel of the accumulation buffer, in UV terms.
+        vec2 texel = 1.0 / max(uViewportPx, vec2(1.0));
+
+        // Muscle is always smooth and soft, never showing sharp per-
+        // triangle detail: a 9-tap box blur (orthogonal + diagonal, 1.5
+        // texels out) on its own accumulated density — this is what keeps
+        // a limb's actual mesh silhouette from reading as a crisp cutout,
+        // fading it toward the background the way real soft tissue does.
+        float muscleSmooth = acc.r
+            + texture(uXrayTex, uv + vec2( 1.5,  0.0) * texel).r
+            + texture(uXrayTex, uv + vec2(-1.5,  0.0) * texel).r
+            + texture(uXrayTex, uv + vec2( 0.0,  1.5) * texel).r
+            + texture(uXrayTex, uv + vec2( 0.0, -1.5) * texel).r
+            + texture(uXrayTex, uv + vec2( 1.5,  1.5) * texel).r
+            + texture(uXrayTex, uv + vec2(-1.5,  1.5) * texel).r
+            + texture(uXrayTex, uv + vec2( 1.5, -1.5) * texel).r
+            + texture(uXrayTex, uv + vec2(-1.5, -1.5) * texel).r;
+        muscleSmooth *= (1.0 / 9.0);
+
+        // Cortical/medullary contrast for bone: a local gradient magnitude
+        // (how much the bone density map changes right around this pixel)
+        // is high at a bone's silhouette edge and low in the uniform
+        // interior of a thick cross-section — exactly the "bright rim,
+        // darker centre" real bone shows, without needing any normal or
+        // view-direction information at all. Divided by the local density
+        // (plus a small floor) so it reads as a RELATIVE change rather
+        // than being dominated by absolute density magnitude.
+        float bG = acc.g;
+        float bL = texture(uXrayTex, uv - vec2(texel.x, 0.0)).g;
+        float bR = texture(uXrayTex, uv + vec2(texel.x, 0.0)).g;
+        float bU = texture(uXrayTex, uv + vec2(0.0, texel.y)).g;
+        float bD = texture(uXrayTex, uv - vec2(0.0, texel.y)).g;
+        float boneGradient = abs(bG - bL) + abs(bG - bR) + abs(bG - bU) + abs(bG - bD);
+        float boneEdge = clamp(boneGradient / (bG + 2.0), 0.0, 1.0);
+
+        // Muscle brighter around the outer regions of bones: a small
+        // secondary boost on top of the uniform baseline below (real
+        // tissue immediately around bone — periosteum, perivascular
+        // structures — is somewhat denser), sampled at a tight 2-texel
+        // radius so it's a subtle glow right at a bone's own edge, not a
+        // wash across an entire limb's cross-section.
+        float boneNearby =
+            ( texture(uXrayTex, uv + vec2( 2.0, 0.0) * texel).g
+            + texture(uXrayTex, uv + vec2(-2.0, 0.0) * texel).g
+            + texture(uXrayTex, uv + vec2(0.0,  2.0) * texel).g
+            + texture(uXrayTex, uv + vec2(0.0, -2.0) * texel).g) * 0.25;
+
+        // True Beer-Lambert now, replacing an earlier "shape * opacity"
+        // ceiling model. That model treated Opacity as a hard cap on an
+        // already-bounded [0,1] density shape, so a material could never
+        // display brighter than its own Opacity value no matter how much
+        // of it accumulated — with DSA's actual muscle Opacity (0.04)
+        // ported in, that meant muscle could never exceed ~0.04 brightness
+        // regardless of density, and read as completely invisible next to
+        // a dark background. That was the wrong model: DSA's 0.04 is a
+        // PER-LAYER alpha in a compositing stack with potentially dozens
+        // of overlapping muscle layers, and repeated alpha-over
+        // compositing of many thin layers accumulates to far more visible
+        // than the per-layer value alone — which is exactly what
+        // Beer-Lambert (attenuation accumulates, then exponentiates once)
+        // reproduces correctly. Opacity is now the attenuation coefficient
+        // per accumulated crossing; Ambient+Diffuse (summing to ~1.0 for
+        // bone, ~1.05 for muscle in the DSA-ported defaults) scale the
+        // overall attenuation strength, so both stay meaningfully
+        // connected to the same DSA-derived numbers, just combined
+        // through a formula that actually behaves like a DRR projection.
+        //
+        // uBoneIntensityMult/uBoneBrightness and uSoftTissueMult/
+        // uMuscleBrightness are folded in here, per material, before the
+        // two attenuations are ever combined — that's what keeps them
+        // independent: uMuscleBrightness appears nowhere in boneAtten, and
+        // vice versa.
+        float boneAtten = acc.g * uBoneOpacity * (uBoneAmbient + uBoneDiffuse)
+                         * uBoneIntensityMult * uBoneBrightness;
+        // Cortical/medullary contrast: asymmetric on purpose, matching
+        // "make the centre darker" (the stronger word) against "keep the
+        // outer layer SLIGHTLY brighter" (the weaker one) — 0.70 at the
+        // centre (a clearly darker interior) against 1.10 at the edge (a
+        // gentle rim, not a hard outline).
+        boneAtten *= mix(0.70, 1.10, boneEdge);
+        // The specular glint term that used to sit here is removed: it was
+        // built as uBoneSpecular * pow(fract(acc.g * 37.0), 3.0) — since
+        // acc.g varies continuously and smoothly across a bone's surface,
+        // multiplying it by 37 and taking the fractional part made the
+        // value repeatedly cycle through 0-1 roughly every 1/37th unit of
+        // density change, and the cube emphasized only the peak of each
+        // cycle. That's a periodic function of a smoothly-varying signal —
+        // exactly the mechanism that produces scattered, discrete-looking
+        // bright spikes, reported as "dotted glitches". Removing it here
+        // (uBoneSpecular/uMuscleSpecular remain declared and are still set
+        // from C++ every frame, so nothing else needs to change) leaves
+        // every other X-ray characteristic — the smooth muscular overlay,
+        // darker bone centre, brighter outer cortical layer, tissue grain,
+        // detector noise — completely untouched.
+
+        // Muscle: uniform across the whole silhouette, not gated by bone
+        // proximity — an earlier version concentrated Muscle Brightness's
+        // whole effect into a halo near bone specifically, and comparing
+        // the result against a real reference image made clear that was
+        // wrong: real soft tissue gives the WHOLE torso and both arms their
+        // visible volume, not just a thin band pressed against the bones.
+        // Muscle Brightness scales this uniform baseline directly; the
+        // Opacity/Ambient/Diffuse stay exactly DSA's ported values.
+        float muscleAtten = muscleSmooth * uMuscleOpacity * (uMuscleAmbient + uMuscleDiffuse)
+                          * uSoftTissueMult * uMuscleBrightness;
+        // A soft glow/halo where muscle surrounds bone, on top of the
+        // uniform baseline — raised from a 0.15 cap to 0.28, per request,
+        // for a more visible "soft, subtle gray halo around the bones".
+        // Still not the only source of visibility (the uniform baseline
+        // above still gives the rest of the silhouette its own volume),
+        // and it self-moderates in the rib cage specifically: boneNearby
+        // is sampled from acc.g, which the rib-cage dampening above
+        // already reduces there, so this boost is naturally smaller in
+        // that region even at the higher cap, rather than compounding with
+        // the wash the dampening is trying to remove.
+        muscleAtten *= 1.0 + clamp(boneNearby * 0.02, 0.0, 0.28);
+
+        // Live, time-varying grain — genuinely flickers frame to frame,
+        // unlike the per-fragment tissue grain (mode 1, baked onto world
+        // position, stable across frames) or the screen-space hash used
+        // elsewhere in this file, neither of which change over time at
+        // all. uLiveTime is a continuously increasing value derived from
+        // the same shared cardiac clock already sampled every frame for
+        // the pulse LUT (see paintGL) — reusing it avoids needing a
+        // separate timer just for this. Multiplicative on muscleAtten
+        // specifically, so this is naturally confined to wherever muscle
+        // actually contributes: background and pure-bone/vessel regions
+        // already have muscleAtten == 0 at this point, and zero times
+        // anything stays zero — no separate masking needed. Kept small
+        // (+/-3%) and at a coarse spatial frequency (half-resolution-ish),
+        // matching "fine, smooth... very subtle" rather than a per-pixel
+        // flicker that would read as a glitch.
+        float liveGrain = hash13(vec3(gl_FragCoord.xy * 0.5, uLiveTime * 8.0)) - 0.5;
+        muscleAtten *= 1.0 + liveGrain * 0.03;
+        // Small additive component on top of the multiplicative one above,
+        // gated by a fast-saturating "is there muscle here at all" signal
+        // rather than scaling with muscleAtten's own magnitude — this is
+        // what keeps grain subtly visible in thin/outer muscle regions
+        // (a limb's edge, a thin cross-section) where muscleAtten itself
+        // is small, and the purely multiplicative term above would fade
+        // out along with it. Still zero wherever there's no muscle mesh
+        // at all (muscleSmooth == 0), so background stays untouched.
+        muscleAtten += liveGrain * 0.02 * clamp(muscleSmooth * 3.0, 0.0, 1.0);
+
+        // Same removal as bone's specular term above, same reason: this
+        // was uMuscleSpecular * pow(fract(acc.r * 37.0), 3.0), the same
+        // periodic-in-a-smooth-signal construction that produced dotted
+        // artifacts. Muscle Specular defaults to 0.0 already (DSA's own
+        // value), so this had no visible effect in practice regardless.
+
+        // Heart-region vessel: shown clearly, not hidden the way the rest
+        // of the vessel tree still is — acc.b only has anything in it at
+        // all where uXrayIsVessel's heart-mask gate (mode 1) let a fragment
+        // through, so this term is naturally zero over the carotids and
+        // the rest of the peripheral tree. A distinct reddish tint (not a
+        // calibration-exposed parameter this round) is what makes it read
+        // as clearly identifiable as the pulsating heart region rather
+        // than another shade of the same gray as bone and muscle.
+        //
+        // Sharp shape signal, not a linear response to density: a linear
+        // acc.b * coefficient (what this was) makes the vessel's edge a
+        // soft brightness ramp, and the same real geometric pulsation this
+        // shares with the 3D View (identical uPulsatile vertex displacement,
+        // untouched here) then just nudges that ramp slightly — reading as
+        // "brightness changing", not "a shape visibly expanding and
+        // contracting". smoothstep turns acc.b into a fast-saturating,
+        // near-binary "is the vessel here" signal instead: the moving
+        // boundary now sweeps across a crisp edge rather than a gradual
+        // one, which is what makes the same underlying motion actually
+        // read as a shape growing and shrinking each beat.
+        float heartShape = smoothstep(0.25, 0.9, acc.b);
+        float heartAtten = heartShape * 0.90;
+        const vec3 kHeartColor = vec3(0.85, 0.25, 0.22);
+
+        // Contrast/embolic material — acc.a only has anything in it where
+        // Pass 1's uXrayIsVessel==2 branch wrote a fragment (the contrast
+        // column or the embolic cast), scaled per-substance by
+        // uForeignDensityScale at accumulation time (a contrast bucket's own
+        // concentration; an embolic agent's own real radiopacity). The same
+        // smoothstep-then-scale shape as the heart-region channel, for the
+        // same reason: a clean, well-defined edge rather than a soft haze,
+        // which is what a real radiopaque bolus/cast actually looks like
+        // under fluoroscopy - crisp against the background, not glowing.
+        //
+        // Deliberately kept OUT of totalAtten/materialColor below (unlike an
+        // earlier version of this, which summed it in there alongside bone/
+        // muscle/heart): that path mixed toward a near-white colour as MORE
+        // contrast accumulated, meaning more contrast produced a BRIGHTER
+        // pixel — backwards from how this console is meant to look.
+        // CineViewStudio already assumes the opposite convention (its own
+        // m_invertEnabled comment: "X-ray look defaults to inverted - dark
+        // contrast on light tissue"), and it's what was being explicitly
+        // asked for. foreignShape is applied as its own DARKENING pass much
+        // further down instead, after all tissue tone-mapping is done, so
+        // contrast/embolic material pools dark on top of the tissue image
+        // regardless of what's underneath, rather than competing with bone/
+        // muscle for whichever is brighter.
+        float foreignShape = smoothstep(0.05, 0.6, acc.a);
+
+        // Tissue-only sum - foreignShape/uForeignOpacity intentionally do
+        // NOT appear here any more.
+        float totalAtten = boneAtten + muscleAtten + heartAtten;
+        float combinedShape = 1.0 - exp(-totalAtten);
+
+        // Explicit early exit for empty screen space: rather than relying
+        // on the downstream gamma/contrast/brightness math happening to
+        // evaluate to exactly uBackgroundColor when there's no anatomy
+        // here at all (which it should, but is an implicit property of
+        // several chained formulas rather than something guaranteed by
+        // construction), this exits directly with the background colour
+        // and skips every remaining step entirely. The X-ray effect —
+        // everything below this line — is now only ever computed for
+        // pixels where Muscular.stl, Skeletal.stl, the heart-region vessel,
+        // or contrast/embolic material actually contributed something;
+        // background and empty screen space never reaches any of it.
+        //
+        // foreignShape has to be checked here TOO now that it no longer
+        // feeds combinedShape directly: a pixel that is pure contrast with
+        // no tissue behind it at all (perfectly possible - a vessel does
+        // not always have muscle directly behind it in projection) would
+        // otherwise incorrectly take the background exit and never render.
+        if (combinedShape < 0.001 && foreignShape < 0.001) {
+            fragColor = vec4(uBackgroundColor, 1.0);
+            return;
+        }
+
+        // Colour is a proper weighted average of the THREE TISSUE
+        // materials' contributions — the same rule the two-material mix()
+        // used to apply (mix(muscleColor, boneColor, boneAtten/total) is
+        // exactly this formula for two terms), generalized to three so the
+        // heart region's reddish tint blends in correctly wherever it
+        // overlaps bone or muscle instead of one material simply
+        // overriding another. Contrast/embolic material is deliberately
+        // absent from this blend now — see foreignShape's own comment above
+        // for why it is applied as a separate darkening pass instead.
+        //
+        // Heart weight boosted (x4) in THIS blend specifically — not in
+        // totalAtten/combinedShape above, which stays exactly as computed,
+        // so overall brightness is unchanged. A rib sitting in front of or
+        // behind the heart in projection is common (the heart is inside
+        // the rib cage), and with an unboosted, purely proportional blend,
+        // bone's typically larger attenuation at the same pixel would
+        // dilute the reddish tint toward bone's own colour there — reading
+        // as the pulsation being hidden behind the ribs rather than
+        // visible through them. Boosting only the colour weight (not the
+        // brightness) is what keeps the heart-region tint identifiable
+        // wherever it overlaps bone, without changing how bright that
+        // pixel is overall.
+        float kHeartColorWeight = heartAtten * 4.0;
+        float colorTotal = boneAtten + muscleAtten + kHeartColorWeight;
+        vec3 materialColor = (boneAtten * uBoneColor + muscleAtten * uMuscleColor
+                             + kHeartColorWeight * kHeartColor) / max(colorTotal, 1e-4);
+        vec3 rgb = mix(uBackgroundColor, materialColor, clamp(combinedShape, 0.0, 1.0));
+
+        // Global post-processing — gamma, then contrast (pivoted at 0.5 so
+        // it cannot shift the black point), then a final brightness
+        // multiply — the same order and the same three controls a photo
+        // editor or a real fluoroscopy console applies to a detector signal.
+        rgb = pow(clamp(rgb, 0.0, 1.0), vec3(uGammaG));
+        rgb = (rgb - 0.5) * uContrastG + 0.5;
+        rgb = rgb * uBrightnessG;
+
+        // Contrast/embolic darkening — applied AFTER tissue tone-mapping, so
+        // it reads as a consistently dark, radiopaque signal regardless of
+        // how bright/contrasty the tissue calibration happens to be set,
+        // rather than being just another additive brightness competing with
+        // bone for the same pixel. uForeignOpacity controls how dark it
+        // pools - near-black at 1.0, only a subtle darkening at low values -
+        // the same single shared coefficient Pass 2 already sets once per
+        // frame for this channel.
+        vec3 kContrastDark = vec3(0.03, 0.03, 0.035);
+        rgb = mix(rgb, kContrastDark, clamp(foreignShape * uForeignOpacity, 0.0, 1.0));
+
+        // The screen-space detector grain that used to sit here is removed
+        // entirely. Two prior rounds tried to fix it in place — replacing
+        // the hash function (which had a real, well-documented large-
+        // argument precision problem), then gating it by combinedShape so
+        // it faded to zero away from anatomy — and grain was still visible
+        // in the background afterward. Rather than a third incremental
+        // adjustment, removing the term outright is the one change that
+        // GUARANTEES the background can no longer carry any of it: with no
+        // per-pixel randomization applied at all, background pixels equal
+        // exactly uBackgroundColor, full stop, regardless of whatever
+        // subtle issue might still remain in a gating calculation. The
+        // per-fragment tissue grain (mode 1, hash13(vWorld * 41.0)) is
+        // unrelated to this and untouched — that's what still gives bone
+        // and muscle their texture; it never reaches empty background at
+        // all, since mode 1 only runs where a mesh fragment is actually
+        // rasterized.
+        rgb = clamp(rgb, 0.0, 1.0);
+        fragColor = vec4(rgb, 1.0);
+        return;
+    }
+
+=======
 out vec4 fragColor;
 
 void main() {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (uShaded == 0) { fragColor = uColor; return; }
 
     vec3 n = normalize(vNormal);
@@ -114,7 +687,18 @@ void main() {
 
     vec3 rgb = uColor.rgb * (uAmbient + uDiffuse * diff) * atten
              + uSheen * spec * atten
+<<<<<<< HEAD
+             + uSheen * fres * 0.09;
+    // Soft-knee roll-off: at low/mid brightness this is nearly the identity
+    // (rgb=0.5 -> ~0.46), so anatomy that was already reading fine is
+    // essentially unchanged. It only bites where diffuse+specular+Fresnel
+    // were stacking up near or past 1.0 and hard-clipping to flat white
+    // with no gradient left in it — the "overexposed" look — easing that
+    // down to a soft, still-bright peak instead.
+    rgb = rgb / (1.0 + rgb * 0.18);
+=======
              + uSheen * fres * 0.16;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     float a = clamp(uColor.a + fres * uColor.a * 1.2, 0.0, 1.0);
     fragColor = vec4(rgb, a);
 }
@@ -143,6 +727,10 @@ VesselView::VesselView(QWidget *parent) : QOpenGLWidget(parent) {
     setFormat(fmt);
     setMinimumSize(520, 420);
     setFocusPolicy(Qt::StrongFocus);
+<<<<<<< HEAD
+    m_fluoroClock.start();   // backs the Fluoroscopy HUD's TIME read-out
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // The device advances at a physical speed; the camera is eased toward it
     // separately so that neither the zoom nor the recentring snaps.
@@ -174,6 +762,11 @@ VesselView::~VesselView() {
     // here — only the mesh, centerline and three device spans were released.
     m_muscularBatch.destroy();
     m_skeletalBatch.destroy();
+<<<<<<< HEAD
+    m_xrayQuadBatch.destroy();   // Fluoro X-ray compositing-pass triangle
+    m_xrayFbo.reset();           // Fluoro X-ray offscreen accumulation buffer
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_sheathCannulaBatch.destroy();
     m_sheathHubBatch.destroy();
     m_sheathValveBatch.destroy();
@@ -213,6 +806,31 @@ void VesselView::setDevice(const cn::CatheterModel *device) {
     update();
 }
 
+<<<<<<< HEAD
+void VesselView::setEmbolization(const cn::EmbolizationModel *emb) {
+    m_emboli = emb;
+    m_emboliDirty = true;
+    update();
+}
+
+void VesselView::refreshEmbolization() {
+    m_emboliDirty = true;
+    update();
+}
+
+void VesselView::setContrastInjection(const cn::ContrastInjectionModel *contrast) {
+    m_contrast = contrast;
+    m_contrastDirty = true;
+    update();
+}
+
+void VesselView::refreshContrastInjection() {
+    m_contrastDirty = true;
+    update();
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setCameraTrack(const cn::CenterlinePath *path, float arc) {
     m_camPath = path;
     // Always track the arc: the endoluminal eye is *inside* the device and has
@@ -299,6 +917,57 @@ void VesselView::showWholeVessel() {
     update();
 }
 
+<<<<<<< HEAD
+void VesselView::focusRibCage() {
+    // Same guard showWholeVessel() uses, and for the same reason: calling
+    // this before any vessel data is loaded has nothing valid to focus on.
+    // This is the actual, confirmed cause of a prior regression — an
+    // earlier call site invoked this during initial widget construction,
+    // before mesh/centerline data was loaded, so m_heartCentre was still
+    // at its default (0,0,0) and the resulting camera state was invalid
+    // across every linked view at once.
+    if (!m_mesh) return;
+
+    // Same distance formula as showWholeVessel() (same FOV, same style of
+    // margin), applied to an assumed rib-cage half-size instead of the
+    // whole mesh's bounding box — this is what gives a closer, more
+    // zoomed-in framing rather than the whole-body view. These half-sizes
+    // are reasoned estimates for an adult thorax (consistent with the
+    // rib-cage Z-band already used for Fluoro's rib dampening,
+    // kFragmentShader), not read back from a labelled rib-cage region in
+    // this specific model — kHeadFrameMargin's own comment ("tighter than
+    // kAnatomyFrameMargin... meant to be close") is the established
+    // precedent this follows for a margin tighter than the whole-vessel
+    // default.
+    static constexpr float kRibCageFrameMargin = 1.10f;
+    const float halfV = 0.20f;   // ~400 mm vertical extent (sternum to lower ribs)
+    const float halfH = 0.17f;   // ~340 mm horizontal extent (rib cage width)
+    const float aspect = height() > 0 ? float(width()) / float(height()) : 1.f;
+    // Clamped well away from zero: a degenerate/near-zero FOV would
+    // otherwise divide out to an enormous or infinite distance, the other
+    // half of what made the prior regression a total black screen rather
+    // than just a mis-centred view.
+    const float tanHalf = std::max(std::tan(qDegreesToRadians(fovDegrees() * 0.5f)), 1e-3f);
+    const float dist = kRibCageFrameMargin *
+                       std::max(halfV / tanHalf, halfH / (tanHalf * std::max(aspect, 0.2f)));
+
+    // Ribs surround the heart at roughly its own level — the same anchor
+    // point Fluoro's rib-cage dampening already uses, so no separate
+    // anatomical query is needed.
+    setCamera(180.f, 0.f, dist, m_heartCentre);
+
+    // setCamera() itself deliberately never emits (syncCameraFrom() relies on
+    // that to avoid a ping-pong loop between linked views) - every OTHER
+    // direct camera-framing function (showWholeVessel, showFluoroDefault,
+    // showHeadSagittal...) emits explicitly right after, and this one had
+    // been missing it: calling focusRibCage() directly (rather than via
+    // resetCamera(), which does emit) silently never reached the other
+    // linked view at all.
+    emit cameraChanged();
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt) {
     m_cameraFollows = false;
     m_azimuth   = az;
@@ -309,7 +978,79 @@ void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt)
 }
 
 void VesselView::syncCameraFrom(const VesselView &other) {
+<<<<<<< HEAD
+    // Distance is scaled by the ratio of each view's own FOV, not copied
+    // verbatim. 3D and Fluoro deliberately use different FOVs (40°/30° -
+    // see fovDegrees()'s own comment: Fluoro's narrower cone approximates a
+    // real X-ray detector's field of view) — the SAME raw distance number
+    // at two different FOVs frames a different apparent amount of anatomy,
+    // so copying it unscaled left the two views with byte-identical
+    // azimuth/elevation/distance/target yet a visibly different on-screen
+    // zoom, which is exactly what "the exact same movement, the exact same
+    // zoom" rules out. Keeping (distance * tan(fov/2)) constant across the
+    // sync is what keeps the apparent half-height of the frame the same
+    // regardless of which of the two FOVs is doing the looking.
+    const float tanHalfMine  = std::tan(qDegreesToRadians(fovDegrees() * 0.5f));
+    const float tanHalfTheir = std::tan(qDegreesToRadians(other.fovDegrees() * 0.5f));
+    const float scaledDistance = other.distance() * (tanHalfTheir / std::max(tanHalfMine, 1e-4f));
+    setCamera(other.azimuth(), other.elevation(), scaledDistance, other.target());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// showHeadSagittal — close lateral view of the head and cerebral vessels.
+//
+// Azimuth 90 puts the eye on +X looking back along -X: a sagittal projection,
+// with the screen's horizontal axis running anterior-posterior (Y) and its
+// vertical axis running cranio-caudal (Z). The other framings all sit at
+// azimuth 180, which is AP and superimposes the left and right circulations.
+//
+// The crop threshold is measured rather than guessed: above 0.82 of the Z span
+// the tree narrows from +/-288 mm to +/-103 mm in X and still holds two thirds
+// of the mesh's vertices, so that is where the cerebral region begins.
+//
+// Framing uses Y for the horizontal half-extent, not X — looking along X, the
+// model's X thickness is depth, and sizing the camera off it would push the
+// view much too far back.
+// ─────────────────────────────────────────────────────────────────────────────
+void VesselView::showHeadSagittal() {
+    if (!m_mesh) { showWholeVessel(); return; }
+
+    const cn::Box3 b = m_mesh->bounds();
+    const float zTop  = b.hi.z;
+    const float zCrop = b.lo.z + (b.hi.z - b.lo.z) * kHeadCropFraction;
+
+    // Measure the head region's own Y extent rather than using the whole
+    // model's: the cerebral tree is not centred on the trunk's midline.
+    float yLo =  std::numeric_limits<float>::max();
+    float yHi = -std::numeric_limits<float>::max();
+    for (const cn::Vec3 &v : m_mesh->vertices()) {
+        if (v.z < zCrop) continue;
+        yLo = std::min(yLo, v.y);
+        yHi = std::max(yHi, v.y);
+    }
+    if (yLo > yHi) { yLo = b.lo.y; yHi = b.hi.y; }
+
+    const float halfZ = (zTop - zCrop) * 0.5f;
+    const float halfY = (yHi - yLo) * 0.5f;
+
+    m_cameraFollows = false;
+    m_target = QVector3D(toQt(b.center()).x(),
+                         (yLo + yHi) * 0.5f,
+                         (zCrop + zTop) * 0.5f);
+    m_azimuth   = 90.f;    // eye on +X, looking along -X: patient's left lateral
+    m_elevation = 0.f;
+
+    const float aspect  = height() > 0 ? float(width()) / float(height()) : 1.f;
+    const float tanHalf = std::tan(qDegreesToRadians(fovDegrees() * 0.5f));
+    m_distance = kHeadFrameMargin *
+                 std::max(halfZ / tanHalf,
+                          halfY / (tanHalf * std::max(aspect, 0.2f)));
+
+    emit cameraChanged();
+    update();
+=======
     setCamera(other.azimuth(), other.elevation(), other.distance(), other.target());
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::showFluoroDefault() {
@@ -375,11 +1116,21 @@ void VesselView::resetCamera() {
     // at a different orientation from the others until the next rotation.
     // Resetting the rig is a separate action (R -> CarmController::resetAll),
     // and that pushes 0/0 to every view at once.
+<<<<<<< HEAD
+    //
+    // Previously branched on palette (Fluoro -> head region, everything else
+    // -> whole vessel) - meaning "Reset Camera" put the two panes at two
+    // different cameras every time, the opposite of every view sharing one
+    // camera state. focusRibCage() now emits cameraChanged() itself, so
+    // calling it here already propagates to every linked view.
+    focusRibCage();
+=======
     if (m_palette == Palette::Angiographic)
         showFluoroDefault();   // head region, AP position, 8° FOV
     else
         showWholeVessel();
     emit cameraChanged();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 // ------------------------------------------------------------------ camera
@@ -433,6 +1184,39 @@ void VesselView::syncCameraToDevice() {
     else if (m_mode == Mode::Reference) updateFollowFrame();
 }
 
+<<<<<<< HEAD
+void VesselView::showEvent(QShowEvent *e) {
+    QOpenGLWidget::showEvent(e);
+
+    // The actual fix for "switch to Fluoro and the camera is briefly wrong"
+    // (and the same for switching to any other pane while in follow mode):
+    // updateFollowFrame()/updateEndoluminalFrame() are only ever called from
+    // paintGL(), and Qt never calls paintGL() for a QStackedWidget page that
+    // isn't the current one - so m_followTarget/m_followDistance (or the
+    // endoluminal eye/forward) sit completely stale for however long this
+    // view was hidden, however far the catheter actually moved in that
+    // time. The very first frame after being shown would otherwise
+    // recompute a fresh goal from the catheter's now-current position and
+    // visibly EASE toward it from the stale one over the next several
+    // frames, rather than already being there - which is exactly what read
+    // as "changes to a different view" on switching panes.
+    //
+    // Recomputing the goal here and then snapping the eased value straight
+    // to it (bypassing the gradual interpolation entirely, just for this
+    // one moment) means the very first frame rendered after becoming
+    // visible again already shows the correct camera, with no visible
+    // catch-up at all.
+    if (m_mode == Mode::Reference && m_cameraFollows && m_device) {
+        updateFollowFrame();
+        m_followTarget   = m_followTargetGoal;
+        m_followDistance = m_followDistanceGoal;
+    } else if (m_mode == Mode::Endoluminal) {
+        updateEndoluminalFrame();
+    }
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 QVector3D VesselView::cameraPosition() const {
     if (m_mode == Mode::Endoluminal) return m_endoEye;
 
@@ -519,11 +1303,20 @@ VesselView::Material VesselView::wallMaterial() const {
         m.ambient  = 0.22f;   // lower ambient — less bright
         break;
     case Palette::Angiographic:
+<<<<<<< HEAD
+        // Non-endo opacity now follows m_wallOpacity like every other
+        // palette, instead of a hardcoded 0.0 that made the vessel
+        // undrawable in Fluoro regardless of what any caller set. Road Map
+        // mode still overrides colour/opacity in the draw section below.
+        m.colour = endo ? QVector4D(0.88f, 0.88f, 0.90f, 1.f)
+                        : QVector4D(0.85f, 0.86f, 0.90f, m_wallOpacity);
+=======
         // Fluoro baseline: vessel is hidden (opacity 0.0) without contrast/roadmap.
         // This matches the old project: real fluoro doesn't show lumen without dye.
         // Road Map mode overrides the colour/opacity in the draw section.
         m.colour = endo ? QVector4D(0.88f, 0.88f, 0.90f, 1.f)
                         : QVector4D(0.85f, 0.86f, 0.90f, 0.0f);  // 0% — hidden
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         m.sheen = QVector3D(0.f, 0.f, 0.f);
         m.specular = 0.0f;
         m.shininess = 1.f;
@@ -552,11 +1345,22 @@ void VesselView::initializeGL() {
     glDisable(GL_CULL_FACE);
 
     m_program = std::make_unique<QOpenGLShaderProgram>();
+<<<<<<< HEAD
+    if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertexShader))
+        qWarning() << "VesselView: vertex shader failed to compile:" << m_program->log();
+    if (!m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragmentShader))
+        qWarning() << "VesselView: fragment shader failed to compile:" << m_program->log();
+    m_program->bindAttributeLocation("aPos", 0);
+    m_program->bindAttributeLocation("aNormal", 1);
+    if (!m_program->link())
+        qWarning() << "VesselView: shader program failed to link:" << m_program->log();
+=======
     m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertexShader);
     m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragmentShader);
     m_program->bindAttributeLocation("aPos", 0);
     m_program->bindAttributeLocation("aNormal", 1);
     m_program->link();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::resizeGL(int w, int h) { glViewport(0, 0, w, h); }
@@ -896,6 +1700,55 @@ void VesselView::rebuildBodyMeshBatch(const QString &path, Batch &batch,
     uploadBatch(batch, transformed, bodyMesh.buildIndexData());
 }
 
+<<<<<<< HEAD
+void VesselView::ensureXrayFbo(int w, int h) {
+    w = std::max(w, 1);
+    h = std::max(h, 1);
+    if (m_xrayFbo && m_xrayFbo->width() == w && m_xrayFbo->height() == h) return;
+
+    QOpenGLFramebufferObjectFormat fmt;
+    // Floating point, not the normalized [0,1] the default framebuffer uses:
+    // that's the whole point. Raw attenuation sums here are never clamped,
+    // no matter how many overlapping mesh fragments a ray crosses, so the
+    // exponential in the compositing pass sees the true total and can never
+    // be fooled into blowing out to solid white by an unexpectedly dense
+    // stack of geometry.
+    fmt.setInternalTextureFormat(GL_RGBA32F);
+    fmt.setAttachment(QOpenGLFramebufferObject::NoAttachment);  // no depth needed
+    fmt.setSamples(0);
+    m_xrayFbo = std::make_unique<QOpenGLFramebufferObject>(w, h, fmt);
+    if (!m_xrayFbo->isValid()) { m_xrayFbo.reset(); return; }
+
+    // Linear filtering on the way back out is what turns this buffer's
+    // deliberately lower resolution into softness rather than visible
+    // blockiness when the compositing pass samples it.
+    glBindTexture(GL_TEXTURE_2D, m_xrayFbo->texture());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void VesselView::ensureXrayQuad() {
+    if (m_xrayQuadBatch.ready) return;
+    // One triangle, big enough that its clip-space footprint covers the
+    // whole [-1,1] viewport (the classic "big triangle" full-screen trick —
+    // one draw call, no diagonal seam a two-triangle quad would have).
+    // Drawn with uViewProj forced to identity (see the compositing pass in
+    // paintGL), so these coordinates ARE the clip-space coordinates rather
+    // than being transformed by the scene camera. Normals are unused by
+    // that pass, so they're left zeroed.
+    const std::vector<float> verts = {
+        -1.f, -1.f, 0.f,  0.f, 0.f, 1.f,
+        3.f, -1.f, 0.f,  0.f, 0.f, 1.f,
+        -1.f,  3.f, 0.f,  0.f, 0.f, 1.f,
+    };
+    uploadBatch(m_xrayQuadBatch, verts, {});
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setBodyAlignment(const BodyAlign &muscular, const BodyAlign &skeletal) {
     m_muscularAlign = muscular;
     m_skeletalAlign = skeletal;
@@ -1093,7 +1946,11 @@ void VesselView::rebuildSheathBatches() {
 // DeviceBatches. Factored out so the parked host devices of a coaxial stack —
 // the guide a microcatheter was introduced through — render the same way as the
 // active device without duplicating the meshing.
+<<<<<<< HEAD
+void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth) {
+=======
 void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b) {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (!dev) {
         b.tip.elementCount = b.band.elementCount = 0;
         b.shaft.elementCount = b.balloon.elementCount = 0;
@@ -1105,17 +1962,178 @@ void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b)
     uploadBatch(b.tip, v, i);
     dev->buildTubeMesh(16, v, i, kTipEnd, kBandEnd);
     uploadBatch(b.band, v, i);
+<<<<<<< HEAD
+
+    // Clip the shaft's proximal end at hideBehindDepth (the host catheter's
+    // own tip depth, when this device was telescoped through one) - see
+    // setDeviceHiddenBehindDepth()'s own comment for why the shaft would
+    // otherwise extend all the way back to the access site: nodes[] is
+    // ordered tip-first, and its proximal-most node is always arc-length
+    // zero, not wherever a host catheter's tip happens to be - CatheterModel
+    // itself has no concept of "telescoped through a host" to clip against
+    // on its own.
+    int shaftLastNode = -1;
+    if (hideBehindDepth > 0.f) {
+        const auto &nodes = dev->state().nodes;
+        const float visibleArc = dev->state().insertionDepth - hideBehindDepth;
+        if (visibleArc <= 0.f) {
+            // The tip has not actually advanced past the host's own tip yet
+            // (e.g. the instant after switching devices) - nothing but the
+            // tip/band should render, which is correct: the microcatheter
+            // has not left the guide yet.
+            shaftLastNode = kBandEnd;
+        } else {
+            float cumulative = 0.f;
+            for (size_t k = static_cast<size_t>(kBandEnd); k + 1 < nodes.size(); ++k) {
+                cumulative += cn::distance(nodes[k], nodes[k + 1]);
+                if (cumulative >= visibleArc) { shaftLastNode = static_cast<int>(k + 1); break; }
+            }
+        }
+    }
+    dev->buildTubeMesh(16, v, i, kBandEnd, shaftLastNode);
+    uploadBatch(b.shaft, v, i);
+}
+
+void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
+                                     const std::vector<CastSpan> &spans, Batch &out) {
+    std::vector<float> verts;
+    std::vector<uint32_t> idx;
+    if (!graph || spans.empty()) { uploadBatch(out, verts, idx); return; }
+
+    const cn::CenterlineGraph &g = *graph;
+    constexpr int kSides = 10;
+    // Fits comfortably inside the lumen at each end - the same spirit as
+    // CatheterModel::Params::lumenFitFraction for a DRAWN (not physical)
+    // radius: the cast/contrast should read as filling the vessel, not
+    // exceeding it, regardless of the coarse per-node radius sampling.
+    constexpr float kFitFraction = 0.85f;
+
+    for (const auto &span : spans) {
+        if (span.frac <= 0.f || span.from < 0 || span.to < 0) continue;
+        if (static_cast<size_t>(span.from) >= g.nodeCount() ||
+            static_cast<size_t>(span.to)   >= g.nodeCount())
+            continue;
+
+        const auto &na = g.nodes()[static_cast<size_t>(span.from)];
+        const auto &nb = g.nodes()[static_cast<size_t>(span.to)];
+
+        const cn::Vec3 pa = na.position;
+        // Partial fill: the leading edge stops part-way to `to` rather than
+        // jumping straight to the full link length, which is what makes the
+        // fill visibly "flow" outward over successive updates instead of
+        // popping fully-formed one link at a time.
+        const cn::Vec3 pb = cn::lerp(pa, nb.position, span.frac);
+
+        const cn::Vec3 axisVec = pb - pa;
+        const float len = axisVec.length();
+        if (len < 1e-6f) continue;
+        const cn::Vec3 dir = axisVec / len;
+
+        const float ra = std::max(na.radius * kFitFraction, 1e-4f);
+        const float rbFull = std::max(nb.radius * kFitFraction, 1e-4f);
+        // Interpolate the radius toward the partial point too, so a leading
+        // edge stopping between a wide and a narrow node tapers smoothly
+        // rather than snapping to the far end's calibre early.
+        const float rb = ra + (rbFull - ra) * span.frac;
+
+        const cn::Vec3 refv = cn::anyPerpendicular(dir);
+        const uint32_t base = static_cast<uint32_t>(verts.size() / 6);
+
+        for (int ring = 0; ring < 2; ++ring) {
+            const cn::Vec3 centre = (ring == 0) ? pa : pb;
+            const float r = (ring == 0) ? ra : rb;
+            for (int s = 0; s < kSides; ++s) {
+                const float ang = (2.0f * float(M_PI) * float(s)) / float(kSides);
+                const cn::Vec3 rim = cn::rotateAbout(refv, dir, ang);
+                const cn::Vec3 pos = centre + rim * r;
+                const cn::Vec3 nrm = rim.normalized();
+                verts.insert(verts.end(), {pos.x, pos.y, pos.z, nrm.x, nrm.y, nrm.z});
+            }
+        }
+        for (int s = 0; s < kSides; ++s) {
+            const uint32_t a0 = base + static_cast<uint32_t>(s);
+            const uint32_t a1 = base + static_cast<uint32_t>((s + 1) % kSides);
+            const uint32_t b0 = a0 + static_cast<uint32_t>(kSides);
+            const uint32_t b1 = a1 + static_cast<uint32_t>(kSides);
+            idx.insert(idx.end(), {a0, b0, a1,  a1, b0, b1});
+        }
+
+        // Cap the leading edge: cheap (one fan of kSides triangles) and
+        // harmless even where a further link continues the fill, since the
+        // cap sits flush with - and is hidden inside - that next segment's
+        // own tube. Without it, a partially-filled span (the common case
+        // while actively injecting or draining) would show as a see-through
+        // open pipe.
+        const uint32_t centreIdx = static_cast<uint32_t>(verts.size() / 6);
+        verts.insert(verts.end(), {pb.x, pb.y, pb.z, dir.x, dir.y, dir.z});
+        for (int s = 0; s < kSides; ++s) {
+            const uint32_t b0 = base + static_cast<uint32_t>(kSides + s);
+            const uint32_t b1 = base + static_cast<uint32_t>(kSides + (s + 1) % kSides);
+            idx.insert(idx.end(), {b0, b1, centreIdx});
+        }
+    }
+    uploadBatch(out, verts, idx);
+}
+
+void VesselView::buildEmboliInto(const cn::EmbolizationModel *emb, Batch &out) {
+    if (!emb || !emb->graph() || !emb->active()) {
+        std::vector<float> v; std::vector<uint32_t> i; uploadBatch(out, v, i);
+        return;
+    }
+    std::vector<CastSpan> spans;
+    spans.reserve(emb->state().links.size());
+    for (const auto &link : emb->state().links)
+        spans.push_back({link.from, link.to, link.fillFraction});
+    buildTubesFromSpans(emb->graph(), spans, out);
+}
+
+void VesselView::buildContrastInto(const cn::ContrastInjectionModel *contrast,
+                                   Batch (&buckets)[kContrastBuckets]) {
+    std::vector<CastSpan> bucketSpans[kContrastBuckets];
+
+    if (contrast && contrast->phase() != cn::ContrastPhase::Idle) {
+        // graph() isn't exposed by ContrastInjectionModel (it never needed to
+        // be read back before now) - MainWindow wires the same m_graph into
+        // both models, so this view already has that pointer via m_graph
+        // directly.
+        //
+        // Bucketed by the link's OWN level (concentration), not by any new
+        // distance computation: level is already 0 near the advancing
+        // leading edge (a span that has only just started filling) and 1 on
+        // an established column close behind it (ContrastInjectionModel's
+        // own fill-front math). That is exactly the gradient a real
+        // contrast bolus shows - concentrated where it has been flowing
+        // longest, dilute at its advancing tip - so no extra state or
+        // distance query is needed; it falls straight out of data the model
+        // already produces.
+        for (const auto &link : contrast->state().links) {
+            if (link.level <= 0.f) continue;
+            const int b = std::clamp(static_cast<int>(link.level * kContrastBuckets),
+                                     0, kContrastBuckets - 1);
+            bucketSpans[b].push_back({link.from, link.to, link.level});
+        }
+    }
+    for (int b = 0; b < kContrastBuckets; ++b)
+        buildTubesFromSpans(m_graph, bucketSpans[b], buckets[b]);
+}
+
+=======
     dev->buildTubeMesh(16, v, i, kBandEnd, -1);
     uploadBatch(b.shaft, v, i);
 }
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::rebuildDeviceBatches() {
     m_deviceDirty = false;
     if (!m_deviceBatches) return;
     // setDevice(nullptr) means "no device in the patient" — e.g. a sheath is in
     // but no catheter has been selected yet. Zero the spans so the previous
     // device stops being drawn instead of lingering as a stale mesh.
+<<<<<<< HEAD
+    buildDeviceInto(m_device, *m_deviceBatches, m_deviceHiddenBehindDepth);
+=======
     buildDeviceInto(m_device, *m_deviceBatches);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (!m_device) return;
     rebuildBalloonBatch();
 
@@ -1145,6 +2163,11 @@ void VesselView::paintGL() {
     if (m_meshDirty) rebuildMeshBatch();
     if (m_centerlineDirty) rebuildCenterlineBatch();
     if (m_deviceDirty) rebuildDeviceBatches();
+<<<<<<< HEAD
+    if (m_emboliDirty) { buildEmboliInto(m_emboli, m_emboliBatch); m_emboliDirty = false; }
+    if (m_contrastDirty) { buildContrastInto(m_contrast, m_contrastBatches); m_contrastDirty = false; }
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (m_sheathDirty) rebuildSheathBatches();
     if (m_bodyMeshDirty) {
         // Same alignment as setBodyMeshes(). Previously these two sites used
@@ -1162,7 +2185,12 @@ void VesselView::paintGL() {
     if (endo)
         glClearColor(0.02f, 0.014f, 0.014f, 1.f);
     else if (fluoro || m_dsaActive || m_roadMapActive)
+<<<<<<< HEAD
+        glClearColor(0.03f, 0.03f, 0.035f, 1.f);   // dark — the X-ray accumulation
+    // (below) adds brightness up from here
+=======
         glClearColor(0.03f, 0.03f, 0.035f, 1.f);   // dark — fluoro/DSA/roadmap
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     else
         glClearColor(0.0f, 0.0f, 0.0f, 1.f);   // black for 3D/mesh
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1180,14 +2208,40 @@ void VesselView::paintGL() {
         m_program->setUniformValue("uPwv",      m_cycle->params().pulseWaveSpeed);
         m_program->setUniformValue("uStrain",   m_cycle->params().distensionStrain);
         m_program->setUniformValueArray("uPulseLUT", m_pulseLUT, kPulseLutSize, 1);
+<<<<<<< HEAD
+        // Same radius the amplitude falloff already uses (rebuildWallBatch's
+        // spatialWeight) - the region that's amplified as "the heart" is the
+        // same region that should move as one synchronized pump, so the two
+        // boundaries have to agree or a vertex could be inside one and
+        // outside the other.
+        m_program->setUniformValue("uHeartTravelExempt", m_heart.coreRadius + m_heart.falloff);
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     } else {
         m_program->setUniformValue("uStrain", 0.f);
     }
     m_program->setUniformValue("uPulsatile", 0);   // nothing pulses unless it asks
     m_program->setUniformValue("uCameraPos", cameraPosition());
+<<<<<<< HEAD
+    m_program->setUniformValue("uHeartCentreZ", m_heartCentre.z());
+    // Continuously increasing (never wraps, unlike phase() alone), reusing
+    // the same shared clock rather than adding a separate timer just for
+    // live grain. Independent of m_pulsation — grain should keep flickering
+    // even if the pulsation displacement itself is toggled off.
+    m_program->setUniformValue("uLiveTime",
+                               m_cycle ? (static_cast<float>(m_cycle->beatCount()) + m_cycle->phase()) : 0.0f);
     m_program->setUniformValue("uLightDir", QVector3D(-0.35f, -0.72f, -0.6f).normalized());
     m_program->setUniformValue("uHeadlight", endo ? 1 : 0);
     m_program->setUniformValue("uFalloff",   endo ? m_modelScale * 0.4f : 0.0f);
+    // Off by default in every VesselView instance; only the Fluoro X-ray
+    // branch below turns it on, and only for its own two passes.
+    m_program->setUniformValue("uXrayMode",    0);
+    m_program->setUniformValue("uXrayIsVessel", 0);
+=======
+    m_program->setUniformValue("uLightDir", QVector3D(-0.35f, -0.72f, -0.6f).normalized());
+    m_program->setUniformValue("uHeadlight", endo ? 1 : 0);
+    m_program->setUniformValue("uFalloff",   endo ? m_modelScale * 0.4f : 0.0f);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     Material line;
     line.colour = QVector4D(0.35f, 0.62f, 0.75f, 1.f);
@@ -1202,6 +2256,390 @@ void VesselView::paintGL() {
             glLineWidth(1.f);
             drawBatch(m_centerlineBatch, GL_LINES, line, false);
         }
+<<<<<<< HEAD
+        // ── Body mesh layers ────────────────────────────────────────────────
+        // Two different draws share these two meshes, chosen by `fluoro`:
+        //   * Fluoro (Angiographic palette): X-ray / DRR-style projection —
+        //     see the branch immediately below.
+        //   * Everything else (3D / Mesh / DSA — arterial3D or m_dsaActive):
+        //     the old-project translucent layering, unchanged — Muscular
+        //     (outermost, opacity 0.04-0.05, flat/unlit), Skeletal (Phong
+        //     shaded), then the vessel wall on top. Old project used VTK
+        //     depth-peeling for this; here it's plain alpha blending with
+        //     glDepthMask(GL_FALSE) so the layers accumulate without writing
+        //     the depth buffer.
+
+        const bool hasMuscular = m_muscularBatch.elementCount > 0;
+        const bool hasSkeletal = m_skeletalBatch.elementCount > 0;
+        const bool hasVessel   = m_meshBatch.elementCount > 0;
+        const bool arterial3D  = (m_palette == Palette::Arterial);
+
+        if (fluoro) {
+            // ── X-ray / DRR-style projection — Fluoro View only ─────────────
+            //
+            // Real fluoroscopy is not lit 3D geometry — it is a projection.
+            // X-rays travel straight through the patient and the detector
+            // reads how much of each ray got absorbed. Every earlier attempt
+            // at this tried to fake that inside a single forward-rendering
+            // pass — additive blending relying on the framebuffer's [0,1]
+            // clamp as an accidental ceiling, then alpha "over" compositing
+            // relying on a hand-picked target brightness — and each was
+            // still fundamentally approximating Beer-Lambert through a blend
+            // equation rather than actually computing it.
+            //
+            // This does the real thing, in two passes:
+            //   1. ACCUMULATE — Skeletal.stl and Muscular.stl's raw
+            //      attenuation contributions summed into an offscreen
+            //      FLOATING-POINT buffer (never clamped, unlike the default
+            //      framebuffer), one channel per material (R=muscle/soft
+            //      tissue, G=bone), via glColorMask. Vessel is deliberately
+            //      NOT part of this — see the overlay draw after Pass 2.
+            //   2. COMPOSITE — one full-screen triangle reads that buffer,
+            //      sums the channels into the total attenuation the ray
+            //      actually accumulated, applies the real Beer-Lambert
+            //      exponential exactly once (kFragmentShader's uXrayMode==2
+            //      branch) — the mathematically correct point to do it,
+            //      which a single blend equation can never be — then a
+            //      window/level contrast stretch and a gamma curve, the way
+            //      a real console processes its detector signal for display.
+            //
+            // Source/detector geometry: there is no separate X-ray camera
+            // to build. The camera used for both passes is whatever this
+            // frame's regular uViewProj already is (set above, from the
+            // normal camera/C-arm-synced code) — that camera, already kept
+            // in sync with the simulated C-arm's angles elsewhere in this
+            // class, IS the source/detector geometry (a perspective camera
+            // is a point-source projection onto a plane, which is exactly
+            // what an X-ray source and detector are). Reusing it rather
+            // than adding a second one is what makes this automatically
+            // follow the C-arm the same way everything else in this view
+            // already does, with no additional synchronisation code needed.
+            GLint vp[4];
+            glGetIntegerv(GL_VIEWPORT, vp);
+            // Was 2/3 resolution (before that, half): anatomy was still
+            // reading as too soft to make out clearly. Full resolution here
+            // — the softness this projection needs now comes only from the
+            // widget-level blur (QuadPanel.cpp), not from this buffer too.
+            const int fboW = std::max(vp[2], 64);
+            const int fboH = std::max(vp[3], 64);
+            ensureXrayFbo(fboW, fboH);
+
+            if (m_xrayFbo) {
+                // ── Pass 1: accumulate ───────────────────────────────────────
+                m_xrayFbo->bind();
+                glViewport(0, 0, fboW, fboH);
+                glClearColor(0.f, 0.f, 0.f, 0.f);
+                glClear(GL_COLOR_BUFFER_BIT);
+
+                glDisable(GL_DEPTH_TEST);
+                glDepthMask(GL_FALSE);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_ONE, GL_ONE);   // additive — safe here: the
+                // target is float and never
+                // clamps, so the raw sum
+                // stays exact regardless of
+                // how many fragments overlap.
+
+                m_program->setUniformValue("uXrayMode",  1);
+                m_program->setUniformValue("uPulsatile", 0);
+
+                // Muscle -> red channel only. Raw crossing count, grain-
+                // textured — every brightness/contrast decision happens in
+                // the compositing pass (mode 2) via VesselView::XrayTuning
+                // (Muscle Ambient/Diffuse/Opacity/Soft-Tissue Multiplier/
+                // Muscle Brightness), set from the X-Ray Calibration dialog
+                // (MainWindow). A procedural, mesh-free version of this
+                // soft-tissue layer was tried and then reverted — this is
+                // Muscular.stl's own accumulated density again.
+                if (hasMuscular) {
+                    glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+                    QOpenGLVertexArrayObject::Binder bnd(&m_muscularBatch.vao);
+                    glDrawElements(GL_TRIANGLES, m_muscularBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+                }
+
+                // Bone -> green channel only. Likewise raw here; shaped
+                // entirely in mode 2 via Bone Ambient/Diffuse/Opacity/Bone
+                // Intensity Multiplier, plus the screen-space cortical/
+                // medullary contrast mode 2 now applies directly to this
+                // channel's accumulated density map.
+                if (hasSkeletal) {
+                    glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_FALSE);
+                    QOpenGLVertexArrayObject::Binder bnd(&m_skeletalBatch.vao);
+                    glDrawElements(GL_TRIANGLES, m_skeletalBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+                }
+
+                // Vessel: drawn again, but only its heart/great-vessel
+                // region — see uXrayIsVessel above. uPulsatile=1 here means
+                // the vertex shader's existing displacement runs exactly as
+                // it does everywhere else this batch is drawn (aRootDist/
+                // aPulseAmp, uPhase/uCycleSec/uPwv/uStrain/uPulseLUT — all
+                // already set once per frame near the top of paintGL), so
+                // this is genuine geometric expansion and contraction with
+                // the cardiac cycle, not a brightness pulse standing in for
+                // one. The carotids and the rest of the peripheral tree
+                // still contribute nothing here: vHeartMask (mode 1) is
+                // already driven to zero for them by the same
+                // superiorWeight product that keeps them from physically
+                // pulsing at all.
+                if (hasVessel) {
+                    m_program->setUniformValue("uXrayIsVessel", 1);
+                    m_program->setUniformValue("uPulsatile",    1);
+                    glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE);
+                    QOpenGLVertexArrayObject::Binder bnd(&m_meshBatch.vao);
+                    glDrawElements(GL_TRIANGLES, m_meshBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+                    m_program->setUniformValue("uPulsatile",    0);
+                    m_program->setUniformValue("uXrayIsVessel", 0);
+                }
+
+                // Contrast + embolic material -> alpha channel. This is what
+                // actually makes them read as radiopaque signal WITHIN the
+                // X-ray projection rather than a separately-lit 3D object
+                // drawn on top of it: both now contribute real optical
+                // depth to the SAME Beer-Lambert sum bone/muscle/heart
+                // already go through (mode 2 above), instead of a forward-
+                // shaded alpha-blended overlay. Combining them additively
+                // into one shared channel is physically correct - different
+                // materials' attenuation coefficients genuinely sum along
+                // one ray - so scaling each draw's OWN density by its own
+                // real radiopacity BEFORE they are summed here is what keeps
+                // a tantalum-based agent (Onyx/SQUID) reading brighter than
+                // an iodine-based one (PHIL/Glue) once mode 2 resolves the
+                // combined channel, without needing to tag or separate them
+                // downstream at all.
+                m_program->setUniformValue("uXrayIsVessel", 2);
+                glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+
+                if (m_contrast && m_contrast->phase() != cn::ContrastPhase::Idle) {
+                    // Iodinated contrast is one of the most radiopaque
+                    // things ever injected into a vessel - a high density
+                    // scale, independent of any embolic agent. Bucket-
+                    // scaled by concentration (t): the dilute leading edge
+                    // genuinely contributes less optical depth than an
+                    // established column, which is what gives "gradual
+                    // dilution" as a real Beer-Lambert consequence instead
+                    // of an alpha-blended fade. Low, near-baseline grain: a
+                    // real contrast bolus is a well-mixed liquid, not a
+                    // textured solid deposit the way an embolic cast is.
+                    m_program->setUniformValue("uForeignGrainAmount", 0.30f);
+                    for (int b = 0; b < kContrastBuckets; ++b) {
+                        if (m_contrastBatches[b].elementCount == 0) continue;
+                        const float t = (static_cast<float>(b) + 0.5f) / static_cast<float>(kContrastBuckets);
+                        m_program->setUniformValue("uForeignDensityScale", 0.9f + 1.6f * t);
+                        QOpenGLVertexArrayObject::Binder bnd(&m_contrastBatches[b].vao);
+                        glDrawElements(GL_TRIANGLES, m_contrastBatches[b].elementCount, GL_UNSIGNED_INT, nullptr);
+                    }
+                }
+
+                if (m_emboli && m_emboli->active() && m_emboliBatch.elementCount > 0) {
+                    // Radiopacity-derived density scale: Onyx/SQUID
+                    // (tantalum, ~0.85-0.90) read bright; PHIL/Glue (iodine,
+                    // ~0.55-0.58) read dimmer but still clearly visible -
+                    // the same EmbolicAgentSpec::radiopacity every other
+                    // agent-dependent brightness decision in this file
+                    // already uses.
+                    const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli->agent());
+                    m_program->setUniformValue("uForeignDensityScale", 0.6f + 1.8f * spec.radiopacity);
+                    // Grain amount derived from the SAME real viscosity
+                    // value that already governs how each agent flows and
+                    // branches (EmbolizationModel) - a viscous, cohesive,
+                    // deliberately-controlled agent (Onyx, SQUID) forms a
+                    // smooth, dense, uniform cast; a thin, fast-
+                    // polymerizing one (Glue) forms a visibly irregular,
+                    // patchy deposit, which is exactly the real clinical
+                    // distinction between them, not an arbitrary per-agent
+                    // knob. PHIL falls naturally in between.
+                    const float grainAmount = std::clamp(1.3f - 1.3f * spec.viscosity, 0.1f, 1.1f);
+                    m_program->setUniformValue("uForeignGrainAmount", grainAmount);
+                    QOpenGLVertexArrayObject::Binder bnd(&m_emboliBatch.vao);
+                    glDrawElements(GL_TRIANGLES, m_emboliBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+                }
+
+                m_program->setUniformValue("uXrayIsVessel", 0);
+
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+                glDisable(GL_BLEND);
+
+                // Back to the widget's own target (NOT framebuffer 0 — a
+                // QOpenGLWidget renders into its own internally-managed FBO,
+                // and defaultFramebufferObject() is the Qt-provided way to
+                // get that id back correctly) and the full-resolution
+                // viewport, before pass 2 draws to the screen.
+                glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+                glViewport(vp[0], vp[1], vp[2], vp[3]);
+
+                // ── Pass 2: composite ────────────────────────────────────────
+                ensureXrayQuad();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, m_xrayFbo->texture());
+                m_program->setUniformValue("uXrayTex", 0);
+                m_program->setUniformValue("uViewportPx", QVector2D(float(vp[2]), float(vp[3])));
+                m_program->setUniformValue("uXrayMode", 2);
+                m_program->setUniformValue("uBackgroundColor", m_xrayTuning.backgroundColor);
+                m_program->setUniformValue("uBoneColor",       m_xrayTuning.boneColor);
+                m_program->setUniformValue("uBoneOpacity",     m_xrayTuning.boneOpacity);
+                m_program->setUniformValue("uBoneAmbient",     m_xrayTuning.boneAmbient);
+                m_program->setUniformValue("uBoneDiffuse",     m_xrayTuning.boneDiffuse);
+                m_program->setUniformValue("uBoneSpecular",    m_xrayTuning.boneSpecular);
+                m_program->setUniformValue("uMuscleColor",     m_xrayTuning.muscleColor);
+                m_program->setUniformValue("uMuscleOpacity",   m_xrayTuning.muscleOpacity);
+                m_program->setUniformValue("uMuscleAmbient",   m_xrayTuning.muscleAmbient);
+                m_program->setUniformValue("uMuscleDiffuse",   m_xrayTuning.muscleDiffuse);
+                m_program->setUniformValue("uMuscleSpecular",  m_xrayTuning.muscleSpecular);
+                m_program->setUniformValue("uGammaG",          m_xrayTuning.gamma);
+                m_program->setUniformValue("uContrastG",       m_xrayTuning.contrast);
+                m_program->setUniformValue("uBrightnessG",     m_xrayTuning.brightness);
+                m_program->setUniformValue("uBoneIntensityMult", m_xrayTuning.boneIntensityMult);
+                m_program->setUniformValue("uSoftTissueMult",    m_xrayTuning.softTissueMult);
+                m_program->setUniformValue("uBoneBrightness",    m_xrayTuning.boneBrightness);
+                m_program->setUniformValue("uMuscleBrightness",  m_xrayTuning.muscleBrightness);
+                // Fixed constant, not yet exposed in the X-Ray Calibration
+                // dialog (that wasn't part of this request) - controls how
+                // dark contrast/embolic material pools against the tissue
+                // image beneath it (see foreignShape's own comment above,
+                // in the composite pass). Raised from an earlier 0.55: that
+                // value was tuned back when this channel BRIGHTENED the
+                // image, and even at full concentration only reached a 55%
+                // mix toward black — nowhere near dark enough once the
+                // formula was corrected to darken instead. 0.85 lets a
+                // fully-formed contrast column or embolic cast read as
+                // genuinely near-black while still leaving a sliver of the
+                // underlying tissue/vessel-wall texture faintly visible
+                // through it, rather than a flat, textureless silhouette.
+                m_program->setUniformValue("uForeignOpacity", 0.85f);
+                // Identity: the quad's vertices are already in clip space
+                // (see ensureXrayQuad), so this draw must not be pushed
+                // through the scene camera the way everything else is.
+                m_program->setUniformValue("uViewProj", QMatrix4x4());
+
+                glDisable(GL_DEPTH_TEST);
+                glDepthMask(GL_FALSE);
+                glDisable(GL_BLEND);   // opaque — this triangle covers every
+                // pixel, replacing the frame's
+                // earlier clear color entirely.
+                {
+                    QOpenGLVertexArrayObject::Binder bnd(&m_xrayQuadBatch.vao);
+                    glDrawArrays(GL_TRIANGLES, 0, m_xrayQuadBatch.elementCount);
+                }
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                // Restore the real camera matrix for everything drawn after
+                // this (device, sheath, HUD overlay).
+                m_program->setUniformValue("uViewProj", viewProjection());
+
+                // Vessel — drawn as an ordinary translucent overlay ON TOP of
+                // the composited X-ray image, not accumulated into the
+                // Beer-Lambert projection above (a real angiogram only shows
+                // the lumen once contrast dye is injected — Road Map / DSA —
+                // so mixing it into the attenuation sum would be physically
+                // wrong). This is the actual fix for "vessel not visible in
+                // Fluoro": an earlier attempt only touched the non-fluoro
+                // `else` branch below, which this `if (fluoro)` branch never
+                // reaches at all — the vessel draw has to live here.
+                //
+                // Pass 2 above left depth test and blending disabled (the
+                // composite quad is opaque and ignores depth); both are
+                // re-enabled here so the vessel draws as normal 3D geometry
+                // with correct self-occlusion and correct alpha blending,
+                // then restored to the state the rest of paintGL expects.
+                if (m_showWall && hasVessel) {
+                    // uXrayMode is still 2 (composite) from Pass 2 above - the
+                    // fragment shader's composite branch ignores uColor/
+                    // uAmbient/uDiffuse entirely and samples uXrayTex instead,
+                    // which is what was actually making the vessel render
+                    // black rather than the grayish colour wallMaterial()
+                    // sets. Reset to 0 (normal shading) so drawBatch's uColor
+                    // is what actually reaches the framebuffer here.
+                    m_program->setUniformValue("uXrayMode", 0);
+
+                    glEnable(GL_DEPTH_TEST);
+                    glDepthMask(GL_FALSE);
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                    Material wm = wallMaterial();   // ambient/specular/shininess/sheen only
+                    wm.colour = QVector4D(m_xrayTuning.vesselColor, m_xrayTuning.vesselOpacity);
+                    if (m_roadMapActive) {
+                        wm.colour   = QVector4D(0.92f, 0.24f, 0.33f, 0.85f);  // #EA3C53 road map
+                        wm.ambient  = 0.9f;
+                        wm.specular = 0.0f;
+                    }
+                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, true, /*pulsatile=*/true);
+
+                    glDepthMask(GL_TRUE);
+                    glDisable(GL_BLEND);
+                }
+            }
+
+            m_program->setUniformValue("uXrayMode", 0);
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        } else {
+            // Enable alpha blending for all body layers
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
+
+            // 1. Muscular — barely-there haze (same in all views per old project)
+            if (hasMuscular) {
+                // X-ray look: muscular = soft tissue silhouette (very faint, lighter colour)
+                // Fluoro = DSA: same faint muscular haze
+                const float musOp = (fluoro || m_dsaActive) ? 0.04f : 0.05f;
+                m_program->setUniformValue("uColor", QVector4D(0.72f, 0.72f, 0.70f, musOp));
+                m_program->setUniformValue("uSheen",    QVector3D(0.f, 0.f, 0.f));
+                m_program->setUniformValue("uSpecular", 0.0f);
+                m_program->setUniformValue("uShininess",1.0f);
+                m_program->setUniformValue("uAmbient",  0.90f);
+                m_program->setUniformValue("uDiffuse",  0.15f);
+                m_program->setUniformValue("uShaded",   0);
+                // Muscular.stl is anatomy, not vasculature: it never pulses.
+                m_program->setUniformValue("uPulsatile", 0);
+                QOpenGLVertexArrayObject::Binder bnd(&m_muscularBatch.vao);
+                glDrawElements(GL_TRIANGLES, m_muscularBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+            }
+
+            // 2. Skeletal — bone structure
+            // Doc WhyFlattened: for 3D view use solid material (ambient=0.25, diffuse=0.75)
+            //                   for fluoro keep X-ray flat (ambient=0.70, diffuse=0.30)
+            if (hasSkeletal) {
+                // 3D: 0.30 (clearly visible ghost), Fluoro: 0.08 (real X-ray = very faint bone)
+                // X-ray look: bone = dark projection on white (high opacity, flat shading)
+                // Fluoro: dark bone silhouette like real AP X-ray
+                // 3D: lighter, more transparent ghost hint
+                // Fluoro = DSA: same skeletal rendering
+                const float skelOp = arterial3D ? 0.25f : 0.22f;  // DSA/fluoro: 0.22
+                m_program->setUniformValue("uColor", QVector4D(0.86f, 0.86f, 0.84f, skelOp));
+                if (arterial3D) {
+                    // 3D: solid directional shading
+                    m_program->setUniformValue("uAmbient",  0.25f);
+                    m_program->setUniformValue("uDiffuse",  0.75f);
+                    m_program->setUniformValue("uSheen",    QVector3D(0.86f, 0.86f, 0.84f));
+                    m_program->setUniformValue("uSpecular", 0.25f);
+                    m_program->setUniformValue("uShininess",30.0f);
+                } else {
+                    // DSA: medium flat
+                    m_program->setUniformValue("uAmbient",  0.70f);
+                    m_program->setUniformValue("uDiffuse",  0.30f);
+                    m_program->setUniformValue("uSheen",    QVector3D(0.86f, 0.86f, 0.84f));
+                    m_program->setUniformValue("uSpecular", 0.10f);
+                    m_program->setUniformValue("uShininess",60.0f);
+                }
+                m_program->setUniformValue("uShaded",   1);
+                // Skeletal.stl likewise: bone does not move with the cardiac cycle.
+                m_program->setUniformValue("uPulsatile", 0);
+                QOpenGLVertexArrayObject::Binder bnd(&m_skeletalBatch.vao);
+                glDrawElements(GL_TRIANGLES, m_skeletalBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+            }
+
+            // 3. Vessel — innermost
+            // Old project: 3D opacity=0.30 (red), fluoro opacity=0.0 (hidden).
+            // Now shown in Fluoro too (per request), at whatever m_wallOpacity
+            // the caller set (QuadPanel defaults it to a visible value for the
+            // fluoro VesselView) - the vessel no longer needs its own draw
+            // call skipped, since wallMaterial() above already resolves the
+            // right colour/opacity for whichever palette is active.
+            if (m_showWall && !m_dsaActive) {
+=======
         // ── Body mesh layers — exact old-project material properties ──────────
         // Old project used VTK depth-peeling for translucent accumulation.
         // We approximate with standard alpha blending + correct draw order:
@@ -1278,6 +2716,7 @@ void VesselView::paintGL() {
             const bool isFluoro  = false;  // fluoro already excluded above
             const bool vesselVis = true;   // 3D/mesh/roadmap: always show vessel
             if (vesselVis) {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
                 Material wm = wallMaterial();
                 if (m_roadMapActive) {
                     wm.colour   = QVector4D(0.92f, 0.24f, 0.33f, 0.85f);  // #EA3C53 road map
@@ -1305,6 +2744,87 @@ void VesselView::paintGL() {
                     drawBatch(m_meshBatch, GL_TRIANGLES, wm, true, /*pulsatile=*/true);
                 }
             }
+<<<<<<< HEAD
+
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        }
+
+        // Device on top in all views
+        if (m_deviceBatches) {
+            Material tip, band, shaft, host;
+            if (fluoro) {
+                // Subtle gray, visible against the X-ray projection without
+                // reading as a lit 3D model: specular defaults to 0.f
+                // (Material's own default), so leaving it unset here — not
+                // just setting colour to gray while keeping the normal
+                // view's shiny highlight values — is what actually gives
+                // the flat look. Bands (the radiopaque marker rings) stay
+                // slightly brighter than the shaft, matching how they read
+                // as distinct bright rings on a real fluoroscopy frame.
+                //
+                // A microcatheter renders darker still - a real 2-3 Fr
+                // microcatheter's braid is thin enough that it reads as a
+                // subtle, almost black line on a real fluoroscopy frame,
+                // distinctly darker than a guide/diagnostic catheter's own
+                // heavier braid - same flat, no-specular STYLE as every
+                // other device here, just a darker set of the same tones,
+                // per the explicit "subtle dark-black... consistent with
+                // the existing Fluoro appearance" request.
+                if (m_deviceIsMicrocatheter) {
+                    tip.colour   = QVector4D(0.30f, 0.30f, 0.30f, 1.f);
+                    band.colour  = QVector4D(0.38f, 0.38f, 0.38f, 1.f);
+                    shaft.colour = QVector4D(0.16f, 0.16f, 0.16f, 1.f);
+                } else {
+                    tip.colour   = QVector4D(0.72f, 0.72f, 0.72f, 1.f);
+                    band.colour  = QVector4D(0.82f, 0.82f, 0.82f, 1.f);
+                    shaft.colour = QVector4D(0.55f, 0.55f, 0.55f, 1.f);
+                }
+                host.colour  = QVector4D(0.45f, 0.45f, 0.45f, 0.65f);
+            } else {
+                shaft.colour = QVector4D(m_deviceColor, 1.f);
+                shaft.sheen = QVector3D(std::min(m_deviceColor.x() + 0.44f, 1.f),
+                                        std::min(m_deviceColor.y() + 0.18f, 1.f),
+                                        std::min(m_deviceColor.z() + 0.06f, 1.f));
+                shaft.specular = 0.50f;
+                shaft.shininess = 48.f;
+
+                // Lightened tint of the shaft colour, not a fixed value -
+                // this reproduces the exact look every device had before
+                // per-device colour existed (solved so the catalog's own
+                // default blue (0.36,0.72,0.94) lightens to very nearly the
+                // old hardcoded tip colour (0.62,0.85,1.00)), while now
+                // correctly following whatever colour a specific device
+                // (Terumo Guide's sky-blue, Medtronic Micro's indigo)
+                // actually specifies.
+                constexpr float kTipLighten = 0.4f;
+                const QVector3D white(1.f, 1.f, 1.f);
+                const QVector3D tipTint = m_deviceColor * (1.f - kTipLighten) + white * kTipLighten;
+                tip.colour = QVector4D(tipTint, 1.f);
+                tip.sheen = QVector3D(1.f, 1.f, 1.f);
+                tip.specular = 0.55f;
+                tip.shininess = 40.f;
+
+                // Marker bands stay a fixed near-white/neutral tone
+                // regardless of device colour - a real radiopaque marker
+                // band is a metallic ring, not tinted to match the
+                // catheter's own body colour.
+                band.colour = QVector4D(0.88f, 0.89f, 0.93f, 1.f);
+                band.sheen = QVector3D(1.f, 1.f, 1.f);
+                band.specular = 0.95f;
+                band.shininess = 96.f;
+
+                // Host devices first: the guide a microcatheter was telescoped
+                // through is still in the patient and still visible, but it is no
+                // longer the thing being steered, so it is drawn desaturated and
+                // slightly translucent to keep the active device legible against it.
+                host.colour    = QVector4D(0.55f, 0.60f, 0.68f, 0.75f);
+                host.sheen     = QVector3D(0.75f, 0.80f, 0.88f);
+                host.specular  = 0.30f;
+                host.shininess = 32.f;
+                host.ambient   = 0.20f;
+            }
+=======
         }
 
         glDepthMask(GL_TRUE);
@@ -1340,6 +2860,7 @@ void VesselView::paintGL() {
             host.specular  = 0.30f;
             host.shininess = 32.f;
             host.ambient   = 0.20f;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
@@ -1358,17 +2879,85 @@ void VesselView::paintGL() {
 
             Material balloon;
             const float ap = static_cast<float>(m_overlay.ballooonAppositionPct / 100.0);
+<<<<<<< HEAD
+            if (fluoro) {
+                balloon.colour = QVector4D(0.85f, 0.85f, 0.85f, 0.30f + 0.28f * ap);
+            } else {
+                balloon.colour = QVector4D(0.90f, 0.95f, 1.00f, 0.30f + 0.28f * ap);
+                balloon.sheen = QVector3D(1.f, 1.f, 1.f);
+                balloon.specular = 0.95f;
+                balloon.shininess = 90.f;
+            }
+=======
             balloon.colour = QVector4D(0.90f, 0.95f, 1.00f, 0.30f + 0.28f * ap);
             balloon.sheen = QVector3D(1.f, 1.f, 1.f);
             balloon.specular = 0.95f;
             balloon.shininess = 90.f;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             glDepthMask(GL_FALSE);
             drawBatch(m_deviceBatches->balloon, GL_TRIANGLES, balloon, true);
             glDepthMask(GL_TRUE);
         }
+<<<<<<< HEAD
+
+        // Embolic cast — non-fluoro/3D view only now. Fluoro rendering moved
+        // to the DRR accumulation pipeline above (Pass 1's uXrayIsVessel==2
+        // branch + Pass 2's foreignShape darkening pass): that is what makes
+        // it read as genuine radiopaque signal WITHIN the X-ray projection -
+        // a dark, radiopaque pool on top of the tissue image, the same way
+        // contrast is - rather than a separately-lit 3D object alpha-blended
+        // on top of the finished image. Drawing it AGAIN here in Fluoro
+        // would double it up - once correctly via the DRR channel, once as
+        // the old colored overlay -
+        // so this block no longer runs there at all. The 3D view's own
+        // appearance (colour, sheen, specular) is completely unchanged.
+        if (!fluoro && m_emboli && m_emboli->active() && m_emboliBatch.elementCount > 0) {
+            const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli->agent());
+            Material cast;
+            cast.colour = QVector4D(spec.colour[0], spec.colour[1], spec.colour[2], spec.opacity);
+            cast.sheen = QVector3D(spec.colour[0], spec.colour[1], spec.colour[2]);
+            cast.specular = 0.25f;
+            cast.shininess = 20.f;
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
+            drawBatch(m_emboliBatch, GL_TRIANGLES, cast, true);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        }
+
+        // Contrast — non-fluoro/3D view only now, same reasoning as the
+        // embolic cast above. Fluoro rendering moved entirely to the DRR
+        // pipeline (Pass 1/2); this block's own appearance in the 3D view is
+        // completely unchanged.
+        if (!fluoro && m_contrast && m_contrast->phase() != cn::ContrastPhase::Idle) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
+            for (int b = 0; b < kContrastBuckets; ++b) {
+                if (m_contrastBatches[b].elementCount == 0) continue;
+                Material dye;
+                dye.colour = QVector4D(0.85f, 0.85f, 0.70f, 0.35f);
+                dye.sheen = QVector3D(1.f, 1.f, 0.95f);
+                dye.specular = 0.6f;
+                dye.shininess = 60.f;
+                drawBatch(m_contrastBatches[b], GL_TRIANGLES, dye, true);
+            }
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        }
+    }
+    // ── Introducer sheath (built by SheathManager, uploaded on setSheath) ──
+    // Hidden entirely in Fluoro — the catheter above stays visible (in its
+    // own gray palette) but the sheath is not part of the Fluoro
+    // presentation at all. Every other view is unaffected: this is the
+    // same condition as before with only `&& !fluoro` added.
+    if (m_sheathVisible && !endo && !fluoro) {
+=======
     }
     // ── Introducer sheath (built by SheathManager, uploaded on setSheath) ──
     if (m_sheathVisible && !endo) {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         // Cannula: translucent PTFE. Drawn first so the opaque hub sits over it.
         Material cannula;
         cannula.colour    = QVector4D(0.86f, 0.88f, 0.90f, 0.55f);
@@ -1430,6 +3019,19 @@ void VesselView::paintOverlay() {
     // Labels sit back from their values, the way they do on the C-arm cluster:
     // the value is what is read, the label only says which value it is.
     const QColor dim(150, 156, 164);
+<<<<<<< HEAD
+    QFont mono("Titillium Web", 9);
+    // Two sizes: a small label over a larger value, matching the C-arm console.
+    QFont labelFont("Titillium Web", 8);
+    labelFont.setStyleHint(QFont::SansSerif);
+    QFont valueFont("Titillium Web", 11, QFont::Bold);
+    valueFont.setStyleHint(QFont::SansSerif);
+    const QFontMetrics fm2(labelFont), fmVal(valueFont);
+    mono.setStyleHint(QFont::SansSerif);
+    p.setFont(mono);
+
+    if (m_showBranchMarkers && m_overlay.decisionPending && !m_overlay.options.empty()) {
+=======
     QFont mono("Monospace", 9);
     // Two sizes: a small label over a larger value, matching the C-arm console.
     QFont labelFont("Monospace", 8);
@@ -1441,6 +3043,7 @@ void VesselView::paintOverlay() {
     p.setFont(mono);
 
     if (m_overlay.decisionPending && !m_overlay.options.empty()) {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         const QMatrix4x4 vp = viewProjection();
         for (const auto &o : m_overlay.options) {
             const QVector4D clip = vp * QVector4D(o.target, 1.f);
@@ -1472,6 +3075,16 @@ void VesselView::paintOverlay() {
                    tr("DISTAL VESSEL — no further advance"));
     }
 
+<<<<<<< HEAD
+    // Shared row-spacing constants — pad/blockH/rowGap are also used by the
+    // Fluoroscopy HUD block just below, which is why these stay even though
+    // the telemetry column that used to be drawn here (ACCESS/DEVICE/BRANCH/
+    // TURNS/DEPTH/LUMEN Ø/DEVICE Ø/CLEAR) is gone: that data is already
+    // shown in full in the sidebar's Procedure Info/Device Status cards, so
+    // drawing it a second time, directly on top of the anatomy, was a
+    // genuine duplicate rather than something this view uniquely needed to
+    // show.
+=======
     // ── Telemetry, stacked label-over-value ──────────────────────────────────
     //
     // Same shape as the C-arm console read-outs: a small dim label with its
@@ -1482,12 +3095,134 @@ void VesselView::paintOverlay() {
     //
     // Every block gets the same height, so the spacing between parameters is
     // uniform — no group separator, which is what made the old layout uneven.
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const int pad     = 10;
     const int lineH   = fm2.height();          // label line
     const int valueH  = fmVal.height();        // value line
     const int rowGap  = 7;                     // between one parameter and the next
     const int blockH  = lineH + valueH + rowGap;
 
+<<<<<<< HEAD
+    // ── Fluoroscopy HUD (FLUOROSCOPY header, LAO/CRAN/SID/MAG/FOV/FRAME,
+    // kVp/mA/DAP/TIME, H/R/L/F orientation indicator) ───────────────────────
+    // Shown in every palette now (3D/Fluoro/Mesh/DSA alike) - not gated to
+    // Fluoro specifically any more, per the explicit request for one
+    // standardized clinical overlay across every view rather than this HUD
+    // only ever appearing in one of them. Still hidden during an
+    // endoluminal fly-through, which is a first-person catheter view this
+    // external console HUD has no place in.
+    //
+    // Deliberately reuses labelFont/valueFont/amber/pale/dim exactly as
+    // already defined above rather than constructing anything new - every
+    // piece of text in this whole overlay, old and new, therefore shares
+    // the same font family, which is the actual point: a HUD reading as one
+    // instrument, not several mismatched labels pasted together.
+    //
+    // LAO/CRAN are the console's real, live C-arm angle state (m_carmLAO/
+    // m_carmCRAN — the exact values setCarmAngles() keeps synchronized
+    // across every view). SID/MAG are now likewise real, live state
+    // (m_hudSidCm/m_hudMagCm, set from CarmView's own sid()/magnification()
+    // — see setDetectorInfo()) rather than a separately-hardcoded guess.
+    // FOV/FRAME and kVp/mA/DAP are still fixed console defaults: this build
+    // has no interactive field-of-view/generator model to draw real numbers
+    // from for those specifically, so they are shown as typical clinical
+    // values rather than invented ones that would imply a live reading that
+    // does not exist. TIME is genuinely live, off this view's own
+    // construction-time clock.
+    if (m_mode != Mode::Endoluminal) {
+        const QColor hudBg(0, 0, 0, 210);
+        const QColor green(46, 204, 113);
+
+        // "● FLUOROSCOPY" header pill, top-left.
+        {
+            const QString title = tr("FLUOROSCOPY");
+            const QFontMetrics fmTitle(valueFont);
+            const int titleW = fmTitle.horizontalAdvance(title) + 34;
+            const int titleH = fmTitle.height() + 10;
+            p.fillRect(QRect(0, 0, titleW, titleH), hudBg);
+            p.setBrush(green);
+            p.setPen(Qt::NoPen);
+            p.drawEllipse(QPointF(14, titleH / 2.0), 4.0, 4.0);
+            p.setFont(valueFont);
+            p.setPen(pale);
+            p.drawText(QRect(24, 0, titleW - 24, titleH), Qt::AlignVCenter, title);
+        }
+
+        // LAO/CRAN/SID/MAG/FOV/FRAME — label left, value right after, same
+        // stacked block shape the ACCESS/DEVICE/... column already uses,
+        // just left-aligned instead of right-aligned.
+        {
+            struct HudRow { QString label, value; };
+            const QVector<HudRow> hud = {
+                                          {tr("LAO"),   tr("%1°").arg(m_carmLAO, 0, 'f', 0)},
+                                          {tr("CRAN"),  tr("%1°").arg(m_carmCRAN, 0, 'f', 0)},
+                                          {tr("SID"),   tr("%1 cm").arg(m_hudSidCm, 0, 'f', 0)},
+                                          {tr("MAG"),   tr("%1 cm").arg(m_hudMagCm, 0, 'f', 0)},
+                                          {tr("FOV"),   tr("25 cm")},
+                                          {tr("FRAME"), tr("15 fps")},
+                                          };
+            const int labelW = 56;   // fixed column so every value lines up
+            int hy = 34 + fm2.ascent();
+            for (const auto &row : hud) {
+                p.setFont(labelFont);
+                p.setPen(pale);
+                p.drawText(8, hy, row.label);
+                p.setFont(valueFont);
+                p.setPen(amber);
+                p.drawText(8 + labelW, hy, row.value);
+                hy += blockH;
+            }
+        }
+
+        // kVp/mA/DAP/TIME — bottom-left, same label/value shape again.
+        {
+            const qint64 s = m_fluoroClock.isValid() ? m_fluoroClock.elapsed() / 1000 : 0;
+            struct HudRow { QString label, value; };
+            const QVector<HudRow> hud = {
+                                          {tr("kVp"),  tr("78")},
+                                          {tr("mA"),   tr("320")},
+                                          {tr("DAP"),  tr("12.4 Gy·cm²")},
+                                          {tr("TIME"), tr("%1:%2").arg(s / 60, 2, 10, QChar('0')).arg(s % 60, 2, 10, QChar('0'))},
+                                          };
+            const int labelW = 40;
+            int by = height() - pad - (blockH * hud.size() - rowGap) + fm2.ascent();
+            for (const auto &row : hud) {
+                p.setFont(labelFont);
+                p.setPen(pale);
+                p.drawText(8, by, row.label);
+                p.setFont(valueFont);
+                p.setPen(amber);
+                p.drawText(8 + labelW, by, row.value);
+                by += blockH;
+            }
+        }
+
+        // I/J/L/K keyboard-navigation hint — bottom-right, small bordered
+        // box. Genuinely accurate, not a placeholder: I/K/J/L are this
+        // console's real Advance/Retract/Left/Right catheter navigation keys
+        // (see buildUi()'s addNavKey() calls), laid out exactly the way they
+        // act - I (advance) on top, K (retract) on the bottom, J (left) and
+        // L (right) either side - rather than an anatomical Head/Foot/Right/
+        // Left cube this build has no live camera-orientation tracking to
+        // back honestly.
+        {
+            const int boxW = 76, boxH = 76;
+            const QRect box(width() - boxW - 12, height() - boxH - 12, boxW, boxH);
+            p.setPen(QPen(dim, 1));
+            p.setBrush(hudBg);
+            p.drawRoundedRect(box, 4, 4);
+
+            p.setFont(valueFont);
+            p.setPen(pale);
+            p.drawText(box.adjusted(0, 4, 0, 0), Qt::AlignHCenter | Qt::AlignTop, tr("I"));
+            p.drawText(box.adjusted(0, 0, 0, -4), Qt::AlignHCenter | Qt::AlignBottom, tr("K"));
+            p.drawText(box.adjusted(6, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, tr("J"));
+            p.drawText(box.adjusted(0, 0, -6, 0), Qt::AlignRight | Qt::AlignVCenter, tr("L"));
+            p.setBrush(green);
+            p.setPen(Qt::NoPen);
+            p.drawEllipse(QPointF(box.center()), 5.0, 5.0);
+        }
+=======
     struct Row { QString label, value; };
     const QVector<Row> rows = {
                                 {QStringLiteral("ACCESS"),   m_overlay.accessSite},
@@ -1515,6 +3250,7 @@ void VesselView::paintOverlay() {
                    y + valueH, rows[i].value);
 
         y += blockH;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 
     if (m_overlay.wallContact) {
@@ -1688,7 +3424,35 @@ void VesselView::setCarmAngles(float lao, float cran) {
     m_carmCRAN = cran;
 
     update();
+<<<<<<< HEAD
+    // Deliberately NOT emit cameraChanged() here. CarmController already
+    // applies the rig's angle directly to every linked view in its own loop
+    // (rotateLinkedCamerasIncremental) — synchronizing the angle across
+    // views does not need the generic cameraChanged -> syncCameraFrom path
+    // at all, and that path is actively wrong for a pure C-arm move: this
+    // was the actual cause of the vessel view snapping to the stale
+    // sheath/access-site target on every W/A/S/D press.
+    //
+    // The mechanism: syncCameraFrom() calls setCamera(), which
+    // unconditionally sets m_cameraFollows = false and copies the SOURCE
+    // view's static m_azimuth/m_target fields. Those static fields are only
+    // ever written by an explicit re-framing call (focusOn() at sheath
+    // placement, for instance) - while camera-follow mode is active, the
+    // camera actually shown each frame is computed dynamically from the
+    // device's current position and never written back into those static
+    // fields. So the static fields silently go stale the moment the operator
+    // starts navigating - and every C-arm press was copying that stale,
+    // long-out-of-date target across via the emit above, while also killing
+    // follow mode on whichever view received it, exposing the stale target
+    // for real. Removing the emit stops a pure orientation change from
+    // touching target/distance/follow-state on ANY view at all - it now
+    // only ever changes what setCarmAngles() itself changed: the rig angle.
+    // Mouse orbit/zoom and the explicit re-framing functions still go
+    // through setCamera() directly and still sync correctly; only this one
+    // spurious side channel is gone.
+=======
     emit cameraChanged();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::setBodyMeshes(const QString &muscularPath, const QString &skeletalPath) {

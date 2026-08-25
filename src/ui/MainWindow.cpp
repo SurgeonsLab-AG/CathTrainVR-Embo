@@ -14,11 +14,21 @@
 #include <QCursor>
 #include <QDialog>
 #include <QDialogButtonBox>
+<<<<<<< HEAD
+=======
 #include <QDockWidget>
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QDir>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QFileDialog>
+<<<<<<< HEAD
+#include <QDateTime>
+#include <QOpenGLWidget>
+#include <QPixmap>
+#include <QStyle>
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QFileInfo>
 #include <QFile>
 #include <QFormLayout>
@@ -32,8 +42,11 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+<<<<<<< HEAD
+=======
 #include <QScrollArea>
 #include <QScrollBar>
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QSpinBox>
 #include <QPushButton>
 #include <QRadioButton>
@@ -68,9 +81,16 @@ const EmbolectomyPreset kPresets[] = {
     {"5 Fr embolectomy  (balloon 11 mm)",  1.667f, 11.f, 11.f, 6.0f},
     {"6 Fr embolectomy  (balloon 13 mm)",  2.000f, 13.f, 13.f, 6.5f},
     };
+<<<<<<< HEAD
+// Quick-size range offered in the Calibration box: 1-3 Fr, matching the
+// diagnostic-catheter body's own catalogue size list (CatheterCatalog.cpp).
+constexpr int kMinFrench = 1;
+constexpr int kMaxFrench = 3;
+=======
 // Quick-size range offered in the Calibration box.
 constexpr int kMinFrench = 2;
 constexpr int kMaxFrench = 5;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 constexpr float kSegLenMm  = 1.5f;
 constexpr int   kFlexSeg   = 6;
@@ -79,6 +99,12 @@ constexpr float kRestCurvDeg = 0.f;
 
 // ── Exact old-project stylesheet ─────────────────────────────────────────────
 const char *kStyle = R"(
+<<<<<<< HEAD
+* {
+    font-family: "Titillium Web";
+}
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 QMainWindow, QWidget {
     background: #000000;
     color: #E8E8E8;
@@ -151,6 +177,79 @@ QStatusBar { background:#000000; color:#9B9B9B; font-size:10px; }
 QRadioButton { color:#C9C9C9; }
 QCheckBox    { color:#C9C9C9; }
 QDockWidget::title { background:#000000; padding:4px; border-bottom:1px solid #3B3B3B; color:#C9C9C9; }
+<<<<<<< HEAD
+
+/* ── Card panels (Patient Monitor / C-Arm Status / Procedure Info / Device
+   Status) — bordered dark boxes with an uppercase header row, matching the
+   reference design. Built by makeCard() in this file. ── */
+QFrame#card { background:#0B0B0E; border:1px solid #2A2A2E; border-radius:6px; }
+QLabel#cardHeader {
+    color:#9B9B9B; font-size:10px; font-weight:bold;
+    padding:8px 10px; border-bottom:1px solid #2A2A2E; background:transparent;
+}
+
+/* ── Bottom tile navigation bar (replaces the old menu-bar view actions) ──
+   Unchecked: plain dark tile. Checked (the active pane): green border/tint,
+   matching the reference's highlighted FLUORO tile. Embolisation gets its
+   own accent (orange/red) regardless of checked state, since it is a
+   procedure action rather than a display mode and reads as "high-attention"
+   in the reference design. */
+QPushButton#tileBtn {
+    background:#0B0B0E; color:#C9C9C9; border:1px solid #2A2A2E; border-radius:6px;
+    font-size:11px; font-weight:bold; min-height:64px;
+}
+QPushButton#tileBtn:hover    { background:#151519; border-color:#3A3A40; }
+QPushButton#tileBtn:checked  { background:#0F1A12; border:1px solid #2ECC71; color:#2ECC71; }
+QPushButton#tileEmbolization { border-color:#7A3B22; color:#E07A4A; }
+QPushButton#tileEmbolization:hover { background:#1A0F0B; border-color:#E07A4A; }
+
+/* ── Left vertical navigation sidebar (replaces the old bottom horizontal
+   tile bar) — same colour language, oriented for a narrow stacked column:
+   icon glyph above a short label, both in the one button's own two-line
+   text (no separate icon asset exists, so this is a deliberate, disclosed
+   approximation rather than a claim of pixel-matched icons). ── */
+QPushButton#navTile {
+    background:#0B0B0E; color:#C9C9C9; border:1px solid #2A2A2E; border-radius:6px;
+    font-size:10px; font-weight:bold; text-align:center;
+}
+QPushButton#navTile:hover    { background:#151519; border-color:#3A3A40; }
+QPushButton#navTile:checked  {
+    background:#0F1A12;
+    color:#2ECC71;
+    font-weight:bold;
+    /* Explicit sub-properties, not the "border: 1px solid #2ECC71" shorthand
+       this used to be - the global QPushButton:checked rule above sets
+       border-color separately (#FFFFFF), and Qt's QSS cascade does not
+       always let a shorthand fully override a competing longhand
+       sub-property from a less-specific rule on every side uniformly. That
+       is exactly what was producing "3 sides show the active green border,
+       1 side doesn't" - one side was still picking up the global rule's
+       white border-color. Setting border-width/border-style/border-color
+       explicitly, at the same sub-property level as the rule it needs to
+       beat, removes the ambiguity entirely and guarantees all four sides
+       resolve identically. */
+    border-width:1px;
+    border-style:solid;
+    border-color:#2ECC71;
+}
+/* Dynamic property, not objectName - setObjectName() would replace "navTile"
+   entirely, which is a SINGLE name Qt's #id selector matches exactly, so the
+   base #navTile rule above (background/border-radius/font-size/text-align)
+   would stop applying to this button altogether. A property selector layers
+   the accent colour on TOP of the base style instead of replacing it. */
+QPushButton#navTile[accent="embolization"] { border-color:#7A3B22; color:#E07A4A; }
+QPushButton#navTile[accent="embolization"]:hover { background:#1A0F0B; border-color:#E07A4A; }
+)";
+
+/// Every button along the bottom Access & devices bar and in the Calibration
+/// dialog is built through here, so they are all the same height and weight.
+/// Previously the selection buttons were 32 px from setMinimumHeight and the
+/// navigation buttons 24 px from setMaximumHeight, while the global
+/// QPushButton rule asked for 38 px — three different answers fighting each
+/// other. One constant now sets the height of every one of them.
+constexpr int kProcBtnHeight = 40;
+
+=======
 )";
 
 /// Every button in the procedure dock is built through here, so they are all
@@ -169,6 +268,7 @@ constexpr int kProcBtnHeight = 40;
 /// the layout's only stretch.
 constexpr int kProcedurePanelWidth = 360;
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 QPushButton *makeProcBtn(const QString &text, QWidget *p) {
     auto *b = new QPushButton(text, p);
     b->setObjectName("btnNav");          // shares the compact dock button style
@@ -177,8 +277,11 @@ QPushButton *makeProcBtn(const QString &text, QWidget *p) {
     return b;
 }
 
+<<<<<<< HEAD
+=======
 QPushButton *makeNavBtn(const QString &text, QWidget *p) { return makeProcBtn(text, p); }
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 QLabel *makeReadout(QWidget *p) {
     auto *l = new QLabel("--", p);
     l->setStyleSheet("color:#C0C0C0; font-family:monospace; font-size:10px;"
@@ -189,6 +292,72 @@ QLabel *makeReadout(QWidget *p) {
     return l;
 }
 
+<<<<<<< HEAD
+/// Bordered "card" panel with an uppercase title header - the Patient
+/// Monitor / C-Arm Status / Procedure Info / Device Status panel style the
+/// reference design uses throughout. Adds the card to `addTo` (with
+/// `stretch`) and returns the layout to put the card's own content into;
+/// most callers only need that returned layout.
+QVBoxLayout *makeCard(const QString &title, QWidget *parent, QBoxLayout *addTo, int stretch = 0) {
+    auto *frame = new QFrame(parent);
+    frame->setObjectName("card");
+    auto *outer = new QVBoxLayout(frame);
+    outer->setContentsMargins(0, 0, 0, 0);
+    outer->setSpacing(0);
+
+    auto *header = new QLabel(title.toUpper(), frame);
+    header->setObjectName("cardHeader");
+    outer->addWidget(header);
+
+    auto *content = new QWidget(frame);
+    auto *contentLay = new QVBoxLayout(content);
+    contentLay->setContentsMargins(10, 8, 10, 10);
+    contentLay->setSpacing(6);
+    outer->addWidget(content, 1);
+
+    if (addTo) addTo->addWidget(frame, stretch);
+    return contentLay;
+}
+
+/// One tile in the bottom navigation bar (3D VIEW / FLUORO / DSA / ROADMAP /
+/// CINE / CONTRAST INJECTION / EMBOLIZATION). Checkable so the active
+/// display mode can show the reference design's highlighted-border state;
+/// callers that are one-shot actions (Cine, Contrast, Embolisation) simply
+/// never toggle it programmatically, so it behaves like a normal button for
+/// them despite being checkable.
+/// One entry in the left vertical navigation sidebar - icon glyph above a
+/// short label, both as one two-line button text (no real icon asset exists
+/// to draw separately, so the glyphs used at each call site are a plain-
+/// Unicode-symbol approximation of the reference design's actual icons, not
+/// a claim of matching them exactly). Fixed width/height, not Expanding:
+/// unlike the old horizontal bar (which filled the window's full width), a
+/// vertical nav column's buttons keep a natural size and leave any leftover
+/// column height as blank space below the last one via the caller's own
+/// trailing addStretch(1), the same convention the sidebar cards already use.
+QPushButton *makeSideNavTile(const QString &icon, const QString &label, QWidget *p) {
+    auto *b = new QPushButton(icon + "\n" + label, p);
+    b->setObjectName("navTile");
+    b->setCheckable(true);
+    b->setFixedWidth(96);
+    // 84px, not 76: the Contrast Injection tile's label itself wraps to two
+    // lines ("Contrast\nInjection"), so its full text is icon+2 lines versus
+    // every other tile's icon+1 line - fixed height has to fit the WORST
+    // case uniformly, the same lesson the horizontal bar's own two-line
+    // label previously required, just in a vertical context this time.
+    // Minimum, not fixed: the trailing addStretch(1) that used to sit after
+    // all the tiles in the nav column dumped 100% of the sidebar's leftover
+    // height into one blank gap at the bottom, the exact same class of
+    // issue already fixed once for the Procedure Info/Device Status/
+    // Embolic Agent cards. setSizePolicy(Expanding) + a per-tile stretch
+    // factor at the call site (navVL->addWidget(tile, 1)) is what actually
+    // lets each tile grow to fill the column instead.
+    b->setMinimumHeight(84);
+    b->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    return b;
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 } // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,20 +378,63 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     if (m_ecgWidget) m_ecgWidget->setCardiacCycle(&m_cardiac);
     for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
         if (v) v->setCardiacCycle(&m_cardiac);
+<<<<<<< HEAD
+    // Real SID/magnification, read from CarmView's own live state, into
+    // every view's Fluoroscopy HUD - previously that HUD had a second,
+    // independently-hardcoded guess (25cm) that disagreed with CarmView's
+    // own actual default (32cm), shown side by side in the C-Arm Status
+    // card. One source of truth now, not two numbers that could drift apart.
+    if (m_carmWidget)
+        for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+            if (v) v->setDetectorInfo(m_carmWidget->sid(), m_carmWidget->magnification());
+    // Embolisation Module: one shared model, handed to every view exactly
+    // the way m_catheter already is - see EmbolizationModel's own class
+    // comment for why this is what guarantees the two panes never disagree.
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->setEmbolization(&m_emboli);
+
+    // Contrast Injection: same shared-instance pattern, PLUS a link to
+    // m_emboli so it can see - and be genuinely blocked by - whatever the
+    // embolic cast currently occludes (ContrastInjectionModel's own class
+    // comment explains why that is what makes a post-embolization angiogram
+    // mechanistically show reduced/absent flow, not a scripted image swap).
+    m_contrastModel.setEmbolization(&m_emboli);
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->setContrastInjection(&m_contrastModel);
+
+    // Ticks m_contrastModel forward in real time so contrast decays/washes
+    // out on its own - a real vessel does not wait for the operator to do
+    // anything before contrast starts clearing. 150 ms is frequent enough to
+    // look smooth without being a meaningful frame-budget cost; tick() itself
+    // is a cheap no-op while phase() is Idle.
+    m_contrastTimer = new QTimer(this);
+    connect(m_contrastTimer, &QTimer::timeout, this, [this]{ onContrastTick(); });
+    m_contrastTimer->start(150);
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     m_heart = new QTimer(this);
     m_heart->setInterval(16);           // ~60 Hz
     connect(m_heart, &QTimer::timeout, this, [this]{ onCardiacTick(); });
     m_heartClock.start();
     m_heart->start();
+<<<<<<< HEAD
+    setWindowTitle(tr("CathTrainVR — Endovascular Navigation Console"));
+=======
     setWindowTitle(tr("EmboNav — Endovascular Navigation Console"));
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     resize(1500, 900);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
+// buildViewBar — Calibration, Cine Studio, the four view modes, Contrast
+// Injection and Road Map as ordinary menu-bar entries.
+=======
 // buildViewBar — Cine Studio, the four view modes, Contrast Injection and Road
 // Map as ordinary menu-bar entries.
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 //
 // A QMenuBar takes QActions directly, not just QMenus, and they render in the
 // bar with the same flat style and hover behaviour as File / View / C-arm /
@@ -238,6 +450,49 @@ void MainWindow::buildViewBar() {
     QMenuBar *bar = menuBar();
     bar->addSeparator();
 
+<<<<<<< HEAD
+    // Calibration used to be a group box in the Procedure dock. The dock is
+    // gone; this opens the exact same widgets (built in buildUi(), parented
+    // to m_calibrationDialog) in a small floating dialog instead. Placed
+    // first, immediately after the separator, so it sits right next to Help.
+    auto *calibAct = new QAction(tr("Calibration…"), this);
+    connect(calibAct, &QAction::triggered, this, [this]{
+        if (!m_calibrationDialog) return;
+        m_calibrationDialog->show();
+        m_calibrationDialog->raise();
+        m_calibrationDialog->activateWindow();
+    });
+    bar->addAction(calibAct);
+
+    // X-Ray Calibration — every parameter in the Fluoro projection's
+    // tone-mapping pipeline (VesselView::XrayTuning). Edits are staged in
+    // the dialog and only take effect on "Save / Apply" (buildUi()); this
+    // action's job is just to make sure that, every time the dialog opens,
+    // it shows what's CURRENTLY applied to the view — not whatever was left
+    // in the spin boxes from a previous, possibly-abandoned editing session.
+    auto *xrayAct = new QAction(tr("X-Ray Calibration…"), this);
+    connect(xrayAct, &QAction::triggered, this, [this]{
+        if (!m_xrayTuningDialog) return;
+        if (VesselView *fv = m_quad ? m_quad->viewFluoro() : nullptr) {
+            const auto vals = xrayTuningToArray(fv->xrayTuning());
+            for (size_t i = 0; i < m_xraySpins.size() && i < vals.size(); ++i) {
+                QSignalBlocker block(m_xraySpins[i]);
+                m_xraySpins[i]->setValue(vals[i]);
+            }
+        }
+        m_xrayTuningDialog->show();
+        m_xrayTuningDialog->raise();
+        m_xrayTuningDialog->activateWindow();
+    });
+    bar->addAction(xrayAct);
+
+    // View-mode buttons (3D/Fluoro/DSA), Road Map, Cine Studio, Contrast
+    // Injection and Embolisation Module moved out of the menu bar entirely —
+    // they are now the bottom tile bar built in buildUi() (m_viewTiles /
+    // buildBottomTileBar), matching the reference design's tile-based
+    // navigation rather than flat menu-bar actions. checkViewAction() below
+    // now drives that tile row's checked state instead of a QActionGroup.
+=======
     auto *cineAct = new QAction(tr("Cine Studio"), this);
     connect(cineAct, &QAction::triggered, this, [this]{ onOpenCineStudio(); });
     bar->addAction(cineAct);
@@ -266,6 +521,7 @@ void MainWindow::buildViewBar() {
     auto *roadAct = new QAction(tr("Road Map"), this);
     connect(roadAct, &QAction::triggered, this, [this]{ onRoadMap(); });
     bar->addAction(roadAct);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void MainWindow::buildMenus() {
@@ -294,6 +550,18 @@ void MainWindow::buildMenus() {
     camAct->setShortcut(Qt::Key_F7);
     connect(camAct, &QAction::toggled, this, [this](bool on){ onCameraFollowToggled(on); });
     viewMenu->addAction(camAct);
+<<<<<<< HEAD
+    // Head framing on demand, so the sagittal view is reachable again after the
+    // camera has been orbited or the whole tree shown.
+    auto *headAct = new QAction(tr("Head — sagittal"), this);
+    headAct->setShortcut(Qt::Key_F8);
+    connect(headAct, &QAction::triggered, this, [this]{
+        if (m_view) m_view->showHeadSagittal();
+    });
+    viewMenu->addAction(headAct);
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     auto *resetAct = new QAction(tr("Reset camera"), this);
     connect(resetAct, &QAction::triggered, this, [this] { m_view->resetCamera(); });
     viewMenu->addAction(resetAct);
@@ -328,6 +596,13 @@ void MainWindow::buildMenus() {
     connect(keysAct, &QAction::triggered, this, [this] {
         QMessageBox::information(this, tr("Controls"),
                                  tr("CATHETER NAVIGATION\n"
+<<<<<<< HEAD
+                                    "  I            advance device\n"
+                                    "  K            retract device\n"
+                                    "  J            take left limb at bifurcation\n"
+                                    "  L            take right limb at bifurcation\n"
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
                                     "  Page Up      advance device\n"
                                     "  Page Down    retract device\n"
                                     "  Left arrow   take left limb at bifurcation\n"
@@ -336,11 +611,15 @@ void MainWindow::buildMenus() {
                                     "C-ARM\n"
                                     "  A / D        LAO / RAO 5°\n"
                                     "  W / S        CRAN / CAUD 5°\n"
+<<<<<<< HEAD
+                                    "  R            Reset C-arm"));
+=======
                                     "  R            Reset C-arm\n\n"
                                     "SKELETON NUDGE (fine-tune body alignment)\n"
                                     "  I / K        Skeleton up / down\n"
                                     "  J / M        Skeleton left / right\n"
                                     "  [ / ]        Skeleton scale"));
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     });
     helpMenu->addAction(keysAct);
 }
@@ -353,21 +632,328 @@ void MainWindow::buildUi() {
     m_cineStudio    = new CineViewStudio(m_pageStack);
     m_pageStack->addWidget(m_simulatorPage);
     m_pageStack->addWidget(m_cineStudio);
+<<<<<<< HEAD
+    connect(m_cineStudio, &CineViewStudio::backToSimulatorRequested,
+            this, &MainWindow::onCineStudioBack);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // OUTER SHELL: top header bar (always visible, above both pages) + the
+    // page stack below it. setCentralWidget() now targets this outer widget
+    // instead of m_pageStack directly, so the header persists across the
+    // Simulator ↔ Cine Studio switch rather than being part of either page.
+    // ═══════════════════════════════════════════════════════════════════════
+    auto *shell = new QWidget(this);
+    auto *shellVL = new QVBoxLayout(shell);
+    shellVL->setContentsMargins(0, 0, 0, 0);
+    shellVL->setSpacing(0);
+
+    // ── Top header bar: logo, patient/procedure identification, actions ────
+    // Patient/ID/Age-Sex/Procedure are fixed demo values - this console has
+    // no patient-record system to draw them from. Procedure Time is real: a
+    // live QElapsedTimer started here, ticked every second. Cine/Screenshot/
+    // Report/End Procedure are genuinely wired, not decorative - see
+    // onScreenshot()/onGenerateReport()/onEndProcedure() below.
+    auto *header = new QWidget(shell);
+    header->setStyleSheet("background:#000000; border-bottom:1px solid #2A2A2E;");
+    auto *headerHL = new QHBoxLayout(header);
+    headerHL->setContentsMargins(14, 8, 14, 8);
+    headerHL->setSpacing(24);
+
+    auto *logoBox = new QVBoxLayout();
+    logoBox->setSpacing(0);
+    auto *logoLabel = new QLabel(tr("CathTrainVR"), header);
+    logoLabel->setStyleSheet("color:#E8E8E8; font-size:16px; font-weight:bold;");
+    auto *subLabel = new QLabel(tr("ENDOVASCULAR NAVIGATION SIMULATOR"), header);
+    subLabel->setStyleSheet("color:#6B6B6F; font-size:8px; letter-spacing:1px;");
+    logoBox->addWidget(logoLabel);
+    logoBox->addWidget(subLabel);
+
+    // SurgeonsLab logo, to the left of the CathTrainVR wordmark. Tries a
+    // couple of likely filenames under the Data folder rather than assuming
+    // one exact name - if none are found, this is a silent no-op (a label
+    // with no pixmap simply takes no space) rather than a crash, since the
+    // exact filename actually placed on disk wasn't specified.
+    QPixmap surgeonsLabLogo;
+    for (const QString &candidate : {"SL_logo.png", "SurgeonsLab_Logo.png", "SurgeonsLabLogo.png",
+                                     "surgeonslab_logo.png", "SurgeonsLab.png"}) {
+        if (surgeonsLabLogo.load(QStringLiteral("C:/SurgeonsLab/EmboNav/Data/") + candidate))
+            break;
+    }
+    if (!surgeonsLabLogo.isNull()) {
+        auto *logoImg = new QLabel(header);
+        logoImg->setPixmap(surgeonsLabLogo.scaledToHeight(40, Qt::SmoothTransformation));
+        headerHL->addWidget(logoImg);
+    }
+    headerHL->addLayout(logoBox);
+
+    auto addHeaderField = [header, &headerHL](const QString &label, const QString &value) -> QLabel* {
+        auto *box = new QVBoxLayout();
+        box->setSpacing(2);
+        auto *l = new QLabel(label, header);
+        l->setStyleSheet("color:#6B6B6F; font-size:9px; letter-spacing:1px;");
+        auto *v = new QLabel(value, header);
+        v->setStyleSheet("color:#E8E8E8; font-size:12px; font-weight:bold;");
+        box->addWidget(l);
+        box->addWidget(v);
+        headerHL->addLayout(box);
+        return v;
+    };
+    addHeaderField(tr("PATIENT"), tr("Demo Patient"));
+    addHeaderField(tr("ID"), tr("DP-2025-001"));
+    addHeaderField(tr("AGE / SEX"), tr("54 / M"));
+    addHeaderField(tr("PROCEDURE"), tr("MMA Embolization"));
+    m_headerProcedureTime = addHeaderField(tr("PROCEDURE TIME"), tr("00:00:00"));
+
+    headerHL->addStretch(1);
+
+    auto *cineHdrBtn = makeProcBtn(tr("Cine"), header);
+    cineHdrBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    connect(cineHdrBtn, &QPushButton::clicked, this, [this]{ onOpenCineStudio(); });
+    headerHL->addWidget(cineHdrBtn);
+
+    auto *shotHdrBtn = makeProcBtn(tr("Screenshot"), header);
+    shotHdrBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    connect(shotHdrBtn, &QPushButton::clicked, this, [this]{ onScreenshot(); });
+    headerHL->addWidget(shotHdrBtn);
+
+    auto *reportHdrBtn = makeProcBtn(tr("Report"), header);
+    reportHdrBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    connect(reportHdrBtn, &QPushButton::clicked, this, [this]{ onGenerateReport(); });
+    headerHL->addWidget(reportHdrBtn);
+
+    auto *endProcBtn = new QPushButton(tr("End Procedure"), header);
+    endProcBtn->setStyleSheet(
+        "QPushButton { background:#2A0F0F; color:#E0574A; border:1px solid #7A2A22;"
+        "border-radius:4px; padding:8px 14px; font-weight:bold; }"
+        "QPushButton:hover { background:#3A1512; }");
+    connect(endProcBtn, &QPushButton::clicked, this, [this]{ onEndProcedure(); });
+    headerHL->addWidget(endProcBtn);
+
+    shellVL->addWidget(header);
+    shellVL->addWidget(m_pageStack, 1);
+    setCentralWidget(shell);
+
+    // ── Bottom system status bar ─────────────────────────────────────────
+    // QMainWindow's own built-in status bar (always full-width, always at
+    // the very bottom, persists across the Simulator/Cine Studio page
+    // switch exactly like the header does) rather than another widget
+    // stitched into the page layout.
+    {
+        auto *sb = statusBar();
+        sb->setSizeGripEnabled(false);
+        auto *sbWidget = new QWidget(sb);
+        auto *sbHL = new QHBoxLayout(sbWidget);
+        sbHL->setContentsMargins(10, 2, 10, 2);
+        sbHL->setSpacing(28);
+
+        auto addStatusField = [sbWidget, &sbHL](const QString &label, const QString &value) -> QLabel* {
+            auto *row = new QHBoxLayout();
+            row->setSpacing(6);
+            auto *l = new QLabel(label, sbWidget);
+            l->setStyleSheet("color:#6B6B6F; font-size:10px;");
+            auto *v = new QLabel(value, sbWidget);
+            v->setStyleSheet("color:#E8E8E8; font-size:10px; font-weight:bold;");
+            row->addWidget(l);
+            row->addWidget(v);
+            sbHL->addLayout(row);
+            return v;
+        };
+
+        // SYSTEM STATUS — a green dot + "OK". No fault-detection model
+        // exists in this build to drive anything other than a static OK.
+        auto *sysRow = new QHBoxLayout();
+        sysRow->setSpacing(6);
+        auto *sysLabel = new QLabel(tr("SYSTEM STATUS"), sbWidget);
+        sysLabel->setStyleSheet("color:#6B6B6F; font-size:10px;");
+        auto *sysDot = new QLabel(sbWidget);
+        sysDot->setStyleSheet("color:#2ECC71; font-size:10px;");
+        sysDot->setText(QString::fromUtf8("\u25CF"));
+        auto *sysVal = new QLabel(tr("OK"), sbWidget);
+        sysVal->setStyleSheet("color:#E8E8E8; font-size:10px; font-weight:bold;");
+        sysRow->addWidget(sysLabel);
+        sysRow->addWidget(sysDot);
+        sysRow->addWidget(sysVal);
+        sbHL->addLayout(sysRow);
+
+        // DOSE / AIR KERMA — fixed console defaults, same disclosed reason as
+        // the Fluoroscopy HUD's kVp/mA/DAP: no generator/dosimetry model to
+        // draw real numbers from. DOSE intentionally matches the HUD's own
+        // DAP value (12.4 Gy·cm²) exactly, since both read out the same
+        // underlying accumulated quantity rather than two independently
+        // invented numbers that happen to differ for no reason.
+        m_sbDose     = addStatusField(tr("DOSE"), tr("12.4 Gy·cm²"));
+        m_sbAirKerma = addStatusField(tr("AIR KERMA"), tr("8.7 mGy"));
+
+        // TOTAL FLUORO TIME — genuinely live: CarmView already tracks real
+        // fluoro-active seconds (setFluoroActive()/fluoroSeconds()); this
+        // just reads it every tick below.
+        m_sbFluoroTime = addStatusField(tr("TOTAL FLUORO TIME"), tr("00:00:00"));
+
+        // LAST IMAGE — genuinely live, driven by onScreenshot()'s own
+        // m_lastImageClock; reads "—" until the first screenshot exists.
+        m_sbLastImage = addStatusField(tr("LAST IMAGE"), tr("—"));
+
+        sbHL->addStretch(1);
+
+        // Speaker/brightness icons are decorative — this console has no
+        // audio subsystem and no display-brightness control to actually
+        // toggle, so these are shown as fixed glyphs rather than wired to
+        // behaviour that does not exist.
+        auto *speakerIcon = new QLabel(QString::fromUtf8("\U0001F50A"), sbWidget);
+        speakerIcon->setStyleSheet("font-size:12px;");
+        sbHL->addWidget(speakerIcon);
+        auto *brightIcon = new QLabel(QString::fromUtf8("\u2600"), sbWidget);
+        brightIcon->setStyleSheet("font-size:12px; color:#9B9B9B;");
+        sbHL->addWidget(brightIcon);
+
+        m_sbClock = new QLabel(sbWidget);
+        m_sbClock->setStyleSheet("color:#E8E8E8; font-size:10px; font-weight:bold;");
+        sbHL->addWidget(m_sbClock);
+
+        sb->addWidget(sbWidget, 1);
+        sb->setStyleSheet("QStatusBar { background:#000000; border-top:1px solid #2A2A2E; }"
+                          "QStatusBar::item { border:none; }");
+    }
+
+    // Live procedure timer — started here (app/session start), ticked once a
+    // second. A training console has no real "procedure start" moment
+    // distinct from launching it, so session time is the honest answer.
+    // Also refreshes the status bar's live fields (TOTAL FLUORO TIME, LAST
+    // IMAGE, clock) each tick, rather than running a second timer for them.
+    m_procedureClock.start();
+    m_procedureTimer = new QTimer(this);
+    connect(m_procedureTimer, &QTimer::timeout, this, [this]{
+        const qint64 s = m_procedureClock.elapsed() / 1000;
+        if (m_headerProcedureTime)
+            m_headerProcedureTime->setText(QString("%1:%2:%3")
+                .arg(s / 3600, 2, 10, QChar('0'))
+                .arg((s / 60) % 60, 2, 10, QChar('0'))
+                .arg(s % 60, 2, 10, QChar('0')));
+
+        if (m_sbFluoroTime && m_carmWidget) {
+            const qint64 fs = static_cast<qint64>(m_carmWidget->fluoroSeconds());
+            m_sbFluoroTime->setText(QString("%1:%2:%3")
+                .arg(fs / 3600, 2, 10, QChar('0'))
+                .arg((fs / 60) % 60, 2, 10, QChar('0'))
+                .arg(fs % 60, 2, 10, QChar('0')));
+        }
+        if (m_sbLastImage) {
+            if (m_hasLastImage) {
+                const qint64 ls = m_lastImageClock.elapsed() / 1000;
+                m_sbLastImage->setText(tr("%1:%2:%3 ago")
+                    .arg(ls / 3600, 2, 10, QChar('0'))
+                    .arg((ls / 60) % 60, 2, 10, QChar('0'))
+                    .arg(ls % 60, 2, 10, QChar('0')));
+            } else {
+                m_sbLastImage->setText(tr("—"));
+            }
+        }
+        if (m_sbClock) m_sbClock->setText(QTime::currentTime().toString("hh:mm AP"));
+    });
+    m_procedureTimer->start(1000);
+
+=======
     setCentralWidget(m_pageStack);
     connect(m_cineStudio, &CineViewStudio::backToSimulatorRequested,
             this, &MainWindow::onCineStudioBack);
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_motion = new QTimer(this);
     m_motion->setInterval(16);
     connect(m_motion, &QTimer::timeout, this, &MainWindow::onMotionTick);
 
     // ═══════════════════════════════════════════════════════════════════════
+<<<<<<< HEAD
+    // SIMULATOR PAGE: outer vertical split, matching the reference design
+    //   [ rootHL: left column (C-Arm/Patient Monitor cards) | vessel view |
+    //             right column (Procedure Info/Device Status cards) ]
+    //   [ tileBar: bottom tile navigation - 3D/Fluoro/DSA/RoadMap/Cine/
+    //             Contrast Injection/Embolization, full width ]
+    // ═══════════════════════════════════════════════════════════════════════
+    auto *pageVL = new QVBoxLayout(m_simulatorPage);
+    pageVL->setContentsMargins(0, 0, 0, 0);
+    pageVL->setSpacing(0);
+
+    // Left column (fixed ~460px)  |  view-mode buttons col (narrow)  |  Right (vessel+procedure)
+    auto *rootHL = new QHBoxLayout();
+    rootHL->setContentsMargins(0, 0, 0, 0);
+    rootHL->setSpacing(0);
+    pageVL->addLayout(rootHL, 1);
+
+    // ── LEFT VERTICAL NAVIGATION SIDEBAR ────────────────────────────────────
+    // 3D VIEW / FLUORO / DSA / ROAD MAP / CINE / CONTRAST INJECTION /
+    // EMBOLIZATION, stacked vertically as the leftmost column - moved here
+    // from a horizontal bar along the bottom of the window, per the
+    // reference layout. Every tile calls the exact same handler it always
+    // did; only the position, orientation, and per-tile icon glyph changed.
+    auto *navCol = new QWidget(m_simulatorPage);
+    navCol->setFixedWidth(112);
+    navCol->setStyleSheet("background:#000000; border-right:1px solid #2A2A2E;");
+    auto *navVL = new QVBoxLayout(navCol);
+    navVL->setContentsMargins(8, 10, 8, 10);
+    navVL->setSpacing(8);
+
+    m_viewTileGroup = new QButtonGroup(this);
+    m_viewTileGroup->setExclusive(true);
+
+    m_viewTiles[0] = makeSideNavTile(QStringLiteral("\u25C7"), tr("3D View"), navCol);
+    m_viewTiles[0]->setChecked(true);
+    connect(m_viewTiles[0], &QPushButton::clicked, this, [this]{ onViewModeChanged(0); });
+    m_viewTileGroup->addButton(m_viewTiles[0]);
+    navVL->addWidget(m_viewTiles[0], 1);
+
+    m_viewTiles[1] = makeSideNavTile(QStringLiteral("\u25C9"), tr("Fluoro"), navCol);
+    connect(m_viewTiles[1], &QPushButton::clicked, this, [this]{ onViewModeChanged(1); });
+    m_viewTileGroup->addButton(m_viewTiles[1]);
+    navVL->addWidget(m_viewTiles[1], 1);
+
+    // Index 2 (Mesh) deliberately has no tile - see m_viewTiles' own
+    // declaration comment in MainWindow.h.
+
+    m_viewTiles[3] = makeSideNavTile(QStringLiteral("\u25C8"), tr("DSA"), navCol);
+    connect(m_viewTiles[3], &QPushButton::clicked, this, [this]{ onViewModeChanged(3); });
+    m_viewTileGroup->addButton(m_viewTiles[3]);
+    navVL->addWidget(m_viewTiles[3], 1);
+
+    // Road Map is a toggle, but independent of the exclusive 3D/Fluoro/DSA
+    // group (it modifies the Fluoro pane rather than selecting a different
+    // one) — not added to m_viewTileGroup, so it can be checked or not
+    // regardless of which display mode is active.
+    m_roadMapTile = makeSideNavTile(QStringLiteral("\u2B21"), tr("Road Map"), navCol);
+    connect(m_roadMapTile, &QPushButton::clicked, this, [this]{ onRoadMap(); });
+    navVL->addWidget(m_roadMapTile, 1);
+
+    auto *cineTile = makeSideNavTile(QStringLiteral("\u25B6"), tr("Cine"), navCol);
+    cineTile->setCheckable(false);   // one-shot action, not a display-mode toggle
+    connect(cineTile, &QPushButton::clicked, this, [this]{ onOpenCineStudio(); });
+    navVL->addWidget(cineTile, 1);
+
+    auto *contrastTile = makeSideNavTile(QStringLiteral("\u271A"), tr("Contrast\nInjection"), navCol);
+    contrastTile->setCheckable(false);
+    connect(contrastTile, &QPushButton::clicked, this, [this]{ showContrastInjectionDialog(); });
+    navVL->addWidget(contrastTile, 1);
+
+    auto *emboTile = makeSideNavTile(QStringLiteral("\u2733"), tr("Embolization"), navCol);
+    emboTile->setProperty("accent", "embolization");
+    // Qt applies a QSS property-selector change immediately on most styles,
+    // but re-polishing explicitly avoids relying on that: without it, a
+    // property set before the widget's first show can be missed by some
+    // styles until the next explicit style/state change forces a re-evaluation.
+    emboTile->style()->unpolish(emboTile);
+    emboTile->style()->polish(emboTile);
+    emboTile->setCheckable(false);
+    connect(emboTile, &QPushButton::clicked, this, [this]{ showEmbolizationDialog(); });
+    navVL->addWidget(emboTile, 1);
+
+    rootHL->addWidget(navCol);
+=======
     // SIMULATOR PAGE: horizontal root split
     //   Left column (fixed ~460px)  |  view-mode buttons col (narrow)  |  Right (vessel+procedure)
     // ═══════════════════════════════════════════════════════════════════════
     auto *rootHL = new QHBoxLayout(m_simulatorPage);
     rootHL->setContentsMargins(0, 0, 0, 0);
     rootHL->setSpacing(0);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // ── LEFT COLUMN: C-arm + angle strip + key hints + ECG ───────────────
     auto *leftCol = new QWidget(m_simulatorPage);
@@ -377,6 +963,15 @@ void MainWindow::buildUi() {
     leftVL->setContentsMargins(8,0,0,0);   // slight left inset so panel isn't flush to edge
     leftVL->setSpacing(0);
 
+<<<<<<< HEAD
+    // ── CarmView pane (top half), wrapped as a "C-Arm Status" card ────────
+    QVBoxLayout *carmContent = makeCard(tr("C-Arm Status"), leftCol, leftVL, 1);
+    carmContent->setContentsMargins(0, 0, 0, 0);   // CarmView fills the card edge-to-edge
+    carmContent->setSpacing(0);
+
+    m_carmWidget = new CarmView(leftCol);
+    carmContent->addWidget(m_carmWidget, 1);
+=======
     // ── CarmView pane (top half) ───────────────────────────────────────────
     auto *carmPane = new QWidget(leftCol);
     carmPane->setStyleSheet("background:#1A1A1A;");
@@ -386,6 +981,7 @@ void MainWindow::buildUi() {
 
     m_carmWidget = new CarmView(carmPane);
     carmPaneVL->addWidget(m_carmWidget, 1);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Angle labels: still created for onCarmAnglesChanged() to update,
     // but not added to any layout — angles are shown inside the CarmView HUD.
@@ -393,6 +989,23 @@ void MainWindow::buildUi() {
     m_cranLabel = new QLabel("CRAN 0.0°");
     // Key hints removed from main UI — see Help menu for controls.
 
+<<<<<<< HEAD
+    // ── ECG pane (bottom half), wrapped as a "Patient Monitor" card ────────
+    QVBoxLayout *ecgContent = makeCard(tr("Patient Monitor"), leftCol, leftVL, 1);
+    ecgContent->setContentsMargins(0, 0, 0, 0);   // ECGWidget fills the card edge-to-edge
+    ecgContent->setSpacing(0);
+
+    m_ecgWidget = new ECGWidget(leftCol);
+    m_ecgWidget->setHeartRate(72);
+    m_ecgWidget->setObjectName("ecgWidget");
+    ecgContent->addWidget(m_ecgWidget, 1);
+
+    // Equal split using stretch factors — no splitter needed.
+    // Both cards were already added to leftVL above with stretch=1 each via
+    // makeCard's own stretch parameter.
+    m_carmWidget->setMinimumSize(10, 10);
+    m_ecgWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+=======
     // ── ECG pane (bottom half) ──────────────────────────────────────────────
     m_ecgWidget = new ECGWidget(leftCol);
     m_ecgWidget->setHeartRate(72);
@@ -407,6 +1020,7 @@ void MainWindow::buildUi() {
     m_ecgWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftVL->addWidget(carmPane, 1);
     leftVL->addWidget(m_ecgWidget, 1);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     rootHL->addWidget(leftCol);
 
@@ -508,6 +1122,166 @@ void MainWindow::buildUi() {
     }
     connect(m_view, &VesselView::balloonToggleRequested, this, [this]{ onBalloonToggled(); });
 
+<<<<<<< HEAD
+    // ── RIGHT-SIDE COLUMN: Procedure Info + Device Status ──────────────────
+    // New — the reference design's sidebar. Every value shown is live app
+    // state (access site, sheath/catheter identity, branch/turns/depth from
+    // NavigationController, and readiness/active flags for the three device
+    // stages), refreshed from updateReadouts(); nothing here is invented
+    // demo data. Sheath/Catheter Selection move here from the old bottom
+    // Access & devices bar, which this column replaces.
+    auto *procCol = new QWidget(m_simulatorPage);
+    procCol->setFixedWidth(300);
+    procCol->setStyleSheet("background:#000000;");
+    auto *procVL = new QVBoxLayout(procCol);
+    procVL->setContentsMargins(8, 8, 8, 8);
+    procVL->setSpacing(8);
+
+    auto addInfoRow = [procCol](QVBoxLayout *lay, const QString &label, QLabel *&valueOut) {
+        auto *row = new QHBoxLayout();
+        auto *l = new QLabel(label, procCol);
+        l->setStyleSheet("color:#9B9B9B; font-size:12px;");
+        valueOut = new QLabel(tr("—"), procCol);
+        valueOut->setStyleSheet("color:#E8E8E8; font-size:12px; font-weight:bold;");
+        valueOut->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        row->addWidget(l);
+        row->addStretch(1);
+        row->addWidget(valueOut);
+        lay->addLayout(row);
+        // A stretch after EVERY row, not one trailing stretch after the
+        // last row - this is what spreads the card's extra height out as
+        // even breathing room between each line instead of pooling all of
+        // it into a single dead gap at the bottom.
+        lay->addStretch(1);
+    };
+
+    // Stretch factors below (2/1/2) are what makes these three cards fill
+    // the sidebar's full height instead of stacking at the top with a dead
+    // black gap underneath - previously every card had stretch 0 and a
+    // single addStretch(1) at the very end absorbed all the leftover space
+    // as empty area rather than distributing it into the cards themselves.
+    // Procedure Info and Embolic Agent get more weight than Device Status
+    // (six/four rows of content vs. three short status rows), so the split
+    // is proportional rather than perfectly even.
+    QVBoxLayout *infoContent = makeCard(tr("Procedure Info"), procCol, procVL, 2);
+    addInfoRow(infoContent, tr("Access"),   m_fAccess);
+    addInfoRow(infoContent, tr("Sheath"),   m_fSheath);
+    addInfoRow(infoContent, tr("Catheter"), m_fCatheter);
+    addInfoRow(infoContent, tr("Branch"),   m_fBranch);
+    addInfoRow(infoContent, tr("Turns"),    m_fTurns);
+    addInfoRow(infoContent, tr("Depth"),    m_fDepth);
+    addInfoRow(infoContent, tr("Lumen Ø"),  m_fLumen);
+    addInfoRow(infoContent, tr("Device Ø"), m_fDevice);
+    addInfoRow(infoContent, tr("Clear"),    m_fClear);
+    m_fAccess->setText(tr("not established"));
+    m_fSheath->setText(tr("no sheath"));
+    m_fCatheter->setText(tr("no catheter"));
+
+    auto addStatusRow = [procCol](QVBoxLayout *lay, const QString &label, QLabel *&valueOut) {
+        auto *row = new QHBoxLayout();
+        auto *l = new QLabel(label, procCol);
+        l->setStyleSheet("color:#9B9B9B; font-size:12px;");
+        valueOut = new QLabel(procCol);
+        valueOut->setStyleSheet("font-size:12px;");
+        valueOut->setTextFormat(Qt::RichText);
+        valueOut->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        row->addWidget(l);
+        row->addStretch(1);
+        row->addWidget(valueOut);
+        lay->addLayout(row);
+        // Same reasoning as addInfoRow's own per-row stretch above.
+        lay->addStretch(1);
+    };
+
+    QVBoxLayout *deviceContent = makeCard(tr("Device Status"), procCol, procVL, 1);
+    addStatusRow(deviceContent, tr("Sheath"),        m_deviceStatusSheath);
+    addStatusRow(deviceContent, tr("Catheter"),      m_deviceStatusCatheter);
+    addStatusRow(deviceContent, tr("Embolic Agent"), m_deviceStatusEmbolic);
+    // Initial state — updateReadouts() keeps these live from here on.
+    m_deviceStatusSheath->setText(  "<span style='color:#6B6B6F;'>&#9679;</span> NOT PLACED");
+    m_deviceStatusCatheter->setText("<span style='color:#6B6B6F;'>&#9679;</span> NOT LOADED");
+    m_deviceStatusEmbolic->setText( "<span style='color:#6B6B6F;'>&#9679;</span> NOT STARTED");
+
+    m_btnSheathSelect = makeProcBtn(tr("Sheath Selection…"), procCol);
+    connect(m_btnSheathSelect, &QPushButton::clicked, this, [this]{ onSheathSelection(); });
+    procVL->addWidget(m_btnSheathSelect);
+
+    m_btnCatheterSelect = makeProcBtn(tr("Catheter Selection…"), procCol);
+    // Disabled until a sheath is in: you cannot introduce a catheter through
+    // an access you have not made yet.
+    m_btnCatheterSelect->setEnabled(false);
+    connect(m_btnCatheterSelect, &QPushButton::clicked, this, [this]{ onCatheterSelection(); });
+    procVL->addWidget(m_btnCatheterSelect);
+
+    // ── Embedded "Embolic Agent" quick-inject panel ─────────────────────────
+    // Matches the reference design directly: agent dropdown, a volume
+    // read-out with +/- steppers, one big INJECT button - no separate dialog
+    // needed for the common case. Drives the exact same shared m_emboli the
+    // Embolisation Module dialog does (onQuickEmboInject()), so picking up
+    // the full dialog later (e.g. to Reset) always reflects whatever was
+    // injected from here, and vice versa.
+    QVBoxLayout *quickEmboContent = makeCard(tr("Embolic Agent"), procCol, procVL, 2);
+
+    m_quickEmboAgentBox = new QComboBox(procCol);
+    for (cn::EmbolicAgent a : {cn::EmbolicAgent::Onyx, cn::EmbolicAgent::Squid,
+                               cn::EmbolicAgent::Phil, cn::EmbolicAgent::Glue})
+        m_quickEmboAgentBox->addItem(QString::fromLatin1(cn::embolicAgentSpec(a).name),
+                                     static_cast<int>(a));
+    quickEmboContent->addWidget(m_quickEmboAgentBox);
+
+    auto *volRow = new QHBoxLayout();
+    auto *volLabelText = new QLabel(tr("VOLUME"), procCol);
+    volLabelText->setStyleSheet("color:#6B6B6F; font-size:12px; letter-spacing:1px;");
+    auto *volMinusBtn = new QPushButton(tr("−"), procCol);
+    volMinusBtn->setFixedWidth(36);
+    connect(volMinusBtn, &QPushButton::clicked, this, [this]{ onQuickEmboVolumeStep(-0.02f); });
+    m_quickEmboVolumeLabel = new QLabel(tr("%1 mL").arg(m_quickEmboVolumeMl, 0, 'f', 2), procCol);
+    m_quickEmboVolumeLabel->setAlignment(Qt::AlignCenter);
+    m_quickEmboVolumeLabel->setStyleSheet("color:#E8E8E8; font-size:12px; font-weight:bold;");
+    auto *volPlusBtn = new QPushButton(tr("+"), procCol);
+    volPlusBtn->setFixedWidth(36);
+    connect(volPlusBtn, &QPushButton::clicked, this, [this]{ onQuickEmboVolumeStep(0.02f); });
+    volRow->addWidget(volMinusBtn);
+    volRow->addWidget(m_quickEmboVolumeLabel, 1);
+    volRow->addWidget(volPlusBtn);
+    auto *volCol = new QVBoxLayout();
+    volCol->setSpacing(4);
+    volCol->addWidget(volLabelText);
+    volCol->addLayout(volRow);
+    quickEmboContent->addLayout(volCol);
+
+    m_quickEmboInjectBtn = new QPushButton(tr("INJECT"), procCol);
+    m_quickEmboInjectBtn->setStyleSheet(
+        "QPushButton { background:#0F3D22; color:#2ECC71; border:1px solid #2ECC71;"
+        "border-radius:4px; padding:10px; font-weight:bold; font-size:12px; }"
+        "QPushButton:hover { background:#154A2A; }");
+    connect(m_quickEmboInjectBtn, &QPushButton::clicked, this, [this]{ onQuickEmboInject(); });
+    quickEmboContent->addWidget(m_quickEmboInjectBtn);
+
+    // Reset — reverses whatever has been injected (Onyx or otherwise) from
+    // right here, without needing to open the Embolisation Module dialog.
+    // Wired to the exact same onResetEmbolization() that dialog's own Reset
+    // button calls (m_emboResetBtn) - one shared reset path for the one
+    // shared m_emboli, so there is no separate "quick panel reset" logic
+    // that could ever disagree with the dialog's.
+    auto *quickEmboResetBtn = new QPushButton(tr("Reset"), procCol);
+    quickEmboResetBtn->setStyleSheet(
+        "QPushButton { background:#1A1A1E; color:#C9C9C9; border:1px solid #3A3A40;"
+        "border-radius:4px; padding:8px; font-size:12px; }"
+        "QPushButton:hover { background:#242429; border-color:#5A5A60; }");
+    connect(quickEmboResetBtn, &QPushButton::clicked, this, [this]{ onResetEmbolization(); });
+    quickEmboContent->addWidget(quickEmboResetBtn);
+
+    // Trailing stretch INSIDE the card - without this, giving the card's
+    // outer frame extra height (via makeCard's stretch factor above) would
+    // spread the combo/volume/inject/reset widgets apart from each other
+    // instead of keeping them compact at the top with the extra room
+    // showing as blank card background beneath the buttons, which is the
+    // actual look "match the balance of the space downside" is asking for.
+    quickEmboContent->addStretch(1);
+
+    rootHL->addWidget(procCol);
+=======
     // Contrast / Road Map
     // Contrast Injection and Road Map now live in the menu bar corner beside
     // Help (buildViewBar), and the embolic agents hang off Contrast Injection as
@@ -525,12 +1299,49 @@ void MainWindow::buildUi() {
     m_emboLabel->setStyleSheet("color:#E8E8E8; font-size:11px; font-weight:bold; padding:3px 8px; background:#000000;");
     rightVL->addWidget(m_emboLabel);
 
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Status label
     // Status label: created but not shown in main UI (instructions moved to Help menu)
     m_statusLabel = new QLabel();
     m_statusLabel->setVisible(false);
 
+<<<<<<< HEAD
+    // The bottom horizontal tile bar that used to live here (3D VIEW/FLUORO/
+    // DSA/ROADMAP/CINE/CONTRAST INJECTION/EMBOLIZATION) has moved to the left
+    // vertical navigation sidebar built earlier in this function, per the
+    // reference layout. m_viewTileGroup/m_viewTiles/m_roadMapTile are already
+    // constructed there; nothing further is built here.
+
+    // ── Catheter navigation — keyboard only, no on-screen buttons ──────────
+    // Advance/Retract/Left/Right used to be a button box here. The buttons are
+    // gone; I/K/J/L call the exact same handlers the buttons called, so the
+    // movement itself — including the m_ready / decisionPending gating already
+    // inside those handlers — is unchanged.
+    //
+    // ApplicationShortcut, same reasoning as the C-arm keys in buildMenus():
+    // VesselView is a QOpenGLWidget with StrongFocus, and a plain
+    // WindowShortcut can be swallowed by the focused widget before the
+    // action ever sees the key.
+    auto addNavKey = [this](Qt::Key k, const QString &desc, std::function<void()> fn) {
+        auto *a = new QAction(desc, this);
+        a->setShortcut(k);
+        a->setShortcutContext(Qt::ApplicationShortcut);
+        connect(a, &QAction::triggered, this, [fn]{ fn(); });
+        this->addAction(a);
+    };
+    addNavKey(Qt::Key_I, tr("Advance catheter"),     [this]{ onAdvance(); });
+    addNavKey(Qt::Key_K, tr("Retract catheter"),      [this]{ onRetract(); });
+    addNavKey(Qt::Key_J, tr("Choose left limb"),      [this]{ onChooseLeft(); });
+    addNavKey(Qt::Key_L, tr("Choose right limb"),     [this]{ onChooseRight(); });
+    // Adjacent to I/K/J/L on the keyboard. This is the fix for a confirmed
+    // gap: setRollAngle() was never called from anywhere in this file before
+    // this, meaning the operator had no way to rotate the catheter at all —
+    // its orientation was determined entirely by its fixed resting shape and
+    // whatever path it happened to be on.
+    addNavKey(Qt::Key_U, tr("Roll catheter left"),    [this]{ onRollLeft(); });
+    addNavKey(Qt::Key_O, tr("Roll catheter right"),   [this]{ onRollRight(); });
+=======
     // ── RIGHT DOCK: Procedure panel ────────────────────────────────────────
     auto *dock  = new QDockWidget(tr("Procedure"), this);
     dock->setFeatures(QDockWidget::DockWidgetMovable);
@@ -602,6 +1413,7 @@ void MainWindow::buildUi() {
     connect(m_btnRetract, &QPushButton::clicked, this, [this]{ onRetract(); });
     connect(m_btnLeft,    &QPushButton::clicked, this, [this]{ onChooseLeft(); });
     connect(m_btnRight,   &QPushButton::clicked, this, [this]{ onChooseRight(); });
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Balloon button removed: the catalogue devices the console offers are
     // guides, distal-access catheters, microcatheters and wires, none of which
@@ -631,11 +1443,25 @@ void MainWindow::buildUi() {
     //
     // updateReadouts() still runs and still guards every field with `if (...)`,
     // so the pointers simply stay null and each write is skipped. Nothing else
+<<<<<<< HEAD
+    // changes.
+
+    // ── Calibration — moved into a dialog, opened from the menu bar ────────
+    // Same QFormLayout, same rows, same widgets, same connect() calls as when
+    // this lived in the Procedure dock's Calibration group box; only the
+    // parent container changed, from a QGroupBox docked on the right to a
+    // free-floating (non-modal) QDialog. buildViewBar() wires the menu action
+    // that shows it.
+    m_calibrationDialog = new QDialog(this);
+    m_calibrationDialog->setWindowTitle(tr("Calibration"));
+    auto *calForm = new QFormLayout(m_calibrationDialog);
+=======
     // in the procedure panel changes.
 
     // ── Calibration ────────────────────────────────────────────────────────
     auto *calBox  = new QGroupBox(tr("Calibration"), panel);
     auto *calForm = new QFormLayout(calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Device area: the measurements of whatever catheter is currently loaded.
     //
@@ -644,7 +1470,11 @@ void MainWindow::buildUi() {
     // use, and picking from it overwrote whatever Catheter Selection had just
     // loaded. The device is now chosen in one place — Catheter Selection — and
     // this area reports it.
+<<<<<<< HEAD
+    m_fDevModel = makeReadout(m_calibrationDialog);
+=======
     m_fDevModel = makeReadout(calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_fDevModel->setText(tr("no catheter"));
     calForm->addRow(tr("Model"), m_fDevModel);
 
@@ -652,14 +1482,39 @@ void MainWindow::buildUi() {
     // OD mm = Fr / 3 — so this changes the device that has to fit the lumen,
     // not just a label. Full per-model dimensions live in the Catheter
     // Selection dialog; this is the quick size control.
+<<<<<<< HEAD
+    m_frCombo = new QComboBox(m_calibrationDialog);
+    for (int fr = kMinFrench; fr <= kMaxFrench; ++fr)
+        m_frCombo->addItem(tr("%1 Fr").arg(fr), fr);
+    m_frCombo->setCurrentIndex(2 - kMinFrench);   // default 2 Fr
+=======
     m_frCombo = new QComboBox(calBox);
     for (int fr = kMinFrench; fr <= kMaxFrench; ++fr)
         m_frCombo->addItem(tr("%1 Fr").arg(fr), fr);
     m_frCombo->setCurrentIndex(m_frCombo->count() - 1);   // default 5 Fr
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     connect(m_frCombo, &QComboBox::currentIndexChanged,
             this, [this](int i){ onCatheterFrenchChanged(i); });
     calForm->addRow(tr("Size"), m_frCombo);
 
+<<<<<<< HEAD
+    m_odSpin = new QDoubleSpinBox(m_calibrationDialog);
+    m_odSpin->setRange(0.20, 3.00); m_odSpin->setSingleStep(0.10);
+    m_odSpin->setDecimals(2); m_odSpin->setSuffix(tr(" mm"));
+    m_odSpin->setValue(0.57);   // default OD; overwritten once a real catheter is loaded (applyCatheterSpec)
+    connect(m_odSpin, &QDoubleSpinBox::valueChanged, this, [this](double v){ onDeviceSizeChanged(v); });
+    calForm->addRow(tr("OD"), m_odSpin);
+
+    m_stepSpin = new QDoubleSpinBox(m_calibrationDialog);
+    m_stepSpin->setRange(0.5, 30.0); m_stepSpin->setValue(4.0); m_stepSpin->setSuffix(tr(" mm"));
+    calForm->addRow(tr("Step"), m_stepSpin);
+
+    m_speedSpin = new QDoubleSpinBox(m_calibrationDialog);
+    m_speedSpin->setRange(1.0, 120.0); m_speedSpin->setValue(50.0); m_speedSpin->setSuffix(tr(" mm/s"));
+    calForm->addRow(tr("Speed"), m_speedSpin);
+
+    m_scaleSpin = new QDoubleSpinBox(m_calibrationDialog);
+=======
     m_odSpin = new QDoubleSpinBox(calBox);
     m_odSpin->setRange(0.20, 3.00); m_odSpin->setSingleStep(0.10);
     m_odSpin->setDecimals(2); m_odSpin->setSuffix(tr(" mm"));
@@ -675,6 +1530,7 @@ void MainWindow::buildUi() {
     calForm->addRow(tr("Speed"), m_speedSpin);
 
     m_scaleSpin = new QDoubleSpinBox(calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_scaleSpin->setRange(0.001, 10000.0); m_scaleSpin->setDecimals(3);
     m_scaleSpin->setValue(m_mmPerUnit);
     connect(m_scaleSpin, &QDoubleSpinBox::valueChanged, this, [this](double v){ onScaleChanged(v); });
@@ -683,14 +1539,22 @@ void MainWindow::buildUi() {
     // ── Heart rate ─────────────────────────────────────────────────────────
     // One control for the whole console: it sets the cardiac clock, which drives
     // both the ECG trace and the pulsating vessel wall.
+<<<<<<< HEAD
+    m_bpmSpin = new QSpinBox(m_calibrationDialog);
+=======
     m_bpmSpin = new QSpinBox(calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_bpmSpin->setRange(30, 220);
     m_bpmSpin->setValue(m_cardiac.heartRate());
     m_bpmSpin->setSuffix(tr(" bpm"));
     connect(m_bpmSpin, &QSpinBox::valueChanged, this, [this](int v){ onHeartRateChanged(v); });
     calForm->addRow(tr("Heart rate"), m_bpmSpin);
 
+<<<<<<< HEAD
+    m_pulseCheck = new QCheckBox(tr("Pulsatile vessel wall"), m_calibrationDialog);
+=======
     m_pulseCheck = new QCheckBox(tr("Pulsatile vessel wall"), calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_pulseCheck->setChecked(true);
     connect(m_pulseCheck, &QCheckBox::toggled, this, [this](bool on){
         for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
@@ -698,16 +1562,252 @@ void MainWindow::buildUi() {
     });
     calForm->addRow(m_pulseCheck);
 
+<<<<<<< HEAD
+    m_autoCalibrate = new QCheckBox(tr("Auto-scale from trunk"), m_calibrationDialog);
+=======
     m_autoCalibrate = new QCheckBox(tr("Auto-scale from trunk"), calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_autoCalibrate->setChecked(true);
     calForm->addRow(m_autoCalibrate);
 
     // Opacity slider — matches old project
+<<<<<<< HEAD
+    m_opacitySlider = new QSlider(Qt::Horizontal, m_calibrationDialog);
+=======
     m_opacitySlider = new QSlider(Qt::Horizontal, calBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_opacitySlider->setRange(5, 100);
     m_opacitySlider->setValue(68);
     connect(m_opacitySlider, &QSlider::valueChanged, this, [this](int v){ onOpacityChanged(v); });
     calForm->addRow(tr("Opacity"), m_opacitySlider);
+<<<<<<< HEAD
+
+    // Close button — the dialog is non-modal (shown, not exec()'d) and never
+    // deleted, so closing it just hides it; reopening from the menu shows the
+    // same instance with everything exactly as it was left.
+    auto *calBtns = new QDialogButtonBox(QDialogButtonBox::Close, m_calibrationDialog);
+    connect(calBtns, &QDialogButtonBox::rejected, m_calibrationDialog, &QDialog::hide);
+    calForm->addRow(calBtns);
+
+    // ── X-Ray Calibration — staged edits, applied on Save / Apply ───────────
+    // Every spin box is purely a staged edit while the dialog is open —
+    // nothing reaches the Fluoro view until "Save / Apply" is clicked, which
+    // reads all 22 of them and pushes a single VesselView::XrayTuning in one
+    // call. A value the user didn't touch keeps whatever it already was
+    // (its spin box was seeded with that same value), so editing one field
+    // can never disturb the other 21. Reopening the dialog (buildViewBar's
+    // xrayAct) re-seeds every spin box from the view's current, actually-
+    // applied state, so an edit that was never Saved/Applied simply doesn't
+    // persist — Close just hides the dialog and discards it.
+    m_xrayTuningDialog = new QDialog(this);
+    m_xrayTuningDialog->setWindowTitle(tr("X-Ray Calibration"));
+    auto *xrForm = new QFormLayout(m_xrayTuningDialog);
+
+    auto addXraySpin = [this, xrForm](const QString &label, double lo, double hi,
+                                      double step, double initial) {
+        auto *spin = new QDoubleSpinBox(m_xrayTuningDialog);
+        spin->setRange(lo, hi);
+        spin->setSingleStep(step);
+        spin->setDecimals(2);
+        spin->setValue(initial);
+        xrForm->addRow(label, spin);
+        m_xraySpins.push_back(spin);
+    };
+    // Three R/G/B spin boxes sharing one range/step, for the colour triples.
+    auto addXrayColorRow = [&addXraySpin](const QString &prefix, double lo, double hi,
+                                          double step, const QVector3D &initial) {
+        addXraySpin(prefix + " R", lo, hi, step, initial.x());
+        addXraySpin(prefix + " G", lo, hi, step, initial.y());
+        addXraySpin(prefix + " B", lo, hi, step, initial.z());
+    };
+
+    // Defaults, purely to seed each spin box's initial displayed value —
+    // the actual defaults live on VesselView::XrayTuning itself.
+    const VesselView::XrayTuning xd;
+
+    addXrayColorRow(tr("Background"), 0.0, 0.3, 0.01, xd.backgroundColor);
+
+    addXrayColorRow(tr("Bone"), 0.5, 1.0, 0.01, xd.boneColor);
+    addXraySpin(tr("Bone opacity"), 0.15, 1.0, 0.01, xd.boneOpacity);
+    addXraySpin(tr("Bone ambient"), 0.0, 1.0, 0.01, xd.boneAmbient);
+    addXraySpin(tr("Bone diffuse"), 0.0, 1.0, 0.01, xd.boneDiffuse);
+    addXraySpin(tr("Bone specular"), 0.0, 0.5, 0.01, xd.boneSpecular);
+
+    addXrayColorRow(tr("Muscle"), 0.1, 0.8, 0.01, xd.muscleColor);
+    addXraySpin(tr("Muscle opacity"), 0.0, 0.6, 0.01, xd.muscleOpacity);
+    addXraySpin(tr("Muscle ambient"), 0.0, 1.0, 0.01, xd.muscleAmbient);
+    addXraySpin(tr("Muscle diffuse"), 0.0, 1.0, 0.01, xd.muscleDiffuse);
+    addXraySpin(tr("Muscle specular"), 0.0, 0.5, 0.01, xd.muscleSpecular);
+
+    addXraySpin(tr("Gamma"), 0.4, 1.6, 0.01, xd.gamma);
+    addXraySpin(tr("Contrast"), 0.5, 2.5, 0.01, xd.contrast);
+    addXraySpin(tr("Brightness"), 0.3, 1.5, 0.01, xd.brightness);
+    addXraySpin(tr("Bone intensity multiplier"), 0.5, 2.5, 0.01, xd.boneIntensityMult);
+    addXraySpin(tr("Soft-tissue multiplier"), 0.1, 1.5, 0.01, xd.softTissueMult);
+    // Independent per-material brightness — distinct from the two
+    // multipliers just above: each is its own scalar on only one
+    // material's final value, so tuning one has zero effect on the other.
+    addXraySpin(tr("Skeleton/Bone brightness"), 0.1, 3.0, 0.01, xd.boneBrightness);
+    addXraySpin(tr("Muscle brightness"), 0.1, 3.0, 0.01, xd.muscleBrightness);
+
+    addXrayColorRow(tr("Vessel"), 0.0, 1.0, 0.01, xd.vesselColor);
+    addXraySpin(tr("Vessel opacity"), 0.0, 1.0, 0.01, xd.vesselOpacity);
+
+    auto *xrBtns = new QDialogButtonBox(QDialogButtonBox::Close, m_xrayTuningDialog);
+    connect(xrBtns, &QDialogButtonBox::rejected, m_xrayTuningDialog, &QDialog::hide);
+
+    // Save / Apply — the only place any of these 24 values actually reaches
+    // the Fluoro view. Reads every spin box exactly once and applies them
+    // as a single VesselView::XrayTuning, so the view's own current values
+    // for anything not represented here (there is nothing else) are never
+    // partially overwritten mid-update.
+    QPushButton *xrApply = xrBtns->addButton(tr("Save / Apply"), QDialogButtonBox::ApplyRole);
+    connect(xrApply, &QPushButton::clicked, this, [this]{
+        VesselView *fv = m_quad ? m_quad->viewFluoro() : nullptr;
+        if (!fv) return;
+        std::array<double, 28> vals{};
+        for (size_t i = 0; i < m_xraySpins.size() && i < vals.size(); ++i)
+            vals[i] = m_xraySpins[i]->value();
+        fv->setXrayTuning(xrayArrayToTuning(vals));
+    });
+
+    QPushButton *xrReset = xrBtns->addButton(tr("Reset to defaults"), QDialogButtonBox::ResetRole);
+    connect(xrReset, &QPushButton::clicked, this, [this]{
+        const VesselView::XrayTuning d;
+        if (VesselView *fv = m_quad ? m_quad->viewFluoro() : nullptr) fv->setXrayTuning(d);
+        const auto vals = xrayTuningToArray(d);
+        for (size_t i = 0; i < m_xraySpins.size() && i < vals.size(); ++i) {
+            QSignalBlocker block(m_xraySpins[i]);
+            m_xraySpins[i]->setValue(vals[i]);
+        }
+    });
+    xrForm->addRow(xrBtns);
+
+    // ── Embolisation Module ──────────────────────────────────────────────
+    // Same non-modal, persistent-dialog pattern as Calibration/X-Ray
+    // Calibration: built once here, shown/raised/activated from the menu
+    // action, never deleted or reconstructed. Deliberately non-modal (shown,
+    // not exec()'d) so the operator can watch the 3D/Fluoro panes update
+    // live while clicking Inject, the same reason the other two dialogs
+    // are non-modal.
+    m_emboDialog = new QDialog(this);
+    m_emboDialog->setWindowTitle(tr("Embolisation Module"));
+    auto *emboLay = new QVBoxLayout(m_emboDialog);
+
+    emboLay->addWidget(new QLabel(tr("Embolic agent:"), m_emboDialog));
+    m_emboAgentBox = new QComboBox(m_emboDialog);
+    for (cn::EmbolicAgent a : {cn::EmbolicAgent::Onyx, cn::EmbolicAgent::Squid,
+                               cn::EmbolicAgent::Phil, cn::EmbolicAgent::Glue})
+        m_emboAgentBox->addItem(QString::fromLatin1(cn::embolicAgentSpec(a).name),
+                                static_cast<int>(a));
+    emboLay->addWidget(m_emboAgentBox);
+
+    auto *emboNote = new QLabel(m_emboDialog);
+    emboNote->setWordWrap(true);
+    emboNote->setStyleSheet("color:#9B9B9B;");
+    emboLay->addWidget(emboNote);
+    auto updateEmboNote = [this, emboNote]{
+        const auto a = static_cast<cn::EmbolicAgent>(m_emboAgentBox->currentData().toInt());
+        emboNote->setText(QString::fromLatin1(cn::embolicAgentSpec(a).note));
+    };
+    connect(m_emboAgentBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [updateEmboNote](int){ updateEmboNote(); });
+    updateEmboNote();
+
+    m_emboStatusLabel = new QLabel(tr("Not started — position the catheter, then Begin."), m_emboDialog);
+    m_emboStatusLabel->setWordWrap(true);
+    emboLay->addWidget(m_emboStatusLabel);
+
+    auto *emboBtnRow = new QHBoxLayout();
+    auto *emboBegin  = new QPushButton(tr("Begin at catheter tip"), m_emboDialog);
+    m_emboInjectBtn  = new QPushButton(tr("Inject"), m_emboDialog);
+    m_emboResetBtn   = new QPushButton(tr("Reset"), m_emboDialog);
+    m_emboInjectBtn->setEnabled(false);
+    m_emboResetBtn->setEnabled(false);
+    connect(emboBegin,       &QPushButton::clicked, this, [this]{ onBeginEmbolization(); });
+    connect(m_emboInjectBtn, &QPushButton::clicked, this, [this]{ onInjectEmbolic(); });
+    connect(m_emboResetBtn,  &QPushButton::clicked, this, [this]{ onResetEmbolization(); });
+    emboBtnRow->addWidget(emboBegin);
+    emboBtnRow->addWidget(m_emboInjectBtn);
+    emboBtnRow->addWidget(m_emboResetBtn);
+    emboLay->addLayout(emboBtnRow);
+
+    // Changing agent mid-cast would silently reinterpret every link already
+    // grown under the old agent's resistance weighting - simplest correct
+    // rule is the same one changing a catheter's own shape uses elsewhere:
+    // disable the choice once a procedure step is actually underway.
+    connect(m_emboAgentBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int){ m_emboAgentBox->setEnabled(!m_emboli.active()); });
+
+    auto *emboBtns = new QDialogButtonBox(QDialogButtonBox::Close, m_emboDialog);
+    connect(emboBtns, &QDialogButtonBox::rejected, m_emboDialog, &QDialog::hide);
+    emboLay->addWidget(emboBtns);
+
+    // ── Contrast Injection ────────────────────────────────────────────────
+    // Three procedural phases, in the order a real diagnostic run actually
+    // happens: an angiogram before embolization, a flush to clear the field,
+    // then a second angiogram after — the only way to actually SEE whether
+    // the embolic cast blocked flow, per the request. Same non-modal,
+    // built-once pattern as the other two dialogs.
+    m_contrastDialog = new QDialog(this);
+    m_contrastDialog->setWindowTitle(tr("Contrast Injection"));
+    auto *conLay = new QVBoxLayout(m_contrastDialog);
+
+    m_contrastStatusLabel = new QLabel(
+        tr("Idle — position the catheter, then choose a phase below."), m_contrastDialog);
+    m_contrastStatusLabel->setWordWrap(true);
+    conLay->addWidget(m_contrastStatusLabel);
+
+    auto *phaseNote = new QLabel(m_contrastDialog);
+    phaseNote->setWordWrap(true);
+    phaseNote->setStyleSheet("color:#9B9B9B;");
+    phaseNote->setText(tr(
+        "Pre-Embolization Angiogram: contrast flows freely, showing the target "
+        "anatomy before treatment.\n"
+        "Flush: saline/DMSO clears the field — contrast drains rapidly rather "
+        "than washing out on its own.\n"
+        "Post-Embolization Angiogram: contrast is injected again from the same "
+        "tip — any embolic cast now genuinely blocks it from reaching the "
+        "target vessel, the same as a real check angiogram."));
+    conLay->addWidget(phaseNote);
+
+    auto *phaseRow = new QHBoxLayout();
+    auto *preBtn   = new QPushButton(tr("Pre-Embolization\nAngiogram"), m_contrastDialog);
+    auto *flushBtn = new QPushButton(tr("Flush"), m_contrastDialog);
+    auto *postBtn  = new QPushButton(tr("Post-Embolization\nAngiogram"), m_contrastDialog);
+    connect(preBtn,   &QPushButton::clicked, this,
+           [this]{ onBeginContrastPhase(cn::ContrastPhase::PreEmbolizationAngiogram); });
+    connect(flushBtn, &QPushButton::clicked, this,
+           [this]{ onBeginContrastPhase(cn::ContrastPhase::Flush); });
+    connect(postBtn,  &QPushButton::clicked, this,
+           [this]{ onBeginContrastPhase(cn::ContrastPhase::PostEmbolizationAngiogram); });
+    phaseRow->addWidget(preBtn);
+    phaseRow->addWidget(flushBtn);
+    phaseRow->addWidget(postBtn);
+    conLay->addLayout(phaseRow);
+
+    m_contrastInjectBtn = new QPushButton(tr("Inject"), m_contrastDialog);
+    m_contrastInjectBtn->setEnabled(false);
+    connect(m_contrastInjectBtn, &QPushButton::clicked, this, [this]{ onInjectContrast(); });
+    conLay->addWidget(m_contrastInjectBtn);
+
+    auto *conBtns = new QDialogButtonBox(QDialogButtonBox::Close, m_contrastDialog);
+    connect(conBtns, &QDialogButtonBox::rejected, m_contrastDialog, &QDialog::hide);
+    conLay->addWidget(conBtns);
+
+    // Procedure log removed from the UI. log() is guarded on a null m_log (see
+    // MainWindow::log at the bottom of this file), so every log(...) call site
+    // elsewhere in this file — telemetry, sheath/catheter selection, C-arm,
+    // contrast, embolic deployment, and so on — keeps running exactly as
+    // before; it simply has nowhere to display now.
+
+    // statusBar()->hide() used to sit here from when the status bar carried
+    // nothing but leftover instructions text ("instructions in Help menu").
+    // It now carries the real System Status bar (SYSTEM STATUS/DOSE/AIR
+    // KERMA/TOTAL FLUORO TIME/LAST IMAGE/clock) built earlier in this
+    // function - hiding it here was undoing that entirely, which is exactly
+    // why it looked like the bar was never created at all.
+=======
     pVL->addWidget(calBox);
 
     // ── Catheter navigation ────────────────────────────────────────────────
@@ -775,6 +1875,7 @@ void MainWindow::buildUi() {
     addDockWidget(Qt::RightDockWidgetArea, dock);
 
     statusBar()->hide();   // status bar hidden — instructions in Help menu
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     updateDeviceGating();
 }
 
@@ -789,6 +1890,22 @@ void MainWindow::onOpenFile() {
 }
 
 void MainWindow::tryAutoLoad() {
+<<<<<<< HEAD
+    // Search for the vessel STL next to the executable — exactly where
+    // CMakeLists.txt's post-build step copies it (its `_asset` foreach lists
+    // Vessel.stl by that exact name) — and in Data/3D/ as a fallback for a
+    // non-packaged dev build. Previously searched for
+    // "Simplified_Vessel_2.stl"/"Vessel_Reconstructed.stl", names that never
+    // matched the actual shipped asset at all: auto-load silently fell
+    // through to "no vessel found" on every single launch, not just this one.
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidates = {
+        appDir + "/Vessel.stl",
+        appDir + "/Data/3D/Vessel.stl",
+        appDir + "/../Data/3D/Vessel.stl",
+        appDir + "/../../Data/3D/Vessel.stl",
+        appDir + "/../../../Data/3D/Vessel.stl",
+=======
     // Search for the vessel STL next to the executable and in Data/3D/.
     // Priority: Vessel_Reconstructed.stl (new) before simplified_branches_.stl (legacy).
     // No hardcoded paths in main.cpp — discovery lives here where loadMesh() also lives.
@@ -799,6 +1916,7 @@ void MainWindow::tryAutoLoad() {
         appDir + "/../Data/3D/Simplified_Vessel_2.stl",
         appDir + "/../../Data/3D/Simplified_Vessel_2.stl",
         appDir + "/../../../Data/3D/Vessel_Reconstructed.stl",
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     };
     for (const QString &p : candidates) {
         if (QFileInfo::exists(p)) {
@@ -835,15 +1953,39 @@ void MainWindow::extractCenterline() {
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QElapsedTimer t; t.start();
 
+<<<<<<< HEAD
+    // ── Try pre-computed VTP centerline first (Vessel_centerlines.vtp) ──────
+    // The VTP file must sit alongside the STL or in Data/3D.
+    // If found: load directly (fast path — no geodesic extraction needed).
+=======
     // ── Try pre-computed VTP centerline first (FullVasculature_Centerlines.vtp) ──
     // The VTP file must sit alongside the STL or in Data/3D.
     // If found: load directly (instant, 192K points, 1333 branches).
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // If not: fall back to geodesic extraction from the STL.
     bool ok = false;
     bool usedVtp = false;
 
     // Build candidate VTP paths from the loaded STL location
     const QString appDir = QCoreApplication::applicationDirPath();
+<<<<<<< HEAD
+    // Search for VTP next to the STL and next to the executable. Previously
+    // searched for "Simplified_Vessel_2_centerlines.vtp" — the same stale-
+    // filename bug as tryAutoLoad()'s STL search: it never matched the
+    // actual shipped asset (Vessel_centerlines.vtp), so this fast path has
+    // never actually been reached; every load fell straight through to the
+    // slower geodesic extraction below regardless of whether a usable VTP
+    // was sitting right there.
+    const QString stlDir = m_bodyMeshDir;
+    const QStringList vtpCandidates = {
+        stlDir  + "/Vessel_centerlines.vtp",
+        appDir  + "/Vessel_centerlines.vtp",
+        appDir  + "/Data/3D/Vessel_centerlines.vtp",
+        appDir  + "/../Data/3D/Vessel_centerlines.vtp",
+        appDir  + "/../../Data/3D/Vessel_centerlines.vtp",
+        appDir  + "/../../../Data/3D/Vessel_centerlines.vtp",
+        appDir  + "/../../../../Data/3D/Vessel_centerlines.vtp",
+=======
     // Search for VTP next to the STL and next to the executable
     const QString stlDir = m_bodyMeshDir;
     const QStringList vtpCandidates = {
@@ -854,6 +1996,7 @@ void MainWindow::extractCenterline() {
         appDir  + "/../../Data/3D/Simplified_Vessel_2_centerlines.vtp",
         appDir  + "/../../../Data/3D/Simplified_Vessel_2_centerlines.vtp",
         appDir  + "/../../../../Data/3D/Simplified_Vessel_2_centerlines.vtp",
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     };
     // Log every candidate path with its exists status for diagnosis
     for (const QString &p : vtpCandidates) {
@@ -984,6 +2127,23 @@ void MainWindow::loadBodyMeshes() {
     const QString skel = find("Skeletal.stl");
     if (!mus.isEmpty() || !skel.isEmpty()) {
         m_quad->setBodyMeshes(mus, skel);
+<<<<<<< HEAD
+        // Every view starts with the same hardcoded BodyAlign defaults, so
+        // this is a no-op today - but only because nothing currently calls
+        // VesselView::nudgeBodyLayers() (a per-instance fine-tune already
+        // built into VesselView) or otherwise diverges the two. Explicitly
+        // reading the alignment back from the reference view (m_view) and
+        // pushing it to every view via QuadPanel::setBodyAlignment() -
+        // which already exists specifically to keep this from drifting,
+        // per its own comment ("has to be pushed to each of them or the 3D
+        // and Fluoro views drift apart") - turns "muscular/skeletal align
+        // identically everywhere" into something this code actually
+        // enforces, rather than an invariant that only holds by accident of
+        // nothing having touched it yet.
+        if (m_view)
+            m_quad->setBodyAlignment(m_view->muscularAlignment(), m_view->skeletalAlignment());
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         log(tr("Body meshes: Muscular=%1  Skeletal=%2 — skeleton aligned inside vessel envelope.")
                 .arg(mus.isEmpty() ? "not found" : "ok")
                 .arg(skel.isEmpty() ? "not found" : "ok"));
@@ -1034,17 +2194,42 @@ void MainWindow::resolveAccessSites() {
     }
     // Initialise SheathManager with verified paths for all resolved sites
     m_sheath.init(&m_graph, m_sites, m_mmPerUnit);
+<<<<<<< HEAD
+    // Embolisation Module casts grow over this same graph.
+    m_emboli.setGraph(&m_graph);
+    // Contrast Injection floods the same graph too.
+    m_contrastModel.setGraph(&m_graph);
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // No auto-selection: the catheter only positions once a sheath is chosen.
     // The instruction line that used to be written to m_emboLabel here has been
     // removed; the label keeps the step text it was built with. Nothing about
     // access-site resolution or sheath selection changes — m_sites is still
     // populated above and SheathManager still holds a verified path per site.
+<<<<<<< HEAD
+    // Default focus/zoom on startup is the Head-Sagittal view (per explicit
+    // request), for every view at once. showHeadSagittal() emits
+    // cameraChanged(), and buildUi()'s camera-sync wiring (syncAllCameras)
+    // is SUPPOSED to propagate that to every other linked view from this one
+    // call alone - but confirmed screenshots showed Fluoro still landing on
+    // a completely different, zoomed-out framing at startup despite that
+    // wiring appearing correct on inspection. Rather than continue relying
+    // solely on the emit reaching a connected slot (whatever subtle timing
+    // issue might be preventing that in this one specific case), this now
+    // ALSO explicitly, directly syncs every other view's camera right here -
+    // a guarantee that does not depend on any signal/slot connection firing
+    // at all, on top of whatever the emit-based path already does.
+    m_view->showHeadSagittal();
+    for (VesselView *v : {m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v && v != m_view) v->syncCameraFrom(*m_view);
+=======
     m_view->showWholeVessel();
     m_quad->viewMesh()->showWholeVessel();
     m_quad->viewDSA()->showWholeVessel();
     // Fluoro view frames the head/brain region by default (AP, 8° FOV, zoomed)
     m_quad->viewFluoro()->showFluoroDefault();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void MainWindow::autoCalibrate() {
@@ -1167,7 +2352,12 @@ void MainWindow::showInsertionDialog() {
 // and segment size drive trackability, and the resting curve is what lets a
 // Cobra C2 select a branch a straight guide would slide past.
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
+bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &sizeLabel,
+                                   const QString &tipShapeName) {
+=======
 bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &sizeLabel) {
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const cn::CatheterSpec *spec = cn::findCatheter(displayName.toUtf8().constData());
     if (!spec) {
         log(tr("Unknown device \"%1\" — not in the catalogue.").arg(displayName));
@@ -1190,8 +2380,45 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
 
     cn::CatheterModel::Params p =
         cn::catheterParams(*spec, sizeIdx, static_cast<float>(m_mmPerUnit));
+<<<<<<< HEAD
+
+    // The diagnostic-catheter body carries no fixed curve of its own (see
+    // CatheterCatalog.cpp) — the shape picked in Catheter Selection is what
+    // actually bends the tip. Every other device keeps the fixed curve
+    // catheterParams() already read out of its own catalogue entry, so
+    // tipShapeName is simply ignored for those.
+    QString appliedShape;
+    if (spec->devClass == cn::DeviceClass::BaseGuide) {
+        const cn::TipShapeDef *shape = cn::findTipShape(tipShapeName.toUtf8().constData());
+        if (!shape) {
+            // Fall back to the first catalogued shape rather than leaving the
+            // tip perfectly straight, which would silently look like "no
+            // device selected" in the viewport.
+            size_t n = 0;
+            shape = &cn::tipShapeCatalog(n)[0];
+        }
+        p = cn::applyTipShape(p, *shape, static_cast<float>(m_mmPerUnit));
+        appliedShape = QString::fromLatin1(shape->name);
+    }
+    m_activeTipShape = appliedShape;
+
+    // Keep the containment settings the console already uses.
+    //
+    // A genuine VALUE copy, not a reference: this is read again further
+    // down, after m_catheter.setParams(p) below has already overwritten
+    // m_catheter's own internal params storage with the NEW device's
+    // values. A reference bound here would silently start reflecting that
+    // new value too, at the exact spot (the parked-device snapshot) that
+    // most needs the OLD device's params - which is exactly what was
+    // happening: the "frozen" guide catheter left behind on telescoping was
+    // being built from the microcatheter's own radius/stiffness/tip curve
+    // instead of the guide's, because CatheterModel(m_catheter.params())
+    // below was reading the value AFTER it had already been overwritten.
+    const cn::CatheterModel::Params old = m_catheter.params();
+=======
     // Keep the containment settings the console already uses.
     const cn::CatheterModel::Params &old = m_catheter.params();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     p.wallSafety      = old.wallSafety;
     p.clampToLumen    = old.clampToLumen;
     p.fitToLumen      = old.fitToLumen;
@@ -1215,7 +2442,20 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
         deviceStackLevel(spec->devClass) > deviceStackLevel(m_activeSpec->devClass);
 
     if (telescoping) {
+<<<<<<< HEAD
+        // `old`, not m_catheter.params(): the live object's params were
+        // already overwritten with the NEW device's values two lines above,
+        // via setParams(p). Reading m_catheter.params() here (as this used
+        // to) silently built the parked "guide" snapshot out of the
+        // microcatheter's own physical properties instead of the guide's
+        // own - same depth/path, but the wrong radius, stiffness, and tip
+        // shape, which is exactly the kind of change that reads as "the
+        // guide catheter moved/reset" even though its position value never
+        // actually did.
+        auto parked = std::make_unique<cn::CatheterModel>(old);
+=======
         auto parked = std::make_unique<cn::CatheterModel>(m_catheter.params());
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         parked->setGraph(&m_graph);
         parked->setPath(m_nav.path());
         parked->setInsertionDepth(m_nav.depth());
@@ -1245,9 +2485,23 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
     std::vector<const cn::CatheterModel *> hosts;
     hosts.reserve(m_parkedDevices.size());
     for (const auto &d : m_parkedDevices) hosts.push_back(d.get());
+<<<<<<< HEAD
+    const bool isMicrocatheter = (spec->devClass == cn::DeviceClass::Microcatheter);
+    const QVector3D deviceColour(spec->colour[0], spec->colour[1], spec->colour[2]);
     for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()}) {
         v->setDevice(&m_catheter);
         v->setHostDevices(hosts);
+        v->setDeviceIsMicrocatheter(isMicrocatheter);
+        v->setDeviceColor(deviceColour);
+        // Already 0.f when not telescoping, the host's own tip depth when
+        // it is - see VesselView::setDeviceHiddenBehindDepth()'s own
+        // comment for why the active device's shaft needs this at all.
+        v->setDeviceHiddenBehindDepth(m_coaxialBaseDepth);
+=======
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()}) {
+        v->setDevice(&m_catheter);
+        v->setHostDevices(hosts);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 
     updateDeviceGating();
@@ -1256,7 +2510,11 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
     m_catheter.setInsertionDepth(m_nav.depth());
     syncDevices();
 
+<<<<<<< HEAD
+    log(tr("%1 %2 (%3, %4) — %5 Fr, ⌀%6 mm OD, %7 mm lumen, %8 cm.%9 %10")
+=======
     log(tr("%1 %2 (%3, %4) — %5 Fr, ⌀%6 mm OD, %7 mm lumen, %8 cm. %9")
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             .arg(displayName)
             .arg(QString::fromLatin1(sz.label))
             .arg(QString::fromLatin1(spec->maker))
@@ -1265,6 +2523,10 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
             .arg(sz.outerDiaMm, 0, 'f', 2)
             .arg(sz.innerDiaMm, 0, 'f', 2)
             .arg(sz.workingLenCm, 0, 'f', 0)
+<<<<<<< HEAD
+            .arg(appliedShape.isEmpty() ? QString() : tr(" Tip shape: %1.").arg(appliedShape))
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             .arg(QString::fromLatin1(spec->note)));
     return true;
 }
@@ -1272,9 +2534,15 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
 // Enables navigation only when there is both an access and a device in it, and
 // keeps the two status read-outs in step.
 void MainWindow::updateDeviceGating() {
+<<<<<<< HEAD
+    // Advance/Retract/Left/Right have no buttons to enable — the I/K/J/L
+    // shortcuts call handlers that already gate themselves on m_ready /
+    // decisionPending, so there is nothing to toggle here for them.
+=======
     const bool canNavigate = m_sheathReady && m_catheterReady;
     for (QPushButton *b : {m_btnAdvance, m_btnRetract, m_btnLeft, m_btnRight})
         if (b) b->setEnabled(canNavigate);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (m_btnCatheterSelect) m_btnCatheterSelect->setEnabled(m_sheathReady);
 
     if (m_fSheath) {
@@ -1291,7 +2559,15 @@ void MainWindow::updateDeviceGating() {
     const cn::CatheterSpec *s = m_catheterReady
                                     ? cn::findCatheter(m_activeCatheter.toUtf8().constData())
                                     : nullptr;
+<<<<<<< HEAD
+    if (m_fDevModel)
+        m_fDevModel->setText(s ? (m_activeTipShape.isEmpty()
+                                     ? m_activeCatheter
+                                     : tr("%1 — %2").arg(m_activeCatheter, m_activeTipShape))
+                              : tr("no catheter"));
+=======
     if (m_fDevModel) m_fDevModel->setText(s ? m_activeCatheter : tr("no catheter"));
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Track the French combo to the loaded device without re-triggering it.
     if (m_frCombo && s) {
@@ -1353,12 +2629,33 @@ void MainWindow::showCatheterSelectionMenu() {
 void MainWindow::showDeviceSpecDialog(const QString &stageName) {
     QDialog dlg(this);
     dlg.setWindowTitle(stageName + tr(" — Device Selection"));
+<<<<<<< HEAD
+    // +40 px over the previous fixed height: room for the tip-shape row,
+    // shown only when the diagnostic-catheter body is selected.
+    dlg.setFixedSize(400, 340);
+=======
     dlg.setFixedSize(400, 300);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     auto *lay = new QVBoxLayout(&dlg);
     lay->addWidget(new QLabel(tr("Select the %1:").arg(stageName), &dlg));
 
     auto *typeBox = new QComboBox(&dlg);
     auto *sizeBox = new QComboBox(&dlg);
+<<<<<<< HEAD
+    // Tip-shape picker — only meaningful for the diagnostic-catheter body
+    // (DeviceClass::BaseGuide); every other device carries its own fixed
+    // shape in the catalogue. Created up front and shown/hidden as the model
+    // selection changes, rather than rebuilding the dialog layout each time.
+    auto *shapeBox = new QComboBox(&dlg);
+    auto *shapeLabel = new QLabel(tr("Tip shape:"), &dlg);
+    {
+        size_t n = 0;
+        const cn::TipShapeDef *shapes = cn::tipShapeCatalog(n);
+        for (size_t i = 0; i < n; ++i)
+            shapeBox->addItem(QString::fromLatin1(shapes[i].name));
+    }
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // The size list is a property of the device, not of the stage: a Sofia comes
     // in 5 Fr / 6 Fr / 6 Fr Plus and an Envoy DA in 5/6/7 Fr, and each of those
     // has its own outer diameter, lumen and working length. A fixed list of
@@ -1434,15 +2731,40 @@ void MainWindow::showDeviceSpecDialog(const QString &stageName) {
                                .arg(QString::fromLatin1(s->note))
                                .arg(fit));
     };
+<<<<<<< HEAD
+    // Shows the shape picker only when the selected model is the diagnostic-
+    // catheter body — DeviceClass::BaseGuide is what carries no fixed curve
+    // of its own (see CatheterCatalog.cpp), so it is the only case where a
+    // shape choice means anything. Also refreshes the shape note text so the
+    // operator sees what the currently-highlighted shape actually looks like,
+    // the same live read-out `describe` already gives the device dimensions.
+    auto updateShapeVisibility = [shapeBox, shapeLabel](const QString &nm) {
+        const cn::CatheterSpec *s = cn::findCatheter(nm.toUtf8().constData());
+        const bool isDiagnostic = s && s->devClass == cn::DeviceClass::BaseGuide;
+        shapeBox->setVisible(isDiagnostic);
+        shapeLabel->setVisible(isDiagnostic);
+    };
+    connect(typeBox, &QComboBox::currentTextChanged, &dlg,
+            [&](const QString &nm){ repopulateSizes(nm); describe(nm); updateShapeVisibility(nm); });
+=======
     connect(typeBox, &QComboBox::currentTextChanged, &dlg,
             [&](const QString &nm){ repopulateSizes(nm); describe(nm); });
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     connect(sizeBox, &QComboBox::currentTextChanged, &dlg,
             [&](const QString &){ describe(typeBox->currentText()); });
     repopulateSizes(typeBox->currentText());
     describe(typeBox->currentText());
+<<<<<<< HEAD
+    updateShapeVisibility(typeBox->currentText());
     lay->addWidget(specLabel);
 
     lay->addWidget(new QLabel(tr("Size:"), &dlg)); lay->addWidget(sizeBox);
+    lay->addWidget(shapeLabel); lay->addWidget(shapeBox);
+=======
+    lay->addWidget(specLabel);
+
+    lay->addWidget(new QLabel(tr("Size:"), &dlg)); lay->addWidget(sizeBox);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     QComboBox *tipBox = nullptr;
     if (stageName.contains("Wire", Qt::CaseInsensitive)) {
@@ -1469,15 +2791,39 @@ void MainWindow::showDeviceSpecDialog(const QString &stageName) {
         m_deviceSpec.coilType       = agentBox ? agentBox->currentText() : tr("—");
         if (tipBox) m_deviceSpec.wireTipShape = tipBox->currentText();
 
+<<<<<<< HEAD
+        // NOT shapeBox->isVisible(): QDialog::accept() has already hidden the
+        // dialog and every child widget by the time dlg.exec() returns, so a
+        // widget's own visibility is always false here regardless of what it
+        // showed while the dialog was open — that was silently discarding
+        // every shape choice and falling back to the first catalogue shape
+        // every time. The devClass check below is what visibility was really
+        // standing in for, and it isn't affected by the dialog having closed.
+        const cn::CatheterSpec *chosen =
+            cn::findCatheter(typeBox->currentText().toUtf8().constData());
+        const bool isDiagnostic = chosen && chosen->devClass == cn::DeviceClass::BaseGuide;
+        const QString shapeName = isDiagnostic ? shapeBox->currentText() : QString();
+
+        // Anything that is not the access sheath becomes the live device.
+        // Choosing "Sofia 6F" now actually loads a 2.11 mm catheter with a
+        // 16-segment compliant tip, not just a string for the log. Choosing
+        // the diagnostic-catheter body additionally bakes on whichever named
+        // shape (SIM2, CK1, ...) was picked above.
+        if (!stageName.contains("Sheath", Qt::CaseInsensitive))
+            applyCatheterSpec(m_deviceSpec.catheterType, m_deviceSpec.catheterSizeFr, shapeName);
+=======
         // Anything that is not the access sheath becomes the live device.
         // Choosing "Sofia 6F" now actually loads a 2.11 mm catheter with a
         // 16-segment compliant tip, not just a string for the log.
         if (!stageName.contains("Sheath", Qt::CaseInsensitive))
             applyCatheterSpec(m_deviceSpec.catheterType, m_deviceSpec.catheterSizeFr);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
+=======
 // Contrast injection — same dialog as old project
 // ─────────────────────────────────────────────────────────────────────────────
 void MainWindow::onContrastInjection() {
@@ -1546,6 +2892,7 @@ bool MainWindow::showContrastControlDialog() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 // Road Map / DSA — same visual-mode logic as old project
 // ─────────────────────────────────────────────────────────────────────────────
 void MainWindow::onRoadMap() {
@@ -1586,14 +2933,422 @@ void MainWindow::onDeployEmbolic(const QString &agent) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
+// Embolisation Module — real cast growth, shared by every view.
+//
+// Deliberately separate from onDeployEmbolic() above (the Contrast Injection
+// dialog's own "agent" dropdown): that path is untouched by this feature,
+// per the request to build on top of the existing intervention system
+// without changing what is already there. This module drives
+// cn::EmbolizationModel directly, and every view renders that one shared
+// instance exactly the way every view already renders the one shared
+// m_catheter — see EmbolizationModel's own class comment for why that
+// guarantees the 3D and Fluoro panes can never disagree about the cast.
+// ─────────────────────────────────────────────────────────────────────────────
+void MainWindow::showEmbolizationDialog() {
+    if (!m_emboDialog) return;
+    if (m_emboAgentBox) m_emboAgentBox->setEnabled(!m_emboli.active());
+    m_emboDialog->show();
+    m_emboDialog->raise();
+    m_emboDialog->activateWindow();
+}
+
+int32_t MainWindow::findProximalNeighbor(int32_t tipNode) const {
+    if (tipNode < 0 || m_activeSite < 0 || m_activeSite >= static_cast<int>(m_sites.size()))
+        return -1;
+    const int32_t accessNode = m_sites[m_activeSite].node;
+    const std::vector<float> dist = m_graph.distancesFrom(accessNode);
+    if (static_cast<size_t>(tipNode) >= dist.size()) return -1;
+    const float tipDist = dist[static_cast<size_t>(tipNode)];
+
+    // Among the tip's own graph neighbors, whichever is genuinely CLOSER to
+    // the access site than the tip itself is the direction the catheter
+    // arrived FROM — the one segment its own body currently occupies. If
+    // several qualify (a complex junction), the closest-to-access one is
+    // the most direct "back the way it came" choice.
+    int32_t best = -1;
+    float bestDist = tipDist;
+    for (int32_t n : m_graph.neighbours(tipNode)) {
+        if (static_cast<size_t>(n) >= dist.size()) continue;
+        if (dist[static_cast<size_t>(n)] < bestDist) {
+            bestDist = dist[static_cast<size_t>(n)];
+            best = n;
+        }
+    }
+    return best;
+}
+
+void MainWindow::onBeginEmbolization() {
+    // The catheter tip's current graph node — the same field the telemetry
+    // read-out and branch-id display already use, so "where the tip is" is
+    // never a second, independently-tracked notion of position.
+    const int32_t tipNode = m_catheter.state().currentNodeId;
+    if (tipNode < 0) {
+        if (m_emboStatusLabel)
+            m_emboStatusLabel->setText(
+                tr("No catheter tip position available — advance the catheter into the vessel first."));
+        return;
+    }
+    if (!m_emboAgentBox) return;
+    const auto agent = static_cast<cn::EmbolicAgent>(m_emboAgentBox->currentData().toInt());
+    m_emboli.setAgent(agent);
+    m_emboli.begin(tipNode, findProximalNeighbor(tipNode));
+
+    if (m_emboAgentBox)  m_emboAgentBox->setEnabled(false);
+    if (m_emboInjectBtn) m_emboInjectBtn->setEnabled(true);
+    if (m_emboResetBtn)  m_emboResetBtn->setEnabled(true);
+    if (m_quickEmboAgentBox) {
+        const QSignalBlocker block(m_quickEmboAgentBox);
+        const int idx = m_quickEmboAgentBox->findData(static_cast<int>(agent));
+        if (idx >= 0) m_quickEmboAgentBox->setCurrentIndex(idx);
+        m_quickEmboAgentBox->setEnabled(false);
+    }
+    updateEmboliReadout();
+    refreshEmboliViews();
+    log(tr("[%1] Embolisation started — %2 at node %3")
+            .arg(QTime::currentTime().toString("HH:mm:ss"),
+                 QString::fromLatin1(cn::embolicAgentSpec(agent).name))
+            .arg(tipNode));
+}
+
+void MainWindow::onInjectEmbolic() {
+    if (!m_emboli.active()) return;
+    // One fixed increment per press — the same "one discrete unit per
+    // operator action" convention m_stepSpin already uses for catheter
+    // advancement, rather than a continuous slider that would make the
+    // exact injected volume hard to reason about from the log/read-out.
+    constexpr float kInjectStep = 1.0f;
+    m_emboli.inject(kInjectStep);
+    updateEmboliReadout();
+    refreshEmboliViews();
+}
+
+void MainWindow::onResetEmbolization() {
+    m_emboli.reset();
+    if (m_emboAgentBox)      m_emboAgentBox->setEnabled(true);
+    if (m_emboInjectBtn)     m_emboInjectBtn->setEnabled(false);
+    if (m_emboResetBtn)      m_emboResetBtn->setEnabled(false);
+    if (m_quickEmboAgentBox) m_quickEmboAgentBox->setEnabled(true);
+    if (m_emboStatusLabel)
+        m_emboStatusLabel->setText(tr("Not started — position the catheter, then Begin."));
+    refreshEmboliViews();
+    log(tr("[%1] Embolisation reset").arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
+void MainWindow::updateEmboliReadout() {
+    if (!m_emboStatusLabel) return;
+    const auto &st = m_emboli.state();
+    if (!st.active) {
+        m_emboStatusLabel->setText(tr("Not started — position the catheter, then Begin."));
+        return;
+    }
+    const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli.agent());
+    m_emboStatusLabel->setText(
+        tr("%1 — %2 injected, cast reach %3 mm, %4 vessel segment(s)")
+            .arg(QString::fromLatin1(spec.name))
+            .arg(st.volumeInjected, 0, 'f', 1)
+            .arg(st.filledArcLength * m_mmPerUnit, 0, 'f', 1)
+            .arg(st.links.size()));
+}
+
+void MainWindow::refreshEmboliViews() {
+    // Same fan-out as every other shared-model update (setDevice, contrast,
+    // road map): every view that can show anatomy gets told to redraw.
+    // Mesh/DSA are aliases of the 3D view, so this costs nothing extra for
+    // them - it is the Fluoro call that matters, and it is genuinely
+    // necessary: Fluoro would otherwise not repaint until something else
+    // (e.g. the cardiac timer) happened to trigger it.
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->refreshEmbolization();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Embedded quick-inject Embolic Agent panel (sidebar) — drives the exact same
+// m_emboli the Embolisation Module dialog does. See that dialog's own
+// onBeginEmbolization()/onInjectEmbolic() for the "advanced" equivalents;
+// this is the reference design's fast path (dropdown + volume + one button).
+// ─────────────────────────────────────────────────────────────────────────────
+void MainWindow::onQuickEmboVolumeStep(float deltaMl) {
+    m_quickEmboVolumeMl = std::clamp(m_quickEmboVolumeMl + deltaMl, 0.02f, 2.0f);
+    if (m_quickEmboVolumeLabel)
+        m_quickEmboVolumeLabel->setText(tr("%1 mL").arg(m_quickEmboVolumeMl, 0, 'f', 2));
+}
+
+void MainWindow::onQuickEmboInject() {
+    if (!m_quickEmboAgentBox) return;
+    const auto agent = static_cast<cn::EmbolicAgent>(m_quickEmboAgentBox->currentData().toInt());
+
+    if (!m_emboli.active()) {
+        // First press starts the cast, exactly like the dialog's own "Begin
+        // at catheter tip" - the reference design has no separate Begin
+        // button, so INJECT itself has to do both jobs on its first press.
+        const int32_t tipNode = m_catheter.state().currentNodeId;
+        if (tipNode < 0) {
+            log(tr("[%1] Cannot inject — no catheter tip position available.")
+                    .arg(QTime::currentTime().toString("HH:mm:ss")));
+            return;
+        }
+        m_emboli.setAgent(agent);
+        m_emboli.begin(tipNode, findProximalNeighbor(tipNode));
+
+        // Keep the Embolisation Module dialog's own combo/buttons in sync,
+        // since both panels drive the one shared model.
+        if (m_emboAgentBox) {
+            const QSignalBlocker block(m_emboAgentBox);
+            const int idx = m_emboAgentBox->findData(static_cast<int>(agent));
+            if (idx >= 0) m_emboAgentBox->setCurrentIndex(idx);
+            m_emboAgentBox->setEnabled(false);
+        }
+        if (m_emboInjectBtn) m_emboInjectBtn->setEnabled(true);
+        if (m_emboResetBtn)  m_emboResetBtn->setEnabled(true);
+        m_quickEmboAgentBox->setEnabled(false);
+
+        log(tr("[%1] Embolisation started — %2 at node %3")
+                .arg(QTime::currentTime().toString("HH:mm:ss"),
+                     QString::fromLatin1(cn::embolicAgentSpec(agent).name))
+                .arg(tipNode));
+    }
+
+    // Scale the displayed mL value into the model's own arbitrary injection
+    // unit - same order of magnitude as the dialog's fixed 1.0-per-press
+    // step (EmbolizationModel::inject()'s own unit note explains why there
+    // is no real fluid-volume model to convert against here).
+    m_emboli.inject(m_quickEmboVolumeMl * 10.f);
+    updateEmboliReadout();
+    refreshEmboliViews();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Top header bar actions
+// ─────────────────────────────────────────────────────────────────────────────
+void MainWindow::onScreenshot() {
+    // Captures whichever pane is actually the current display mode - Fluoro
+    // if that tile is checked, the 3D/Mesh/DSA view (all the same VesselView
+    // instance) otherwise.
+    QOpenGLWidget *target = (m_viewTiles[1] && m_viewTiles[1]->isChecked())
+                                ? static_cast<QOpenGLWidget *>(m_quad->viewFluoro())
+                                : static_cast<QOpenGLWidget *>(m_view);
+    if (!target) return;
+
+    const QImage img = CineViewStudio::captureWidgetFrame(target);
+    if (img.isNull()) {
+        log(tr("[%1] Screenshot failed — no frame captured.")
+                .arg(QTime::currentTime().toString("HH:mm:ss")));
+        return;
+    }
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Save Screenshot"),
+        QDir::homePath() + "/CathTrainVR_Screenshot_" +
+            QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".png",
+        tr("PNG Image (*.png)"));
+    if (path.isEmpty()) return;
+
+    if (img.save(path)) {
+        m_hasLastImage = true;
+        m_lastImageClock.restart();
+        log(tr("[%1] Screenshot saved to %2")
+                .arg(QTime::currentTime().toString("HH:mm:ss"), path));
+    } else {
+        log(tr("[%1] Screenshot save failed: %2")
+                .arg(QTime::currentTime().toString("HH:mm:ss"), path));
+    }
+}
+
+void MainWindow::onGenerateReport() {
+    // A genuine summary of real app state, not a templated mock-up - every
+    // line here is read from the same fields the Procedure Info/Device
+    // Status cards already display.
+    QString report;
+    report += tr("CathTrainVR Procedure Report\n");
+    report += tr("Generated: %1\n\n").arg(QDateTime::currentDateTime().toString());
+    report += tr("Access:   %1\n").arg(m_fAccess ? m_fAccess->text() : tr("not established"));
+    report += tr("Sheath:   %1\n").arg(m_fSheath ? m_fSheath->text() : tr("no sheath"));
+    report += tr("Catheter: %1\n").arg(m_fCatheter ? m_fCatheter->text() : tr("no catheter"));
+    report += tr("Branch: %1   Turns: %2   Depth: %3\n")
+                  .arg(m_fBranch ? m_fBranch->text() : tr("-"),
+                       m_fTurns ? m_fTurns->text() : tr("-"),
+                       m_fDepth ? m_fDepth->text() : tr("-"));
+
+    if (m_emboli.active()) {
+        const auto &st = m_emboli.state();
+        report += tr("\nEmbolic Agent: %1\n")
+                      .arg(QString::fromLatin1(cn::embolicAgentSpec(m_emboli.agent()).name));
+        report += tr("Volume injected: %1\n").arg(st.volumeInjected, 0, 'f', 2);
+        report += tr("Cast reach: %1 mm across %2 vessel segment(s)\n")
+                      .arg(st.filledArcLength * m_mmPerUnit, 0, 'f', 1)
+                      .arg(st.links.size());
+    } else {
+        report += tr("\nEmbolic Agent: not started\n");
+    }
+
+    if (m_contrastModel.phase() != cn::ContrastPhase::Idle) {
+        const auto &cst = m_contrastModel.state();
+        report += tr("\nContrast: last phase active, %1 injected, reach %2 mm\n")
+                      .arg(cst.volumeInjected, 0, 'f', 1)
+                      .arg(cst.filledArcLength * m_mmPerUnit, 0, 'f', 1);
+    }
+
+    QMessageBox::information(this, tr("Procedure Report"), report);
+    log(tr("[%1] Report generated").arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
+void MainWindow::onEndProcedure() {
+    if (QMessageBox::question(
+            this, tr("End Procedure"),
+            tr("End the current procedure? This resets embolisation and contrast state "
+               "and restarts the procedure timer."),
+            QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
+        return;
+
+    m_emboli.reset();
+    m_contrastModel.reset();
+    refreshEmboliViews();
+    refreshContrastViews();
+    updateEmboliReadout();
+    updateContrastReadout();
+
+    if (m_emboAgentBox)      m_emboAgentBox->setEnabled(true);
+    if (m_emboInjectBtn)     m_emboInjectBtn->setEnabled(false);
+    if (m_emboResetBtn)      m_emboResetBtn->setEnabled(false);
+    if (m_quickEmboAgentBox) m_quickEmboAgentBox->setEnabled(true);
+
+    stopCineRecording();
+
+    m_procedureClock.restart();
+    log(tr("[%1] Procedure ended — embolisation/contrast state reset.")
+            .arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contrast Injection — real 3-phase procedural simulation, sharing the same
+// architecture as the Embolisation Module above (one model instance, every
+// view renders that same instance). See ContrastInjectionModel's own class
+// comment for why occlusion-blocking is a mechanistic graph property here,
+// not a scripted before/after swap.
+// ─────────────────────────────────────────────────────────────────────────────
+void MainWindow::showContrastInjectionDialog() {
+    if (!m_contrastDialog) return;
+    m_contrastDialog->show();
+    m_contrastDialog->raise();
+    m_contrastDialog->activateWindow();
+}
+
+void MainWindow::onBeginContrastPhase(cn::ContrastPhase phase) {
+    using cn::ContrastPhase;
+
+    if (phase == ContrastPhase::Flush) {
+        m_contrastModel.beginPhase(ContrastPhase::Flush);
+        if (m_contrastInjectBtn) m_contrastInjectBtn->setEnabled(false);
+        updateContrastReadout();
+        refreshContrastViews();
+        log(tr("[%1] Contrast — flush started").arg(QTime::currentTime().toString("HH:mm:ss")));
+        return;
+    }
+
+    // Both angiogram phases start from the catheter tip's current graph
+    // node — the exact same field the Embolisation Module and the console's
+    // own telemetry read-out already use as "where the tip is".
+    const int32_t tipNode = m_catheter.state().currentNodeId;
+    if (tipNode < 0) {
+        if (m_contrastStatusLabel)
+            m_contrastStatusLabel->setText(
+                tr("No catheter tip position available — advance the catheter into the vessel first."));
+        return;
+    }
+
+    m_contrastModel.beginPhase(phase, tipNode);
+    if (m_contrastInjectBtn) m_contrastInjectBtn->setEnabled(true);
+    updateContrastReadout();
+    refreshContrastViews();
+
+    // A real Cine run starts with the diagnostic angiogram, not with the
+    // operator remembering to open Cine Studio separately - starting here
+    // means the pre-embo -> intervention -> post-embo progression the
+    // recording shows is exactly what actually happened, in order.
+    if (phase == ContrastPhase::PreEmbolizationAngiogram)
+        startCineRecordingIfNeeded();
+
+    const bool isPost = (phase == ContrastPhase::PostEmbolizationAngiogram);
+    log(tr("[%1] Contrast — %2 started at node %3")
+            .arg(QTime::currentTime().toString("HH:mm:ss"),
+                 isPost ? tr("post-embolization angiogram") : tr("pre-embolization angiogram"))
+            .arg(tipNode));
+}
+
+void MainWindow::onInjectContrast() {
+    using cn::ContrastPhase;
+    if (m_contrastModel.phase() != ContrastPhase::PreEmbolizationAngiogram &&
+        m_contrastModel.phase() != ContrastPhase::PostEmbolizationAngiogram)
+        return;
+    // Contrast is thin and advances fast — a single press is a deliberately
+    // larger step than the Embolisation Module's own kInjectStep, matching
+    // how quickly a real contrast bolus actually races down a vessel
+    // compared to a viscous liquid embolic.
+    constexpr float kContrastInjectStep = 2.0f;
+    m_contrastModel.inject(kContrastInjectStep);
+    updateContrastReadout();
+    refreshContrastViews();
+}
+
+void MainWindow::onContrastTick() {
+    using cn::ContrastPhase;
+    // tick() is a cheap no-op while Idle, but skip the readout/repaint fan-out
+    // in that case too - no point repainting every view six times a second
+    // for a phase that is not visibly changing.
+    if (m_contrastModel.phase() == ContrastPhase::Idle) return;
+    m_contrastModel.tick(0.15f);   // matches m_contrastTimer's 150 ms interval
+    updateContrastReadout();
+    refreshContrastViews();
+}
+
+void MainWindow::updateContrastReadout() {
+    if (!m_contrastStatusLabel) return;
+    using cn::ContrastPhase;
+    const auto &st = m_contrastModel.state();
+
+    QString phaseName;
+    switch (st.phase) {
+    case ContrastPhase::Idle:                      phaseName = tr("Idle"); break;
+    case ContrastPhase::PreEmbolizationAngiogram:  phaseName = tr("Pre-Embolization Angiogram"); break;
+    case ContrastPhase::Flush:                     phaseName = tr("Flush"); break;
+    case ContrastPhase::PostEmbolizationAngiogram: phaseName = tr("Post-Embolization Angiogram"); break;
+    }
+
+    if (st.phase == ContrastPhase::Idle) {
+        m_contrastStatusLabel->setText(tr("Idle — position the catheter, then choose a phase below."));
+        return;
+    }
+    m_contrastStatusLabel->setText(
+        tr("%1 — %2 injected, contrast reach %3 mm, %4 vessel segment(s) opacified")
+            .arg(phaseName)
+            .arg(st.volumeInjected, 0, 'f', 1)
+            .arg(st.filledArcLength * m_mmPerUnit, 0, 'f', 1)
+            .arg(st.links.size()));
+}
+
+void MainWindow::refreshContrastViews() {
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->refreshContrastInjection();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 // View-mode switching
 // ─────────────────────────────────────────────────────────────────────────────
 // Tick the menu-bar action for a display mode without re-triggering it — the
 // pane is switched by the caller, so firing triggered() here would switch twice.
 void MainWindow::checkViewAction(int id) {
+<<<<<<< HEAD
+    // Index 2 (Mesh) has no tile in the reference-design bottom bar - see
+    // m_viewTiles' own declaration comment. A harmless no-op, not an error.
+    if (id < 0 || id > 3 || !m_viewTiles[id]) return;
+    m_viewTiles[id]->setChecked(true);
+=======
     if (!m_viewActGroup) return;
     for (QAction *a : m_viewActGroup->actions())
         if (a->data().toInt() == id) { a->setChecked(true); return; }
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void MainWindow::onViewModeChanged(int id) {
@@ -1769,7 +3524,22 @@ void MainWindow::restartFromCurrentSite(bool focusCamera) {
 void MainWindow::onFocusAccess() {
     if (m_activeSite < 0 || m_activeSite >= static_cast<int>(m_sites.size())) return;
     const cn::Vec3 &p = m_graph.nodes()[m_sites[m_activeSite].node].position;
+<<<<<<< HEAD
+    const float r = m_graph.nodes()[m_sites[m_activeSite].node].radius;
+    // focusOn() does not emit cameraChanged() - it also flips on continuous
+    // camera-follow mode (m_cameraFollows), which is per-instance ongoing
+    // behaviour, not a one-shot position the syncCameraFrom() mechanism
+    // could copy across even if it did emit. Call it on every view directly,
+    // the same way restartFromCurrentSite() already correctly does - this
+    // was the one call site that instead called it on m_view alone, which is
+    // exactly why Focus Access moved the 3D camera but left Fluoro (and DSA/
+    // Mesh, though those alias m_view so were never actually affected)
+    // looking wherever it already was.
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->focusOn(QVector3D(p.x, p.y, p.z), r);
+=======
     m_view->focusOn(QVector3D(p.x, p.y, p.z), m_graph.nodes()[m_sites[m_activeSite].node].radius);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void MainWindow::onShowWholeVessel() {
@@ -1789,6 +3559,31 @@ void MainWindow::onRetract() {
     if (!m_motion->isActive()) m_motion->start();
 }
 
+<<<<<<< HEAD
+// Rotation is a simple, immediate operation — unlike advance/retract, it does
+// not interact with junction-stopping or the smoothed m_motion animation, so
+// it is applied directly rather than queued. Same update()+refreshDevice()
+// pattern as syncDevices(), which is what keeps every view consistent.
+void MainWindow::onRollLeft() {
+    if (!m_ready) return;
+    constexpr float kRollStepRad = 15.f * 3.14159265f / 180.f;
+    m_catheter.setRollAngle(m_catheter.state().rollAngle - kRollStepRad);
+    m_catheter.update();
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        v->refreshDevice();
+}
+
+void MainWindow::onRollRight() {
+    if (!m_ready) return;
+    constexpr float kRollStepRad = 15.f * 3.14159265f / 180.f;
+    m_catheter.setRollAngle(m_catheter.state().rollAngle + kRollStepRad);
+    m_catheter.update();
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        v->refreshDevice();
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 // Position of a device class in the coaxial stack. Larger is further inside:
 // a microcatheter goes up a guide, a wire goes up a microcatheter.
 int MainWindow::deviceStackLevel(cn::DeviceClass c) {
@@ -1804,6 +3599,48 @@ int MainWindow::deviceStackLevel(cn::DeviceClass c) {
     return 1;
 }
 
+<<<<<<< HEAD
+std::array<double, 28> MainWindow::xrayTuningToArray(const VesselView::XrayTuning &t) {
+    return {
+        t.backgroundColor.x(), t.backgroundColor.y(), t.backgroundColor.z(),
+        t.boneColor.x(), t.boneColor.y(), t.boneColor.z(),
+        t.boneOpacity, t.boneAmbient, t.boneDiffuse, t.boneSpecular,
+        t.muscleColor.x(), t.muscleColor.y(), t.muscleColor.z(),
+        t.muscleOpacity, t.muscleAmbient, t.muscleDiffuse, t.muscleSpecular,
+        t.gamma, t.contrast, t.brightness,
+        t.boneIntensityMult, t.softTissueMult,
+        t.boneBrightness, t.muscleBrightness,
+        t.vesselColor.x(), t.vesselColor.y(), t.vesselColor.z(), t.vesselOpacity
+    };
+}
+
+VesselView::XrayTuning MainWindow::xrayArrayToTuning(const std::array<double, 28> &v) {
+    VesselView::XrayTuning t;
+    t.backgroundColor = QVector3D(float(v[0]), float(v[1]), float(v[2]));
+    t.boneColor       = QVector3D(float(v[3]), float(v[4]), float(v[5]));
+    t.boneOpacity  = float(v[6]);
+    t.boneAmbient  = float(v[7]);
+    t.boneDiffuse  = float(v[8]);
+    t.boneSpecular = float(v[9]);
+    t.muscleColor  = QVector3D(float(v[10]), float(v[11]), float(v[12]));
+    t.muscleOpacity  = float(v[13]);
+    t.muscleAmbient  = float(v[14]);
+    t.muscleDiffuse  = float(v[15]);
+    t.muscleSpecular = float(v[16]);
+    t.gamma      = float(v[17]);
+    t.contrast   = float(v[18]);
+    t.brightness = float(v[19]);
+    t.boneIntensityMult = float(v[20]);
+    t.softTissueMult    = float(v[21]);
+    t.boneBrightness    = float(v[22]);
+    t.muscleBrightness  = float(v[23]);
+    t.vesselColor   = QVector3D(float(v[24]), float(v[25]), float(v[26]));
+    t.vesselOpacity = float(v[27]);
+    return t;
+}
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 // Advance with the coaxial floor applied: an inner device cannot be pulled back
 // behind the tip of the device it was introduced through — that would withdraw
 // it into the host lumen rather than out of the patient.
@@ -1962,6 +3799,17 @@ void MainWindow::onCarmAnglesChanged(double lao, double cran) {
 void MainWindow::onFrontalLockToggled(bool on) { m_view->setFrontalLock(on); }
 void MainWindow::onCameraFollowToggled(bool on) {
     m_view->setCameraFollows(on);
+<<<<<<< HEAD
+    // Previously 3D-only: Fluoro never followed the tip at all, so turning
+    // this on made the two views' cameras diverge every frame instead of
+    // staying in lockstep. Both views read the same shared CatheterModel
+    // (m_device), so each computing its own follow position from that one
+    // source converges to the same effective camera - this is not a
+    // duplicate/redundant call, it is what makes follow mode apply to every
+    // view rather than just the one it happened to be wired to before.
+    if (VesselView *fv = m_quad ? m_quad->viewFluoro() : nullptr) fv->setCameraFollows(on);
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (on) syncDevices(); else m_view->showWholeVessel();
 }
 void MainWindow::onCameraChanged() {
@@ -2028,6 +3876,8 @@ void MainWindow::onBalloonToggled() {
 // Sync
 // ─────────────────────────────────────────────────────────────────────────────
 void MainWindow::syncDevices() {
+<<<<<<< HEAD
+=======
     // Enable Left/Right buttons ONLY when at a bifurcation decision point
     const bool atBifurc = m_ready && m_nav.decisionPending();
     if (m_btnLeft)  m_btnLeft->setEnabled(atBifurc);
@@ -2043,6 +3893,7 @@ void MainWindow::syncDevices() {
     const QString activeStyle = ""; // use global btnNav style
     if (m_btnLeft)  m_btnLeft->setStyleSheet(atBifurc  ? activeStyle : dimStyle);
     if (m_btnRight) m_btnRight->setStyleSheet(atBifurc ? activeStyle : dimStyle);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (!m_ready) return;
     const cn::CenterlinePath &path = m_nav.path();
     const float depth = m_nav.depth();
@@ -2140,12 +3991,95 @@ void MainWindow::updateReadouts() {
         else s = tr("tracking");
         m_fStatus->setText(s);
     }
+<<<<<<< HEAD
+
+    // Access site — the one Procedure Info field with no prior read-out
+    // anywhere in the app; accessSiteName() already exists for the log
+    // messages onAccessSiteChosen() writes, reused here rather than
+    // duplicating the site-name table.
+    if (m_fAccess) {
+        m_fAccess->setText(
+            (m_activeSite >= 0 && m_activeSite < static_cast<int>(m_sites.size()))
+                ? QString::fromLatin1(cn::accessSiteName(m_sites[m_activeSite].site))
+                : tr("not established"));
+    }
+
+    // Device Status — a coloured bullet (rich text) + status word per stage.
+    // Green once genuinely ready/active, grey beforehand; nothing here is a
+    // separate tracked "status" of its own; it is read straight off the same
+    // booleans that already gate navigation and the Embolisation Module.
+    auto statusHtml = [](bool active, const QString &onText, const QString &offText) {
+        return active ? QStringLiteral("<span style='color:#2ECC71;'>&#9679;</span> %1").arg(onText)
+                      : QStringLiteral("<span style='color:#6B6B6F;'>&#9679;</span> %1").arg(offText);
+    };
+    if (m_deviceStatusSheath)
+        m_deviceStatusSheath->setText(statusHtml(m_sheathReady, tr("PLACED"), tr("NOT PLACED")));
+    if (m_deviceStatusCatheter)
+        m_deviceStatusCatheter->setText(statusHtml(m_catheterReady, tr("POSITIONED"), tr("NOT LOADED")));
+    if (m_deviceStatusEmbolic)
+        m_deviceStatusEmbolic->setText(statusHtml(m_emboli.active(), tr("ACTIVE"), tr("NOT STARTED")));
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cine Studio
 // ─────────────────────────────────────────────────────────────────────────────
 void MainWindow::onOpenCineStudio() {
+<<<<<<< HEAD
+    // No longer captures a frame here - Cine Studio is now purely the
+    // REVIEW page for whatever startCineRecordingIfNeeded() has actually
+    // been recording in the background since the procedure's first
+    // Pre-Embolization Angiogram. Opening it mid-recording is fine: the
+    // capture timer keeps running regardless of which page is on screen.
+    m_pageStack->setCurrentIndex(1);
+    setWindowTitle(tr("CathTrainVR — Cine Studio"));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cine acquisition — real continuous recording from the Fluoro view
+// ─────────────────────────────────────────────────────────────────────────────
+void MainWindow::startCineRecordingIfNeeded() {
+    if (m_cineRecording || !m_cineStudio || !m_quad) return;
+    m_cineStudio->beginRecording(true, tr("Run %1").arg(++m_cineRunCounter), kCineCaptureFps);
+    m_cineRecording = true;
+
+    if (!m_cineCaptureTimer) {
+        m_cineCaptureTimer = new QTimer(this);
+        connect(m_cineCaptureTimer, &QTimer::timeout, this, [this]{ onCineCaptureTick(); });
+    }
+    // recordFrameFromWidget() throttles its own appends to the captureFps
+    // passed to beginRecording() above, so ticking faster than that here
+    // would simply mean most ticks are no-ops rather than over-capturing -
+    // ticking at exactly that rate keeps this timer's own overhead in line
+    // with what actually gets recorded.
+    m_cineCaptureTimer->start(1000 / kCineCaptureFps);
+
+    log(tr("[%1] Cine recording started").arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
+void MainWindow::stopCineRecording() {
+    if (!m_cineRecording) return;
+    if (m_cineCaptureTimer) m_cineCaptureTimer->stop();
+    if (m_cineStudio) m_cineStudio->endRecording();
+    m_cineRecording = false;
+    log(tr("[%1] Cine recording stopped").arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
+void MainWindow::onCineCaptureTick() {
+    if (!m_cineRecording || !m_cineStudio || !m_quad) return;
+    // The Fluoro view specifically, not the 3D view - a real Cine
+    // acquisition IS the fluoroscopy sequence, not a 3D render of it. Same
+    // capture path (QOpenGLWidget::grabFramebuffer(), via
+    // CineViewStudio::captureWidgetFrame()) onScreenshot() already uses, so
+    // whatever is actually on screen - catheter, contrast, embolic cast, all
+    // through the same DRR pipeline - is exactly what gets recorded.
+    m_cineStudio->recordFrameFromWidget(m_quad->viewFluoro());
+}
+void MainWindow::onCineStudioBack() {
+    m_pageStack->setCurrentIndex(0);
+    setWindowTitle(tr("CathTrainVR — Endovascular Navigation Console"));
+=======
     if (m_cineStudio && m_view) {
         m_cineStudio->beginRecording(true, tr("Run %1").arg(++m_cineRunCounter), 15);
         m_cineStudio->recordFrameFromWidget(m_view);
@@ -2157,6 +4091,7 @@ void MainWindow::onOpenCineStudio() {
 void MainWindow::onCineStudioBack() {
     m_pageStack->setCurrentIndex(0);
     setWindowTitle(tr("EmboNav — Endovascular Navigation Console"));
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_view->setFocus();
 }
 

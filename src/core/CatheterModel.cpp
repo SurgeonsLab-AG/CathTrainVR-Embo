@@ -8,6 +8,40 @@ namespace cn {
 void CatheterModel::setPath(const CenterlinePath &path, bool keepDepth) {
     const float depth = keepDepth ? m_state.insertionDepth : 0.f;
     const float roll = keepDepth ? m_state.rollAngle : 0.f;
+<<<<<<< HEAD
+    const float rollRealized = keepDepth ? m_state.rollAngleRealized : 0.f;
+    const float deflect = keepDepth ? m_state.tipDeflection : 0.f;
+
+    // Carry the shaft's actual rendered shape across a route EXTENSION (a
+    // branch just chosen, a click-refined entry) instead of discarding it -
+    // the already-travelled proximal portion of the route does not change,
+    // so there is no reason for the shaft to visibly reset to the raw
+    // centerline the instant the path object is replaced. Only meaningful
+    // when this model already had a real relaxed shape to carry (m_seeded);
+    // a setPath(..., true) on a model that has never actually update()'d yet
+    // has nothing worth keeping.
+    const bool carryForward = keepDepth && m_seeded;
+    std::vector<Vec3> keptNodes;
+    if (carryForward) keptNodes = std::move(m_state.nodes);
+
+    m_path = path;
+    m_state = State{};
+    m_state.rollAngle = roll;
+    m_state.rollAngleRealized = rollRealized;
+    m_state.tipDeflection = deflect;
+    m_state.nodes.assign(std::max(2, m_params.segmentCount), Vec3());
+    m_nodeArc.assign(m_state.nodes.size(), 0.f);
+
+    if (carryForward) {
+        // Index i means "i segments behind the tip" regardless of which path
+        // object the chain is riding, so this correspondence is still valid
+        // after the route changes; only copy as much as overlaps in case the
+        // node count differs.
+        const size_t m = std::min(keptNodes.size(), m_state.nodes.size());
+        std::copy(keptNodes.begin(), keptNodes.begin() + m, m_state.nodes.begin());
+    }
+    m_seeded = carryForward;   // false forces a clean seed on the next update()
+=======
     const float deflect = keepDepth ? m_state.tipDeflection : 0.f;
 
     m_path = path;
@@ -16,6 +50,7 @@ void CatheterModel::setPath(const CenterlinePath &path, bool keepDepth) {
     m_state.tipDeflection = deflect;
     m_state.nodes.assign(std::max(2, m_params.segmentCount), Vec3());
     m_nodeArc.assign(m_state.nodes.size(), 0.f);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     setInsertionDepth(depth);
 }
 
@@ -32,6 +67,11 @@ void CatheterModel::setTipDeflection(float radians) {
 void CatheterModel::update() {
     if (m_path.empty()) return;
 
+<<<<<<< HEAD
+    const size_t prevSize = m_state.nodes.size();
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // The shaft must reach back to the puncture: a fixed-length chain leaves
     // the catheter floating in mid-vessel with no visible connection to the
     // access point, which reads as an artefact rather than as a device.
@@ -41,8 +81,16 @@ void CatheterModel::update() {
             static_cast<int>(std::ceil(m_state.insertionDepth / seg)) + 2,
             std::max(8, m_params.tipFlexSegments + 2), m_params.maxSegments);
         if (static_cast<int>(m_state.nodes.size()) != need) {
+<<<<<<< HEAD
+            // resize(), not assign(): keeps whatever the existing nodes
+            // already are - carried forward from the previous frame, or from
+            // setPath()'s own carry-forward - instead of wiping the whole
+            // chain to zero every time it needs to grow or shrink.
+            m_state.nodes.resize(static_cast<size_t>(need), Vec3());
+=======
             m_state.nodes.assign(static_cast<size_t>(need), Vec3());
             m_nodeArc.assign(static_cast<size_t>(need), 0.f);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         }
     }
 
@@ -50,6 +98,66 @@ void CatheterModel::update() {
     if (m_nodeArc.size() != n) m_nodeArc.assign(n, 0.f);
     if (m_state.nodeRadius.size() != n) m_state.nodeRadius.assign(n, m_params.deviceRadius);
 
+<<<<<<< HEAD
+    // --- 1. Target samples along the path -------------------------------------
+    // What a perfectly compliant device would occupy: the tip at the insertion
+    // depth, each trailing node one segment length further back *along the
+    // path*, not along a straight line. This is the REST state relaxChain()
+    // pulls the actual chain toward, not the final answer - a device stiffer
+    // than the vessel is tight only approximates it.
+    const float depth = m_state.insertionDepth;
+    std::vector<Vec3> target(n);
+    for (size_t i = 0; i < n; ++i) {
+        const float s = depth - static_cast<float>(i) * m_params.segmentLength;
+        m_nodeArc[i] = std::max(0.f, s);
+        target[i] = m_path.pointAt(m_nodeArc[i]);
+    }
+
+    // --- 2. Roll wind-up -------------------------------------------------------
+    // The tip's realised roll eases toward the operator's commanded roll
+    // rather than snapping to it - a fixed fraction per update() call, the
+    // same "ease by a constant fraction every fixed tick" idiom the vessel
+    // camera already uses (VesselView::m_camEase), not a true torque
+    // simulation.
+    {
+        const float resp = std::clamp(m_params.rollResponsiveness, 0.f, 1.f);
+        float d = m_state.rollAngle - m_state.rollAngleRealized;
+        // Shortest angular path, so a roll command near +/-pi does not wind
+        // the long way around.
+        while (d > 3.14159265f)  d -= 6.28318531f;
+        while (d < -3.14159265f) d += 6.28318531f;
+        m_state.rollAngleRealized += d * resp;
+    }
+
+    // --- 3. Tip shape / steering ------------------------------------------
+    // Bends the leading tip-flex-zone TARGET samples into the tip's resting
+    // shape plus operator deflection, about the realised (lagged) roll. This
+    // happens to the target array, before relaxation, so the tip is folded
+    // into the very same solve as the rest of the shaft below rather than
+    // being pinned afterward - which is what keeps the shaft smoothly,
+    // tangent-continuously joined to it instead of kinking at the pivot.
+    applyTipArticulation(target);
+
+    // --- 4. Seed / carry forward, then relax ----------------------------
+    // The rendered chain is NOT reset to `target` every call - it is carried
+    // forward from whatever it already was (the previous frame's relaxed
+    // shape, or whatever setPath() just carried over) and only nudged toward
+    // the new target by relaxChain()'s fixed iteration count. That is what
+    // turns advancing, steering, and crossing a bifurcation into continuous,
+    // spring-like motion instead of the shaft popping to a freshly-solved
+    // shape every frame. Only genuinely new nodes have no previous shape to
+    // carry and start at their own target sample: the chain just grew
+    // (autoLength added trailing entries), or this is the very first update
+    // after a plain setPath() with nothing seeded yet at all.
+    if (!m_seeded) {
+        m_state.nodes = target;
+        m_seeded = true;
+    } else if (n > prevSize) {
+        for (size_t i = prevSize; i < n; ++i) m_state.nodes[i] = target[i];
+    }
+    relaxChain(target);
+
+=======
     // --- follow-the-leader ---------------------------------------------------
     // The tip sits at the insertion depth; every trailing node sits one segment
     // length further back *along the path*, not along a straight line. This is
@@ -63,6 +171,7 @@ void CatheterModel::update() {
     }
 
     applyTipArticulation();
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (m_params.clampToLumen) constrainToLumen();
 
     // --- telemetry -----------------------------------------------------------
@@ -137,6 +246,156 @@ void CatheterModel::update() {
     m_state.oversized = m_params.deviceRadius >= m_state.lumenRadiusAtTip;
 }
 
+<<<<<<< HEAD
+namespace {
+
+/// Cumulative bend angle at normalised distance `d` (0 at the pivot, 1 at the
+/// tip) along a compound resting shape. Walks the segment list summing each
+/// one's full curve before it, then linearly interpolates through whichever
+/// segment `d` falls inside - the same taper-to-a-constant-curvature-arc
+/// approximation the single-curve case always used, just repeated once per
+/// segment instead of once for the whole tip. With exactly one segment of
+/// lengthFraction 1 this reduces to `curveRadians * d`, i.e. the plain
+/// single-arc formula it replaces.
+float compoundShapeAngle(const std::vector<CatheterModel::Params::TipShapeSegment> &shape,
+                         float d) {
+    float base = 0.f;      // angle accumulated by segments fully behind d
+    float pos  = 0.f;      // cumulative lengthFraction consumed so far
+    for (const auto &seg : shape) {
+        const float segLen = std::max(seg.lengthFraction, 1e-6f);
+        const float segEnd = pos + segLen;
+        if (d <= segEnd || &seg == &shape.back()) {
+            const float t = std::clamp((d - pos) / segLen, 0.f, 1.f);
+            return base + seg.curveRadians * t;
+        }
+        base += seg.curveRadians;
+        pos = segEnd;
+    }
+    return base;   // empty shape
+}
+
+} // namespace
+
+void CatheterModel::applyTipArticulation(std::vector<Vec3> &nodes) {
+    const int k = std::min(m_params.tipFlexSegments,
+                           static_cast<int>(nodes.size()) - 1);
+    const bool compound = !m_params.tipShape.empty();
+    // Single-arc fallback keeps its own early-out so a straight device with
+    // no operator input costs nothing beyond this check, exactly as before.
+    if (!compound) {
+        const float curve = m_state.tipDeflection + m_params.restingTipCurve;
+        if (k < 2 || std::fabs(curve) < 1e-5f) return;
+    } else if (k < 2) {
+        return;
+    }
+
+    // Bend the leading k nodes about a pivot, in the plane selected by the
+    // REALISED (lagged) roll angle, not the raw commanded one - see State::
+    // rollAngleRealized. A single curve tapers linearly to zero at the pivot,
+    // approximating a constant-curvature arc; a compound shape does the same
+    // per segment (see compoundShapeAngle) so the whole tip stays planar -
+    // true to how a real shaped diagnostic catheter is heat-set, one flat
+    // curve at a time.
+    const Vec3 pivot = nodes[k];
+    const Vec3 tangent = (nodes[0] - nodes[k]).normalized();
+    if (tangent.lengthSquared() < 1e-12f) return;
+
+    const Vec3 ref = anyPerpendicular(tangent);
+    const Vec3 up = rotateAbout(ref, tangent, m_state.rollAngleRealized);
+    const Vec3 bendAxis = tangent.cross(up).normalized();
+
+    for (int i = 0; i < k; ++i) {
+        const float d = static_cast<float>(k - i) / static_cast<float>(k);
+        // Operator steering is added on top of the resting shape, tapered the
+        // same way the resting curve is, so a steered compound tip still
+        // flexes as one continuous piece rather than kinking at the pivot.
+        const float angle = compound ? compoundShapeAngle(m_params.tipShape, d)
+                                           + m_state.tipDeflection * d
+                                     : (m_state.tipDeflection + m_params.restingTipCurve) * d;
+        const Vec3 rel = nodes[i] - pivot;
+        nodes[i] = pivot + rotateAbout(rel, bendAxis, angle);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// relaxChain — position-based (Gauss-Seidel) relaxation.
+//
+// Three passes per iteration, in this order:
+//
+//   1. Distance: push/pull each adjacent pair symmetrically back to exactly
+//      segmentLength apart. The chain does not stretch; this is the one
+//      constraint that always holds exactly regardless of stiffness.
+//
+//   2. Bending: pull each interior node toward the midpoint of its two
+//      neighbours - the straightest the chain can be without breaking the
+//      distance constraint above - scaled by Params::shaftStiffness. This is
+//      what makes a stiff device cut a corner instead of hugging it, and it
+//      is the ONLY thing that determines how far the final resting shape
+//      deviates from the centerline.
+//
+//   3. Centerline attraction: pull every node back toward its own target
+//      sample. This pull has a FLOOR (kPullFloor below) that does not go to
+//      zero even at full stiffness - it exists purely to make each frame
+//      converge to its equilibrium quickly, not to limit how far a stiff
+//      chain is allowed to deviate (the bending pass already owns that). A
+//      pull weight that faded to ~0 at high stiffness (the previous
+//      formulation) made a STIFF device converge slower toward a changed
+//      target than a soft one - backwards from a real catheter, where more
+//      rigidity means a quicker, more decisive response, not a floppier,
+//      slower-settling one. That mismatch is what read as "too flexible":
+//      with the chain now warm-started across frames (see update()) instead
+//      of fully re-solved every call, a weak pull meant a stiff device could
+//      take many frames to catch up to a moving target, showing as lag and
+//      wobble along the way rather than a taut, immediate response.
+//
+// A handful of Gauss-Seidel sweeps is standard for a short position-based
+// chain like this (see e.g. cloth/rope solvers): each pass only looks at
+// immediate neighbours, so the whole thing stays O(n) per iteration, and a
+// small FIXED iteration count keeps update() reproducible call to call -
+// which matters here because every view renders this one CatheterModel
+// instance and must never compute a different answer from it.
+// ─────────────────────────────────────────────────────────────────────────────
+void CatheterModel::relaxChain(const std::vector<Vec3> &target) {
+    const size_t n = m_state.nodes.size();
+    if (n < 3 || target.size() != n) return;
+
+    const float stiff  = std::clamp(m_params.shaftStiffness, 0.f, 1.f);
+    const float segLen = std::max(m_params.segmentLength, 1e-6f);
+    const int   iters   = std::max(1, m_params.relaxIterations);
+
+    // Floor so a stiff device still converges fast frame-to-frame - see the
+    // class comment above. 0 stiffness -> 0.85 (dominant, hugs the
+    // centerline almost exactly); full stiffness -> 0.35 (still a decisive
+    // per-iteration correction, just weak enough that the bending pass below
+    // can hold the chain off-axis through an actual bend).
+    constexpr float kPullFloor = 0.35f;
+    constexpr float kPullSpan  = 0.50f;
+    const float pull = kPullFloor + (1.f - stiff) * kPullSpan;
+
+    for (int pass = 0; pass < iters; ++pass) {
+        for (size_t i = 0; i + 1 < n; ++i) {
+            Vec3 &a = m_state.nodes[i];
+            Vec3 &b = m_state.nodes[i + 1];
+            const Vec3 d = b - a;
+            const float len = d.length();
+            if (len < 1e-9f) continue;
+            const float err = (len - segLen) * 0.5f;
+            const Vec3 corr = d * (err / len);
+            a += corr;
+            b -= corr;
+        }
+
+        if (stiff > 1e-4f) {
+            for (size_t i = 1; i + 1 < n; ++i) {
+                const Vec3 straight = (m_state.nodes[i - 1] + m_state.nodes[i + 1]) * 0.5f;
+                m_state.nodes[i] += (straight - m_state.nodes[i]) * (stiff * 0.65f);
+            }
+        }
+
+        if (pull > 1e-4f)
+            for (size_t i = 0; i < n; ++i)
+                m_state.nodes[i] += (target[i] - m_state.nodes[i]) * pull;
+=======
 void CatheterModel::applyTipArticulation() {
     const int k = std::min(m_params.tipFlexSegments,
                            static_cast<int>(m_state.nodes.size()) - 1);
@@ -160,16 +419,26 @@ void CatheterModel::applyTipArticulation() {
         const float w = static_cast<float>(k - i) / static_cast<float>(k);
         const Vec3 rel = m_state.nodes[i] - pivot;
         m_state.nodes[i] = pivot + rotateAbout(rel, bendAxis, curve * w);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 }
 
 float CatheterModel::nearestArc(const Vec3 &p, float guess) const {
     if (m_path.empty()) return guess;
     const float total = m_path.totalLength();
+<<<<<<< HEAD
+    // Widened from 3x to 4x segmentLength: the relaxed shaft can now sit
+    // further from its own arc-length target than a purely kinematic snap
+    // ever did (that is the point of shaftStiffness), so the search has to
+    // reach a little further to still find the true nearest cross-section
+    // rather than settling for the nearest point inside too narrow a window.
+    const float window = std::max(m_params.segmentLength * 4.f, total * 0.01f);
+=======
     // A window of a few segment lengths is plenty: a node never strays further
     // than the articulation can throw it, and a global search would cost O(n)
     // per node per frame for no benefit.
     const float window = std::max(m_params.segmentLength * 3.f, total * 0.01f);
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const float lo = std::clamp(guess - window, 0.f, total);
     const float hi = std::clamp(guess + window, 0.f, total);
     const int steps = 24;
@@ -194,6 +463,18 @@ void CatheterModel::constrainToLumen() {
     // Hard projection: a node may not sit further from the centerline than the
     // usable lumen radius minus the device radius.
     //
+<<<<<<< HEAD
+    // The cross-section to clamp against is found by nearestArc(), not by
+    // using the node's nominal arc position: both tip articulation and the
+    // relaxation pass move a node away from the arc sample it was assigned,
+    // so clamping it against that original cross-section measured the wrong
+    // distance in the wrong direction - which let an articulated or
+    // stiffness-deviated tip swing bodily outside the vessel while the
+    // constraint reported it as satisfied.
+    for (size_t i = 0; i < m_state.nodes.size(); ++i) {
+        const Vec3 &node = m_state.nodes[i];
+        const float bestS = nearestArc(node, m_nodeArc[i]);
+=======
     // The cross-section to clamp against is found by a local search rather than
     // by using the node's nominal arc position. Tip articulation *moves* a node
     // away from the arc it was placed at, so clamping it against that original
@@ -216,6 +497,7 @@ void CatheterModel::constrainToLumen() {
             const float d = (node - m_path.pointAt(s)).lengthSquared();
             if (d < bestD) { bestD = d; bestS = s; }
         }
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
         const Vec3 axis = m_path.pointAt(bestS);
         const Vec3 tangent = m_path.tangentAt(bestS);
@@ -332,7 +614,11 @@ void CatheterModel::buildTubeMesh(int sides,
     if (lo == 0) {
         const Vec3 t0 = tangentAt(0);
         const float noseR = m_state.nodeRadius.empty() ? m_params.deviceRadius
+<<<<<<< HEAD
+                                                       : m_state.nodeRadius[0];
+=======
                                                       : m_state.nodeRadius[0];
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         const Vec3 apex = nodes[0] + t0 * (noseR * 0.7f);
         const uint32_t apexId = static_cast<uint32_t>(interleavedOut.size() / 6);
         interleavedOut.insert(interleavedOut.end(),
@@ -393,4 +679,8 @@ void CatheterModel::buildBalloonMesh(int rings, int sides,
     }
 }
 
+<<<<<<< HEAD
 } // namespace cn
+=======
+} // namespace cn
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7

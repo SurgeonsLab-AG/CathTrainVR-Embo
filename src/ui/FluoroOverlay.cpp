@@ -49,6 +49,31 @@ void FluoroOverlay::paintEvent(QPaintEvent *) {
     QPainter p(this);
     const QRect r = rect();
 
+<<<<<<< HEAD
+    // Widget-level full-screen grain used to be drawn here. Removed: this
+    // overlay is a separate QWidget compositing on top of VesselView with
+    // no access to what it actually rendered, so it has no way to know
+    // "this pixel is anatomy" vs. "this pixel is background" — every
+    // previous attempt to fix grain leaking into the background happened
+    // in VesselView.cpp's shader, and none of those fixes could ever touch
+    // this, because this paints unconditionally across the entire widget
+    // rectangle regardless of what's underneath it. The per-fragment tissue
+    // grain in VesselView.cpp's kFragmentShader (hash13(vWorld * 41.0),
+    // mode 1) is untouched and remains the grain source — it only ever
+    // runs where an actual bone/muscle/vessel fragment is rasterized, so it
+    // is correctly confined to anatomy by construction, which this overlay
+    // never was.
+
+    // ── 2. Vignette — image intensifier edge falloff ─────────────────────────
+    // Darkened and pulled inward from the previous 0.75/22 - 1.0/90 falloff,
+    // so the body's own silhouette fades into the background rather than
+    // stopping at a crisp mesh edge — part of "blends into the dark
+    // background" rather than reading as a separate object on top of it.
+    QRadialGradient vg(r.center(), std::max(r.width(), r.height()) * 0.72);
+    vg.setColorAt(0.0,  QColor(0, 0, 0,   0));
+    vg.setColorAt(0.60, QColor(0, 0, 0,  35));
+    vg.setColorAt(1.0,  QColor(0, 0, 0, 130));
+=======
     // ── 1. Fine detector grain ───────────────────────────────────────────────
     // Half-resolution noise buffer scaled up — cheaper and reads more like
     // real detector grain than per-pixel noise at full res.
@@ -75,6 +100,7 @@ void FluoroOverlay::paintEvent(QPaintEvent *) {
     vg.setColorAt(0.0,  QColor(0, 0, 0,  0));
     vg.setColorAt(0.75, QColor(0, 0, 0, 22));
     vg.setColorAt(1.0,  QColor(0, 0, 0, 90));
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     p.fillRect(r, vg);
 
     // ── 3. Collimation — clinical field narrowing (animated) ─────────────────

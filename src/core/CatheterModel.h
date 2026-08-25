@@ -7,6 +7,43 @@ namespace cn {
 
 /// Kinematic model of a catheter / guidewire riding a planned centerline path.
 ///
+<<<<<<< HEAD
+/// This is a *reduced* model, not an FEM: the device is a chain of
+/// inextensible segments whose lead node is driven along the path by
+/// insertion depth ("follow-the-leader", the standard reduced model for
+/// endovascular navigation). It is cheap enough to run at display rate and
+/// gives the quantities an operator actually watches: insertion depth, lumen
+/// calibre at the tip, wall clearance, and which branch the tip is in.
+///
+/// The chain is NOT snapped onto the centerline, and it is NOT re-solved from
+/// scratch every call either. Each node has a target sample on the path
+/// (from its insertion-depth-derived arc length), but update() carries the
+/// chain's actual rendered shape forward from the previous call and only
+/// relaxes it (see relaxChain()) a fixed number of steps toward the new
+/// target - the same "distance constraint + bending resistance + centerline
+/// pull" solve as before, just warm-started from where the shaft already
+/// was instead of reset to the centerline every frame. That is what turns
+/// advancing, steering, and crossing a bifurcation into continuous motion:
+/// the shaft eases toward its new equilibrium rather than popping to a fresh
+/// one each call. Bending resistance is set by Params::shaftStiffness, and
+/// the result is always re-clamped inside the lumen (constrainToLumen() runs
+/// last). The tip's own resting/steered shape (applyTipArticulation()) feeds
+/// into the SAME relaxation as the rest of the chain, which is what keeps the
+/// shaft smoothly, tangent-continuously joined to the bent tip rather than
+/// kinking where the flexible zone ends.
+///
+/// What it deliberately does not model: friction, true torsional dynamics
+/// (rollResponsiveness below is a first-order approximation of wind-up, not
+/// a torque simulation), vessel compliance, or buckling. Swap in a Cosserat-
+/// rod solver behind the same interface if you need those.
+///
+/// Exactly one CatheterModel exists per device in the running console
+/// (MainWindow owns m_catheter and each parked host device); every VesselView
+/// only ever reads that same instance's state() to build its own render
+/// batches. So the position, orientation, bend and roll computed here are, by
+/// construction, identical in every view - there is nothing here that could
+/// diverge per view, because no view ever computes any of it itself.
+=======
 /// This is a *navigation* model, not an FEM: the device is a chain of
 /// inextensible segments whose lead node is driven along the path by insertion
 /// depth ("follow-the-leader", the standard reduced model for endovascular
@@ -18,6 +55,7 @@ namespace cn {
 /// What it deliberately does not model: friction, torque wind-up along the
 /// shaft, vessel compliance, or buckling. Swap in a Cosserat-rod solver behind
 /// the same interface if you need those.
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 class CatheterModel {
 public:
     struct Params {
@@ -28,7 +66,44 @@ public:
         float maxTipDeflection = 1.2f;  ///< radians
         /// Pre-shaped primary curve, applied even at zero operator input. This
         /// is what makes a JR4 behave differently from a straight-tip wire.
+<<<<<<< HEAD
+        ///
+        /// This is the SINGLE-ARC case only: one constant-curvature bend from
+        /// the pivot to the tip. Kept rather than folded away because it is
+        /// still the cheapest way to describe a device whose shape really is
+        /// one arc (a plain angled or curved-tip wire). A shape with more than
+        /// one curve — a Simmons loop-back, a Newton double-kink — cannot be
+        /// expressed by a single angle; see `tipShape` below, which subsumes
+        /// this field whenever it is non-empty.
         float restingTipCurve = 0.f;    ///< radians; 0 keeps the tip on the axis
+
+        /// One arc of a compound resting shape: turns through `curveRadians`
+        /// (signed — opposite sign reverses the direction of the bend) over
+        /// `lengthFraction` of the tip flex zone. Segments are listed PROXIMAL
+        /// TO DISTAL (pivot end first, tip end last); their fractions should
+        /// sum to 1, but this is not enforced so a shape can be authored to
+        /// leave the very tip straight - an over- or under-filled list simply
+        /// stops short of, or overshoots past, the tip.
+        struct TipShapeSegment {
+            float lengthFraction = 1.f;
+            float curveRadians   = 0.f;
+        };
+
+        /// Compound resting shape, pivot to tip. Empty means "use
+        /// restingTipCurve as one segment" - the plain single-arc case above.
+        /// A non-empty list takes over entirely (restingTipCurve is then
+        /// ignored): a device's shape is one thing or the other, never both.
+        ///
+        /// This is what lets the tip trace a real diagnostic-catheter curve -
+        /// a Simmons' primary loop followed by its own reverse secondary bend,
+        /// a Newton's tight double-kink right at the tip - rather than only
+        /// ever the single hooks a plain angle can draw. See
+        /// CatheterCatalog::TipShapeDef for the named presets (Simmons 1/2/3,
+        /// Newton, Cobra, Headhunter, vertebral/angled-taper).
+        std::vector<TipShapeSegment> tipShape;
+=======
+        float restingTipCurve = 0.f;    ///< radians; 0 keeps the tip on the axis
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         float wallSafety = 0.90f;       ///< fraction of lumen radius usable
         bool  clampToLumen = true;      ///< project nodes back inside the wall
 
@@ -44,6 +119,40 @@ public:
         bool  fitToLumen = true;
         float lumenFitFraction = 0.82f;
 
+<<<<<<< HEAD
+        /// How strongly the shaft resists bending, 0..1. At 0 the chain
+        /// traces the vessel centerline exactly - the old, purely-kinematic
+        /// behaviour, useful for a very soft microcatheter. At 1 it behaves
+        /// like a stiff rod: it straightens through a bend and leans on the
+        /// OUTER wall of a curve rather than hugging the medial axis, which
+        /// is what a real braided guide catheter actually does - devices
+        /// already differ enough in stiffness (see CatheterCatalog) that
+        /// this is exposed per device rather than fixed for every one.
+        float shaftStiffness = 0.5f;
+
+        /// Position-based relaxation passes per update(). A short, FIXED
+        /// count rather than an error-tolerance loop, so update() costs the
+        /// same every call and - critically - is exactly reproducible for
+        /// the same inputs: every view renders the one shared CatheterModel
+        /// instance and must never show a different shape from it. Raised
+        /// from 8: with the chain now warm-started across frames rather than
+        /// fully re-solved each call (see update()), 8 passes left a visible
+        /// multi-frame settling wobble whenever the target moved by more
+        /// than a small step; 16 converges close enough to equilibrium in a
+        /// single frame that the lag is no longer visible at any normal
+        /// advance/steer speed, while still costing nothing extra a real
+        /// frame budget would notice for a chain this short.
+        int relaxIterations = 16;
+
+        /// How quickly the tip's realised roll catches up to the operator's
+        /// commanded roll (State::rollAngle), per update() call. 1 =
+        /// instantaneous (a short/stiff device); lower values model the
+        /// wind-up of a long compliant shaft, which does not transmit torque
+        /// to the tip the instant the operator turns it.
+        float rollResponsiveness = 0.35f;
+
+=======
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         /// Fogarty-style embolectomy balloon: a compliant balloon set back a
         /// short distance from a small rounded atraumatic tip. Advanced
         /// deflated past the clot, inflated, then withdrawn to drag it out -
@@ -65,7 +174,17 @@ public:
         float remainingToTarget = 0.f;
         float lumenRadiusAtTip = 0.f;
         float minWallClearance = 0.f;    ///< negative means the wall is engaged
+<<<<<<< HEAD
+        float rollAngle = 0.f;           ///< operator-commanded roll, radians
+        /// Roll the tip has actually reached, easing toward rollAngle each
+        /// update() at Params::rollResponsiveness - what applyTipArticulation
+        /// actually bends the tip about, not the raw commanded value. Models
+        /// the wind-up of a long compliant shaft without a full torsional
+        /// simulation.
+        float rollAngleRealized = 0.f;
+=======
         float rollAngle = 0.f;
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         float tipDeflection = 0.f;
 
         int32_t currentNodeId = -1;
@@ -146,6 +265,30 @@ public:
     float balloonInflation() const { return m_params.balloonInflation; }
 
 private:
+<<<<<<< HEAD
+    /// Bends the leading tip-flex-zone entries of `nodes` about a pivot into
+    /// the tip's resting/steered shape - the same math as before, just
+    /// writing into the caller's target array instead of m_state.nodes
+    /// directly, so relaxChain() can fold the tip into the same solve as the
+    /// rest of the shaft rather than treating it as a separate, later step.
+    void applyTipArticulation(std::vector<Vec3> &nodes);
+
+    /// Position-based relaxation: pulls m_state.nodes (seeded at `target`)
+    /// toward mutual segmentLength spacing and toward straightness, blended
+    /// by Params::shaftStiffness, in Params::relaxIterations fixed passes.
+    /// This is what replaces "snap onto the centerline" - see the class
+    /// comment above for the reasoning.
+    void relaxChain(const std::vector<Vec3> &target);
+
+    void constrainToLumen();
+
+    /// Arc length of the centerline point closest to `p`, searched in a window
+    /// around `guess`. Nodes move away from the sample they were assigned -
+    /// by tip articulation, and now routinely by the relaxation pass too -
+    /// so clamping against that stale sample would let a node escape the
+    /// wall on a bend; the clamp has to be taken about the point the node is
+    /// actually nearest to.
+=======
     void applyTipArticulation();
     void constrainToLumen();
 
@@ -154,6 +297,7 @@ private:
     /// it was assigned, so clamping it against that stale sample lets it escape
     /// the wall on a bend - the clamp has to be taken about the point the node
     /// is actually nearest to.
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     float nearestArc(const Vec3 &p, float guess) const;
 
     Params m_params;
@@ -161,6 +305,21 @@ private:
     CenterlinePath m_path;
     State m_state;
     std::vector<float> m_nodeArc;   ///< arc length assigned to each chain node
+<<<<<<< HEAD
+
+    /// True once the chain has a real relaxed shape to carry forward. False
+    /// right after construction or a plain setPath(path) (keepDepth=false —
+    /// there is nothing to carry, so the next update() seeds cleanly from the
+    /// centerline target); true otherwise, including across a keepDepth=true
+    /// setPath() (a route extension), so the shaft's actual rendered shape
+    /// persists across that call instead of resetting. See update()'s own
+    /// comment on why the chain is not reseeded to target every frame.
+    bool m_seeded = false;
 };
 
 } // namespace cn
+=======
+};
+
+} // namespace cn
+>>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
