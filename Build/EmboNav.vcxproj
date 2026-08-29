@@ -142,9 +142,9 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Message>Copying Simplified_Vessel_2.stl	Copying Simplified_Vessel_2_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
+      <Message>windeployqt (C:/Software/Qt/6.8.3/msvc2022_64/bin) — syncing Qt runtime DLLs to match this build's Qt exactly	Copying Vessel.stl	Copying Vessel_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
       <Command>setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2.stl C:/SurgeonsLab/EmboNav/Build/Debug
+C:\Software\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --no-compiler-runtime C:/SurgeonsLab/EmboNav/Build/Debug/EmboNav.exe
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -153,7 +153,16 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/Debug
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel.stl C:/SurgeonsLab/EmboNav/Build/Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/Debug
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -293,9 +302,9 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Message>Copying Simplified_Vessel_2.stl	Copying Simplified_Vessel_2_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
+      <Message>windeployqt (C:/Software/Qt/6.8.3/msvc2022_64/bin) — syncing Qt runtime DLLs to match this build's Qt exactly	Copying Vessel.stl	Copying Vessel_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
       <Command>setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2.stl C:/SurgeonsLab/EmboNav/Build/Release
+C:\Software\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --no-compiler-runtime C:/SurgeonsLab/EmboNav/Build/Release/EmboNav.exe
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -304,7 +313,16 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/Release
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel.stl C:/SurgeonsLab/EmboNav/Build/Release
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/Release
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -444,9 +462,9 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Message>Copying Simplified_Vessel_2.stl	Copying Simplified_Vessel_2_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
+      <Message>windeployqt (C:/Software/Qt/6.8.3/msvc2022_64/bin) — syncing Qt runtime DLLs to match this build's Qt exactly	Copying Vessel.stl	Copying Vessel_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
       <Command>setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2.stl C:/SurgeonsLab/EmboNav/Build/MinSizeRel
+C:\Software\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --no-compiler-runtime C:/SurgeonsLab/EmboNav/Build/MinSizeRel/EmboNav.exe
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -455,7 +473,16 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/MinSizeRel
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel.stl C:/SurgeonsLab/EmboNav/Build/MinSizeRel
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/MinSizeRel
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -594,9 +621,9 @@ exit /b %1
 if %errorlevel% neq 0 goto :VCEnd</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Message>Copying Simplified_Vessel_2.stl	Copying Simplified_Vessel_2_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
+      <Message>windeployqt (C:/Software/Qt/6.8.3/msvc2022_64/bin) — syncing Qt runtime DLLs to match this build's Qt exactly	Copying Vessel.stl	Copying Vessel_centerlines.vtp	Copying Muscular.stl	Copying Skeletal.stl	Copying carm_head.stl	Copying carm_stand.stl	Copying carm_bed.stl	Copying carm_xray.stl</Message>
       <Command>setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2.stl C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo
+C:\Software\Qt\6.8.3\msvc2022_64\bin\windeployqt.exe --no-compiler-runtime C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo/EmboNav.exe
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -605,7 +632,16 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Simplified_Vessel_2_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel.stl C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different C:/SurgeonsLab/EmboNav/Data/3D/Vessel_centerlines.vtp C:/SurgeonsLab/EmboNav/Build/RelWithDebInfo
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone

@@ -3,23 +3,17 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFont>
-<<<<<<< HEAD
 #include <QFontDatabase>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QPalette>
 #include <QStyleFactory>
 #include <QSurfaceFormat>
 #include <QTimer>
-<<<<<<< HEAD
 #include <QIcon>
 #include <QPixmap>
 #include <QPainter>
 #include <QSplashScreen>
 #include <QScreen>
 #include <QGuiApplication>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 
 namespace {
@@ -104,7 +98,6 @@ int main(int argc, char **argv) {
     QSurfaceFormat::setDefaultFormat(fmt);
 
     QApplication app(argc, argv);
-<<<<<<< HEAD
     QApplication::setApplicationName("CathTrainVR");
     QApplication::setApplicationVersion("1.0");
     applyClinicalStyle(app);
@@ -192,15 +185,6 @@ int main(int argc, char **argv) {
     QCommandLineParser parser;
     parser.setApplicationDescription(
         "CathTrainVR — endovascular embolectomy navigation console.\n"
-=======
-    QApplication::setApplicationName("EmboNav");
-    QApplication::setApplicationVersion("1.0");
-    applyClinicalStyle(app);
-
-    QCommandLineParser parser;
-    parser.setApplicationDescription(
-        "EmboNav — endovascular embolectomy navigation console.\n"
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         "Open a vessel STL via File > Open to begin.");
     parser.addHelpOption();
     parser.addVersionOption();
@@ -208,7 +192,6 @@ int main(int argc, char **argv) {
     parser.process(app);
 
     MainWindow w;
-<<<<<<< HEAD
     w.setWindowIcon(appIcon);   // belt-and-suspenders: explicit on the main window too
     w.showMaximized();
 
@@ -218,9 +201,6 @@ int main(int argc, char **argv) {
         splash->finish(&w);
         delete splash;
     }
-=======
-    w.show();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Defer loading until after the event loop starts so the window
     // is fully visible before any wait cursor or heavy work begins.

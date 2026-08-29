@@ -1,9 +1,13 @@
 C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_MainWindow.cpp: C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QDateTime \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QEvent \
-  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QMutex \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QList \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QPair \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QRect \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSize \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSizeF \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QString \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QVector \
@@ -28,6 +32,7 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayalgorithms.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearraylist.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayview.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcalendar.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qchar.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare_impl.h \
@@ -39,13 +44,17 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainerinfo.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainertools_impl.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontiguouscache.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication_platform.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreevent.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdarwinhelpers.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatastream.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatetime.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdeadlinetimer.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdebug.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qelapsedtimer.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qendian.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qeventloop.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qexceptionhandling.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qflags.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qfloat16.h \
@@ -57,12 +66,14 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qglobalstatic.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhash.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhashfunctions.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevice.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevicebase.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterable.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterator.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlatin1stringview.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qline.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlist.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlocale.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlogging.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmalloc.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmap.h \
@@ -71,7 +82,6 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetacontainer.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetatype.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qminmax.h \
-  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmutex.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnamespace.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnativeinterface.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnumeric.h \
@@ -123,13 +133,13 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtnoop.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtpreprocessorsupport.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtresource.h \
-  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtsan_impl.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttranslation.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttypetraits.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversion.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversionchecks.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypeinfo.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypes.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qurl.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qutf8stringview.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvariant.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvarlengtharray.h \
@@ -140,7 +150,10 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QImage \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QMatrix4x4 \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QPainter \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QShowEvent \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QSurfaceFormat \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QTransform \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector2D \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector3D \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector4D \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qaction.h \
@@ -148,12 +161,18 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qbrush.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcolor.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcursor.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qevent.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qeventpoint.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfont.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontinfo.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontmetrics.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qgenericmatrix.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication_platform.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qicon.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qimage.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputdevice.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputmethod.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qkeysequence.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qmatrix4x4.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qopengl.h \
@@ -166,17 +185,21 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpen.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixelformat.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixmap.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpointingdevice.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpolygon.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qquaternion.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qregion.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgb.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgba64.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen_platform.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qsurfaceformat.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtextoption.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtgui-config.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiexports.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiglobal.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtransform.h \
+  C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector2d.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector3d.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector4d.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvectornd.h \
@@ -216,6 +239,8 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Main
   C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h \
   C:/SurgeonsLab/EmboNav/src/core/CenterlineExtractor.h \
   C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h \
+  C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h \
+  C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h \
   C:/SurgeonsLab/EmboNav/src/core/NavigationController.h \
   C:/SurgeonsLab/EmboNav/src/core/SheathManager.h \
   C:/SurgeonsLab/EmboNav/src/core/StlMesh.h \

@@ -25,36 +25,36 @@ float resistance(float radius, float viscosity) {
 // Glue) — embolicAgentSpec() indexes straight into this array.
 const EmbolicAgentSpec kAgentSpecs[] = {
     { "Onyx",
-     "Ethylene-vinyl alcohol copolymer in DMSO. Highly cohesive and "
-     "radiopaque via suspended TANTALUM powder; injected slowly, fills the "
-     "path of least resistance and is the most controllable of the four.",
-     { 0.16f, 0.15f, 0.17f }, 0.92f, 0.90f, 0.85f, 0.009f },
+      "Ethylene-vinyl alcohol copolymer in DMSO. Highly cohesive and "
+      "radiopaque via suspended TANTALUM powder; injected slowly, fills the "
+      "path of least resistance and is the most controllable of the four.",
+      { 0.16f, 0.15f, 0.17f }, 0.92f, 0.90f, 0.85f, 0.009f },
 
     { "SQUID",
-     "Also an EVOH/DMSO copolymer, radiopaque via suspended "
-     "TANTALUM/TUNGSTEN powder — a newer alternative to Onyx with similar "
-     "handling, slightly less viscous in practice, so it advances a touch "
-     "faster for the same injection technique.",
-     { 0.34f, 0.16f, 0.46f }, 0.90f, 0.85f, 0.70f, 0.011f },
+      "Also an EVOH/DMSO copolymer, radiopaque via suspended "
+      "TANTALUM/TUNGSTEN powder — a newer alternative to Onyx with similar "
+      "handling, slightly less viscous in practice, so it advances a touch "
+      "faster for the same injection technique.",
+      { 0.34f, 0.16f, 0.46f }, 0.90f, 0.85f, 0.70f, 0.011f },
 
     { "PHIL",
-     "Precipitating Hydrophobic Injectable Liquid — also EVOH-based, but "
-     "radiopaque via dissolved IODINE rather than a suspended metal powder, "
-     "which is why it reads visibly less radiopaque on fluoroscopy than "
-     "Onyx/SQUID despite similar handling. A cream/off-white liquid, not "
-     "Onyx's black \"lava\"; less viscous, so it advances a little further "
-     "per injection and backs into a narrow branch a little sooner.",
-     { 0.82f, 0.78f, 0.68f }, 0.88f, 0.55f, 0.55f, 0.013f },
+      "Precipitating Hydrophobic Injectable Liquid — also EVOH-based, but "
+      "radiopaque via dissolved IODINE rather than a suspended metal powder, "
+      "which is why it reads visibly less radiopaque on fluoroscopy than "
+      "Onyx/SQUID despite similar handling. A cream/off-white liquid, not "
+      "Onyx's black \"lava\"; less viscous, so it advances a little further "
+      "per injection and backs into a narrow branch a little sooner.",
+      { 0.82f, 0.78f, 0.68f }, 0.88f, 0.55f, 0.55f, 0.013f },
 
     { "Glue",
-     "n-butyl cyanoacrylate (n-BCA), radiopacified by mixing with an "
-     "IODINE-based oil (Lipiodol) rather than a suspended metal powder — "
-     "moderately radiopaque, not in Onyx/SQUID's class. Thin and "
-     "fast-polymerizing: it spreads into small branches almost as readily "
-     "as the main channel, which is exactly what makes it the hardest of "
-     "the four to control.",
-     { 0.86f, 0.81f, 0.56f }, 0.80f, 0.58f, 0.25f, 0.020f },
-    };
+      "n-butyl cyanoacrylate (n-BCA), radiopacified by mixing with an "
+      "IODINE-based oil (Lipiodol) rather than a suspended metal powder — "
+      "moderately radiopaque, not in Onyx/SQUID's class. Thin and "
+      "fast-polymerizing: it spreads into small branches almost as readily "
+      "as the main channel, which is exactly what makes it the hardest of "
+      "the four to control.",
+      { 0.86f, 0.81f, 0.56f }, 0.80f, 0.58f, 0.25f, 0.020f },
+};
 
 } // namespace
 
@@ -155,7 +155,7 @@ void EmbolizationModel::inject(float dVolume) {
                                       m_graph->nodes()[static_cast<size_t>(link.to)].radius);
         const float weightedLen = std::max(
             cn::distance(m_graph->nodes()[static_cast<size_t>(link.from)].position,
-                         m_graph->nodes()[static_cast<size_t>(link.to)].position) *
+                        m_graph->nodes()[static_cast<size_t>(link.to)].position) *
                 resistance(radius, spec.viscosity),
             1e-6f);
 

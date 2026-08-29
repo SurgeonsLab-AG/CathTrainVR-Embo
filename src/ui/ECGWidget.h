@@ -6,7 +6,6 @@
 
 #include "core/CardiacCycle.h"
 
-<<<<<<< HEAD
 /// A real bedside monitor never shows ECG alone: the trace field always
 /// carries arterial pressure and pulse-ox pleth stacked with it, and the
 /// numeric column always carries HR, SpO2, a BP pair, and respiratory rate
@@ -21,8 +20,6 @@
 /// touched either time (cn::CardiacCycle::arterialPressure()/pleth() have
 /// been sitting there fully implemented throughout), only which of it this
 /// widget chooses to draw.
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 class ECGWidget : public QWidget
 {
     Q_OBJECT
@@ -53,7 +50,6 @@ private:
     cn::CardiacCycle m_ownCycle;   ///< fallback when no shared clock is set
 
     QTimer m_timer;
-<<<<<<< HEAD
 
     // Three ring buffers sharing one write position, so all three traces
     // scroll in lockstep — a bedside monitor's ECG/pressure/pleth are three
@@ -119,33 +115,4 @@ private:
     const QColor SPO2_COLOR = QColor(232, 198, 82);     // softened gold, not pure yellow
     const QColor BP_COLOR   = QColor(210, 96, 90);       // softened red
     const QColor RR_COLOR   = QColor(84, 196, 196);      // softened teal
-=======
-    QVector<double> m_ecgBuffer, m_abpBuffer;
-    int m_writePos = 0;
-    // Phase and respiratory wander moved into cn::CardiacCycle, which is the
-    // single source of cardiac timing for the whole console.
-    QString m_eventLabel;
-    bool m_inEvent = false;
-
-    // Displayed pressures. Held here rather than printed inline so the numerals
-    // and the trace cannot disagree.
-    static constexpr double kSystolicMmHg  = 118.0;
-    static constexpr double kDiastolicMmHg =  76.0;
-    /// Fixed pressure axis. Not auto-scaled: a trace that silently rescales
-    /// itself between beats is unreadable as a measurement.
-    static constexpr double kScaleTopMmHg  = 180.0;
-    static constexpr double kScaleBotMmHg  =  40.0;
-    /// ECG amplitude as a fraction of the field height. Small on purpose — it
-    /// shares the field with the pressure trace rather than owning a lane.
-    static constexpr double kEcgHeightFraction = 0.17;
-
-    const QColor BG_COLOR   = QColor(0, 0, 0);
-    // GRID_COLOR removed with the grid — it was the only non-black element
-    // in the panel. Re-add as a neutral dark grey if the ruling is wanted back.
-    const QColor ECG_COLOR  = QColor(0, 255, 100);
-    const QColor ABP_COLOR  = QColor(255, 60, 60);
-    const QColor RESP_COLOR = QColor(230, 230, 230);
-    // The plethysmograph lane and its PLETH_COLOR were removed. cn::CardiacCycle
-    // still provides pleth(); only this display is gone.
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 };

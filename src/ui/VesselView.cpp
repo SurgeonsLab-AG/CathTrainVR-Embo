@@ -1,12 +1,8 @@
 #include "VesselView.h"
 
-<<<<<<< HEAD
 #include <QDebug>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFramebufferObject>
-=======
-#include <QOpenGLShaderProgram>
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -44,7 +40,6 @@ uniform float uPwv;        // pulse wave velocity, model units/second
 uniform float uStrain;     // peak fractional radius increase; 0 disables
 uniform int   uPulsatile;  // 1 ONLY for the vessel wall; 0 for everything else
 uniform float uPulseLUT[64];
-<<<<<<< HEAD
 // Arc length from the root within which transit delay is NOT applied — see
 // the comment in main() below for why this exists.
 uniform float uHeartTravelExempt;
@@ -60,11 +55,6 @@ out vec3 vWorld;
 // carotids from physically pulsing. The same product works unchanged as a
 // visibility mask, with no separate centerline query needed.
 out float vHeartMask;
-=======
-
-out vec3 vNormal;
-out vec3 vWorld;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 // The pressure pulse is defined once, in cn::CardiacCycle, and handed to the
 // shader as 64 samples. Duplicating the waveform in GLSL would guarantee the
@@ -83,7 +73,6 @@ void main() {
     if (uPulsatile == 1 && uStrain > 0.0 && aPulseAmp > 0.0) {
         // The pressure wave travels: a vertex 1 m down the tree distends about
         // 170 ms after the aortic root at 6 m/s, which is a fifth of a cycle.
-<<<<<<< HEAD
         // That transit-delay model is correct for the downstream ARTERIAL
         // tree, where a real elastic-wall pressure wave genuinely does take
         // time to propagate. It is NOT correct for the heart itself: cardiac
@@ -101,17 +90,11 @@ void main() {
         // travelled BEYOND it accrues real transit delay.
         float travelDist = max(aRootDist - uHeartTravelExempt, 0.0);
         float delayed = uPhase - (travelDist / uPwv) / max(uCycleSec, 1e-4);
-=======
-        float delayed = uPhase - (aRootDist / uPwv) / max(uCycleSec, 1e-4);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         pos += normalize(aNormal) * (aPulseAmp * uStrain * pulseAt(delayed));
     }
     vNormal = aNormal;
     vWorld  = pos;
-<<<<<<< HEAD
     vHeartMask = aPulseAmp;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     gl_Position = uViewProj * vec4(pos, 1.0);
 }
 )";
@@ -119,16 +102,11 @@ void main() {
 const char *kFragmentShader = R"(#version 330 core
 in vec3 vNormal;
 in vec3 vWorld;
-<<<<<<< HEAD
 in float vHeartMask;   // see kVertexShader — only meaningful when uXrayIsVessel==1
 uniform vec4  uColor;
 uniform vec3  uCameraPos;
 uniform float uHeartCentreZ;   // world Z of the heart/aortic-root centre — anatomical anchor for mode 1's regional dampening
 uniform float uLiveTime;       // mode 2: continuously increasing, for genuinely time-varying (flickering) grain — see paintGL for how this is derived
-=======
-uniform vec4  uColor;
-uniform vec3  uCameraPos;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 uniform vec3  uLightDir;
 uniform vec3  uSheen;
 uniform float uSpecular;
@@ -138,7 +116,6 @@ uniform float uDiffuse;    // 0.88 default (vessel), 0.75 for 3D bone, 0.30 for 
 uniform float uFalloff;
 uniform int   uShaded;
 uniform int   uHeadlight;
-<<<<<<< HEAD
 // Fluoro X-ray projection is two passes now, both using this same program:
 //
 //   uXrayMode == 1 ("accumulate"): drawn into an offscreen floating-point
@@ -194,6 +171,7 @@ uniform float uMuscleBrightness;
 uniform float uForeignDensityScale;
 uniform float uForeignOpacity;
 uniform float uForeignGrainAmount;
+uniform float uForeignIsFluid;    // 1.0 for contrast (a real flowing liquid), 0.0 for embolic cast (a permanent solid deposit) - see the fluid-flow noise term below for why this distinction exists
 out vec4 fragColor;
 
 // Cheap deterministic hash, 0..1. Textures bone/muscle with grain instead of
@@ -338,6 +316,34 @@ void main() {
             // a flowing liquid bolus, not a textured solid.
             float agentGrain = 1.0 + uForeignGrainAmount * 0.45 * (grain - 0.5);
             float fv = agentGrain * uForeignDensityScale;
+
+            // Fluid flow animation - contrast only (uForeignIsFluid), never
+            // the embolic cast, which is a genuinely permanent solid deposit
+            // that should never appear to move once it has set.
+            //
+            // A low-frequency, high-amplitude directional flow band, not
+            // random noise: a sine wave along Z (vessels broadly run along
+            // the body's long axis), phase-shifted by uLiveTime so the
+            // bands visibly travel through the vessel over real time. This
+            // replaces an earlier, much weaker attempt (high-frequency hash
+            // noise at +/-12%) that turned out invisible in practice for
+            // two compounding reasons: high-frequency random noise tends to
+            // average toward near-zero net variation once this fragment's
+            // contribution is summed additively with every other
+            // overlapping triangle in the accumulation pass, and whatever
+            // survives that gets compressed further by the composite
+            // pass's own smoothstep(0.05, 0.6, acc.a) downstream. A
+            // low-frequency sine wave keeps its shape under additive
+            // summation instead of cancelling out, and a much larger
+            // amplitude (0.35x-1.4x, not +/-12%) is what actually reaches
+            // the far side of that compression as a real, visible
+            // difference rather than nothing.
+            if (uForeignIsFluid > 0.5) {
+                float flowPhase = vWorld.z * 0.06 - uLiveTime * 3.0;
+                float flowBand = sin(flowPhase) * 0.5 + 0.5;   // 0..1
+                fv *= mix(0.35, 1.4, flowBand);
+            }
+
             fragColor = vec4(0.0, 0.0, 0.0, fv);
             return;
         }
@@ -648,16 +654,25 @@ void main() {
         // and muscle their texture; it never reaches empty background at
         // all, since mode 1 only runs where a mesh fragment is actually
         // rasterized.
+        // Subtle detector falloff — a real image intensifier's output
+        // brightness genuinely falls off gently toward the edge of its
+        // round field of view; this is a soft radial darkening, not a hard
+        // circular cutout or a decorative vignette. Deliberately mild (at
+        // most ~12% darkening at the corners, and only beginning well past
+        // the centre) so it reads as authentic detector physics rather
+        // than a stylised overlay - a real fluoro frame's falloff is
+        // something you'd only consciously notice if you went looking for
+        // it, not an obvious dark ring.
+        vec2 vignetteUv = gl_FragCoord.xy / max(uViewportPx, vec2(1.0));
+        float vignetteDist = length(vignetteUv - vec2(0.5)) * 1.35;
+        float vignette = 1.0 - 0.12 * smoothstep(0.55, 1.05, vignetteDist);
+        rgb *= vignette;
+
         rgb = clamp(rgb, 0.0, 1.0);
         fragColor = vec4(rgb, 1.0);
         return;
     }
 
-=======
-out vec4 fragColor;
-
-void main() {
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (uShaded == 0) { fragColor = uColor; return; }
 
     vec3 n = normalize(vNormal);
@@ -687,7 +702,6 @@ void main() {
 
     vec3 rgb = uColor.rgb * (uAmbient + uDiffuse * diff) * atten
              + uSheen * spec * atten
-<<<<<<< HEAD
              + uSheen * fres * 0.09;
     // Soft-knee roll-off: at low/mid brightness this is nearly the identity
     // (rgb=0.5 -> ~0.46), so anatomy that was already reading fine is
@@ -696,9 +710,6 @@ void main() {
     // with no gradient left in it — the "overexposed" look — easing that
     // down to a soft, still-bright peak instead.
     rgb = rgb / (1.0 + rgb * 0.18);
-=======
-             + uSheen * fres * 0.16;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     float a = clamp(uColor.a + fres * uColor.a * 1.2, 0.0, 1.0);
     fragColor = vec4(rgb, a);
 }
@@ -727,10 +738,7 @@ VesselView::VesselView(QWidget *parent) : QOpenGLWidget(parent) {
     setFormat(fmt);
     setMinimumSize(520, 420);
     setFocusPolicy(Qt::StrongFocus);
-<<<<<<< HEAD
     m_fluoroClock.start();   // backs the Fluoroscopy HUD's TIME read-out
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // The device advances at a physical speed; the camera is eased toward it
     // separately so that neither the zoom nor the recentring snaps.
@@ -762,11 +770,8 @@ VesselView::~VesselView() {
     // here — only the mesh, centerline and three device spans were released.
     m_muscularBatch.destroy();
     m_skeletalBatch.destroy();
-<<<<<<< HEAD
     m_xrayQuadBatch.destroy();   // Fluoro X-ray compositing-pass triangle
     m_xrayFbo.reset();           // Fluoro X-ray offscreen accumulation buffer
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_sheathCannulaBatch.destroy();
     m_sheathHubBatch.destroy();
     m_sheathValveBatch.destroy();
@@ -806,7 +811,6 @@ void VesselView::setDevice(const cn::CatheterModel *device) {
     update();
 }
 
-<<<<<<< HEAD
 void VesselView::setEmbolization(const cn::EmbolizationModel *emb) {
     m_emboli = emb;
     m_emboliDirty = true;
@@ -829,8 +833,6 @@ void VesselView::refreshContrastInjection() {
     update();
 }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setCameraTrack(const cn::CenterlinePath *path, float arc) {
     m_camPath = path;
     // Always track the arc: the endoluminal eye is *inside* the device and has
@@ -917,7 +919,6 @@ void VesselView::showWholeVessel() {
     update();
 }
 
-<<<<<<< HEAD
 void VesselView::focusRibCage() {
     // Same guard showWholeVessel() uses, and for the same reason: calling
     // this before any vessel data is loaded has nothing valid to focus on.
@@ -966,8 +967,6 @@ void VesselView::focusRibCage() {
     emit cameraChanged();
 }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt) {
     m_cameraFollows = false;
     m_azimuth   = az;
@@ -978,7 +977,6 @@ void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt)
 }
 
 void VesselView::syncCameraFrom(const VesselView &other) {
-<<<<<<< HEAD
     // Distance is scaled by the ratio of each view's own FOV, not copied
     // verbatim. 3D and Fluoro deliberately use different FOVs (40°/30° -
     // see fovDegrees()'s own comment: Fluoro's narrower cone approximates a
@@ -1048,9 +1046,6 @@ void VesselView::showHeadSagittal() {
 
     emit cameraChanged();
     update();
-=======
-    setCamera(other.azimuth(), other.elevation(), other.distance(), other.target());
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::showFluoroDefault() {
@@ -1116,7 +1111,6 @@ void VesselView::resetCamera() {
     // at a different orientation from the others until the next rotation.
     // Resetting the rig is a separate action (R -> CarmController::resetAll),
     // and that pushes 0/0 to every view at once.
-<<<<<<< HEAD
     //
     // Previously branched on palette (Fluoro -> head region, everything else
     // -> whole vessel) - meaning "Reset Camera" put the two panes at two
@@ -1124,13 +1118,6 @@ void VesselView::resetCamera() {
     // camera state. focusRibCage() now emits cameraChanged() itself, so
     // calling it here already propagates to every linked view.
     focusRibCage();
-=======
-    if (m_palette == Palette::Angiographic)
-        showFluoroDefault();   // head region, AP position, 8° FOV
-    else
-        showWholeVessel();
-    emit cameraChanged();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 // ------------------------------------------------------------------ camera
@@ -1184,7 +1171,6 @@ void VesselView::syncCameraToDevice() {
     else if (m_mode == Mode::Reference) updateFollowFrame();
 }
 
-<<<<<<< HEAD
 void VesselView::showEvent(QShowEvent *e) {
     QOpenGLWidget::showEvent(e);
 
@@ -1215,8 +1201,6 @@ void VesselView::showEvent(QShowEvent *e) {
     }
 }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 QVector3D VesselView::cameraPosition() const {
     if (m_mode == Mode::Endoluminal) return m_endoEye;
 
@@ -1303,20 +1287,12 @@ VesselView::Material VesselView::wallMaterial() const {
         m.ambient  = 0.22f;   // lower ambient — less bright
         break;
     case Palette::Angiographic:
-<<<<<<< HEAD
         // Non-endo opacity now follows m_wallOpacity like every other
         // palette, instead of a hardcoded 0.0 that made the vessel
         // undrawable in Fluoro regardless of what any caller set. Road Map
         // mode still overrides colour/opacity in the draw section below.
         m.colour = endo ? QVector4D(0.88f, 0.88f, 0.90f, 1.f)
                         : QVector4D(0.85f, 0.86f, 0.90f, m_wallOpacity);
-=======
-        // Fluoro baseline: vessel is hidden (opacity 0.0) without contrast/roadmap.
-        // This matches the old project: real fluoro doesn't show lumen without dye.
-        // Road Map mode overrides the colour/opacity in the draw section.
-        m.colour = endo ? QVector4D(0.88f, 0.88f, 0.90f, 1.f)
-                        : QVector4D(0.85f, 0.86f, 0.90f, 0.0f);  // 0% — hidden
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         m.sheen = QVector3D(0.f, 0.f, 0.f);
         m.specular = 0.0f;
         m.shininess = 1.f;
@@ -1345,7 +1321,6 @@ void VesselView::initializeGL() {
     glDisable(GL_CULL_FACE);
 
     m_program = std::make_unique<QOpenGLShaderProgram>();
-<<<<<<< HEAD
     if (!m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertexShader))
         qWarning() << "VesselView: vertex shader failed to compile:" << m_program->log();
     if (!m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragmentShader))
@@ -1354,13 +1329,6 @@ void VesselView::initializeGL() {
     m_program->bindAttributeLocation("aNormal", 1);
     if (!m_program->link())
         qWarning() << "VesselView: shader program failed to link:" << m_program->log();
-=======
-    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertexShader);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragmentShader);
-    m_program->bindAttributeLocation("aPos", 0);
-    m_program->bindAttributeLocation("aNormal", 1);
-    m_program->link();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::resizeGL(int w, int h) { glViewport(0, 0, w, h); }
@@ -1700,7 +1668,6 @@ void VesselView::rebuildBodyMeshBatch(const QString &path, Batch &batch,
     uploadBatch(batch, transformed, bodyMesh.buildIndexData());
 }
 
-<<<<<<< HEAD
 void VesselView::ensureXrayFbo(int w, int h) {
     w = std::max(w, 1);
     h = std::max(h, 1);
@@ -1747,8 +1714,6 @@ void VesselView::ensureXrayQuad() {
     uploadBatch(m_xrayQuadBatch, verts, {});
 }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::setBodyAlignment(const BodyAlign &muscular, const BodyAlign &skeletal) {
     m_muscularAlign = muscular;
     m_skeletalAlign = skeletal;
@@ -1946,11 +1911,7 @@ void VesselView::rebuildSheathBatches() {
 // DeviceBatches. Factored out so the parked host devices of a coaxial stack —
 // the guide a microcatheter was introduced through — render the same way as the
 // active device without duplicating the meshing.
-<<<<<<< HEAD
 void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth) {
-=======
-void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b) {
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (!dev) {
         b.tip.elementCount = b.band.elementCount = 0;
         b.shaft.elementCount = b.balloon.elementCount = 0;
@@ -1962,7 +1923,6 @@ void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b)
     uploadBatch(b.tip, v, i);
     dev->buildTubeMesh(16, v, i, kTipEnd, kBandEnd);
     uploadBatch(b.band, v, i);
-<<<<<<< HEAD
 
     // Clip the shaft's proximal end at hideBehindDepth (the host catheter's
     // own tip depth, when this device was telescoped through one) - see
@@ -2117,23 +2077,13 @@ void VesselView::buildContrastInto(const cn::ContrastInjectionModel *contrast,
         buildTubesFromSpans(m_graph, bucketSpans[b], buckets[b]);
 }
 
-=======
-    dev->buildTubeMesh(16, v, i, kBandEnd, -1);
-    uploadBatch(b.shaft, v, i);
-}
-
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 void VesselView::rebuildDeviceBatches() {
     m_deviceDirty = false;
     if (!m_deviceBatches) return;
     // setDevice(nullptr) means "no device in the patient" — e.g. a sheath is in
     // but no catheter has been selected yet. Zero the spans so the previous
     // device stops being drawn instead of lingering as a stale mesh.
-<<<<<<< HEAD
     buildDeviceInto(m_device, *m_deviceBatches, m_deviceHiddenBehindDepth);
-=======
-    buildDeviceInto(m_device, *m_deviceBatches);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (!m_device) return;
     rebuildBalloonBatch();
 
@@ -2163,11 +2113,8 @@ void VesselView::paintGL() {
     if (m_meshDirty) rebuildMeshBatch();
     if (m_centerlineDirty) rebuildCenterlineBatch();
     if (m_deviceDirty) rebuildDeviceBatches();
-<<<<<<< HEAD
     if (m_emboliDirty) { buildEmboliInto(m_emboli, m_emboliBatch); m_emboliDirty = false; }
     if (m_contrastDirty) { buildContrastInto(m_contrast, m_contrastBatches); m_contrastDirty = false; }
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (m_sheathDirty) rebuildSheathBatches();
     if (m_bodyMeshDirty) {
         // Same alignment as setBodyMeshes(). Previously these two sites used
@@ -2185,15 +2132,23 @@ void VesselView::paintGL() {
     if (endo)
         glClearColor(0.02f, 0.014f, 0.014f, 1.f);
     else if (fluoro || m_dsaActive || m_roadMapActive)
-<<<<<<< HEAD
         glClearColor(0.03f, 0.03f, 0.035f, 1.f);   // dark — the X-ray accumulation
     // (below) adds brightness up from here
-=======
-        glClearColor(0.03f, 0.03f, 0.035f, 1.f);   // dark — fluoro/DSA/roadmap
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     else
         glClearColor(0.0f, 0.0f, 0.0f, 1.f);   // black for 3D/mesh
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Frozen roadmap mask, drawn first as a flat background layer - a
+    // complete, self-contained QPainter session, fully ended before any
+    // raw GL shader work below begins. This is what makes the mask stay
+    // fixed in screen space regardless of what the camera/C-arm angle
+    // does afterward: it is a captured 2D image, not 3D geometry being
+    // re-projected each frame, so nothing here can rotate or re-frame it -
+    // only an explicit captureRoadmapMask() ("Re-mask") call ever replaces
+    // it. Everything drawn after this (bone, muscle, the LIVE near-
+    // invisible vessel, catheter) is genuinely live and responds normally.
+    drawRoadmapMaskLayer();
+
     if (!m_program) return;
 
     m_program->bind();
@@ -2208,21 +2163,17 @@ void VesselView::paintGL() {
         m_program->setUniformValue("uPwv",      m_cycle->params().pulseWaveSpeed);
         m_program->setUniformValue("uStrain",   m_cycle->params().distensionStrain);
         m_program->setUniformValueArray("uPulseLUT", m_pulseLUT, kPulseLutSize, 1);
-<<<<<<< HEAD
         // Same radius the amplitude falloff already uses (rebuildWallBatch's
         // spatialWeight) - the region that's amplified as "the heart" is the
         // same region that should move as one synchronized pump, so the two
         // boundaries have to agree or a vertex could be inside one and
         // outside the other.
         m_program->setUniformValue("uHeartTravelExempt", m_heart.coreRadius + m_heart.falloff);
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     } else {
         m_program->setUniformValue("uStrain", 0.f);
     }
     m_program->setUniformValue("uPulsatile", 0);   // nothing pulses unless it asks
     m_program->setUniformValue("uCameraPos", cameraPosition());
-<<<<<<< HEAD
     m_program->setUniformValue("uHeartCentreZ", m_heartCentre.z());
     // Continuously increasing (never wraps, unlike phase() alone), reusing
     // the same shared clock rather than adding a separate timer just for
@@ -2237,11 +2188,6 @@ void VesselView::paintGL() {
     // branch below turns it on, and only for its own two passes.
     m_program->setUniformValue("uXrayMode",    0);
     m_program->setUniformValue("uXrayIsVessel", 0);
-=======
-    m_program->setUniformValue("uLightDir", QVector3D(-0.35f, -0.72f, -0.6f).normalized());
-    m_program->setUniformValue("uHeadlight", endo ? 1 : 0);
-    m_program->setUniformValue("uFalloff",   endo ? m_modelScale * 0.4f : 0.0f);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     Material line;
     line.colour = QVector4D(0.35f, 0.62f, 0.75f, 1.f);
@@ -2256,7 +2202,6 @@ void VesselView::paintGL() {
             glLineWidth(1.f);
             drawBatch(m_centerlineBatch, GL_LINES, line, false);
         }
-<<<<<<< HEAD
         // ── Body mesh layers ────────────────────────────────────────────────
         // Two different draws share these two meshes, chosen by `fluoro`:
         //   * Fluoro (Angiographic palette): X-ray / DRR-style projection —
@@ -2421,6 +2366,7 @@ void VesselView::paintGL() {
                     // real contrast bolus is a well-mixed liquid, not a
                     // textured solid deposit the way an embolic cast is.
                     m_program->setUniformValue("uForeignGrainAmount", 0.30f);
+                    m_program->setUniformValue("uForeignIsFluid", 1.0f);
                     for (int b = 0; b < kContrastBuckets; ++b) {
                         if (m_contrastBatches[b].elementCount == 0) continue;
                         const float t = (static_cast<float>(b) + 0.5f) / static_cast<float>(kContrastBuckets);
@@ -2431,6 +2377,11 @@ void VesselView::paintGL() {
                 }
 
                 if (m_emboli && m_emboli->active() && m_emboliBatch.elementCount > 0) {
+                    // uForeignIsFluid explicitly off here - a set embolic
+                    // cast is a genuinely permanent solid deposit and must
+                    // never show the flow animation, regardless of whatever
+                    // the contrast draw above this last left the uniform at.
+                    m_program->setUniformValue("uForeignIsFluid", 0.0f);
                     // Radiopacity-derived density scale: Onyx/SQUID
                     // (tantalum, ~0.85-0.90) read bright; PHIL/Glue (iodine,
                     // ~0.55-0.58) read dimmer but still clearly visible -
@@ -2558,12 +2509,29 @@ void VesselView::paintGL() {
 
                     Material wm = wallMaterial();   // ambient/specular/shininess/sheen only
                     wm.colour = QVector4D(m_xrayTuning.vesselColor, m_xrayTuning.vesselOpacity);
+                    bool wallShaded = true;
                     if (m_roadMapActive) {
-                        wm.colour   = QVector4D(0.92f, 0.24f, 0.33f, 0.85f);  // #EA3C53 road map
-                        wm.ambient  = 0.9f;
+                        // Grayscale only, distinguished by intensity, not
+                        // hue - this used to be a saturated red
+                        // (#EA3C53), which is exactly the "colored, lit,
+                        // 3D-shaded mesh" a real fluoroscopic roadmap never
+                        // looks like. A real roadmap is a flat X-ray
+                        // attenuation image: no hue, no shading, no
+                        // highlight or gradient.
+                        //
+                        // Opacity is the mask-lifecycle-dependent value
+                        // computed in updateRoadmapMask() (near-invisible
+                        // baseline ~0.04 with no mask yet, boosted only
+                        // for the single frame the mask is actually
+                        // captured from) - not a fixed constant - see that
+                        // function's own comment for the full mechanism.
+                        const float grayLevel = 0.82f;
+                        wm.colour   = QVector4D(grayLevel, grayLevel, grayLevel, m_roadmapVesselOpacity);
+                        wm.ambient  = 1.0f;
                         wm.specular = 0.0f;
+                        wallShaded  = false;   // flat attenuation, not a lit 3D object - see drawBatch's own shaded parameter
                     }
-                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, true, /*pulsatile=*/true);
+                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, wallShaded, /*pulsatile=*/true);
 
                     glDepthMask(GL_TRUE);
                     glDisable(GL_BLEND);
@@ -2639,98 +2607,25 @@ void VesselView::paintGL() {
             // call skipped, since wallMaterial() above already resolves the
             // right colour/opacity for whichever palette is active.
             if (m_showWall && !m_dsaActive) {
-=======
-        // ── Body mesh layers — exact old-project material properties ──────────
-        // Old project used VTK depth-peeling for translucent accumulation.
-        // We approximate with standard alpha blending + correct draw order:
-        //   1. Muscular (outermost, opacity=0.04, flat ambient, no lighting)
-        //   2. Skeletal (opacity=0.45 in 3D / 0.22 in fluoro, Phong shading)
-        //   3. Vessel   (innermost, on top of both body layers)
-        // All drawn with glDepthMask(GL_FALSE) + GL_BLEND so they accumulate
-        // correctly without overwriting the depth buffer.
-
-        const bool hasMuscular = m_muscularBatch.elementCount > 0;
-        const bool hasSkeletal = m_skeletalBatch.elementCount > 0;
-        const bool arterial3D  = (m_palette == Palette::Arterial);
-
-        // Enable alpha blending for all body layers
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthMask(GL_FALSE);
-
-        // 1. Muscular — barely-there haze (same in all views per old project)
-        if (hasMuscular) {
-            // X-ray look: muscular = soft tissue silhouette (very faint, lighter colour)
-            // Fluoro = DSA: same faint muscular haze
-            const float musOp = (fluoro || m_dsaActive) ? 0.04f : 0.05f;
-            m_program->setUniformValue("uColor", QVector4D(0.72f, 0.72f, 0.70f, musOp));
-            m_program->setUniformValue("uSheen",    QVector3D(0.f, 0.f, 0.f));
-            m_program->setUniformValue("uSpecular", 0.0f);
-            m_program->setUniformValue("uShininess",1.0f);
-            m_program->setUniformValue("uAmbient",  0.90f);
-            m_program->setUniformValue("uDiffuse",  0.15f);
-            m_program->setUniformValue("uShaded",   0);
-            // Muscular.stl is anatomy, not vasculature: it never pulses.
-            m_program->setUniformValue("uPulsatile", 0);
-            QOpenGLVertexArrayObject::Binder bnd(&m_muscularBatch.vao);
-            glDrawElements(GL_TRIANGLES, m_muscularBatch.elementCount, GL_UNSIGNED_INT, nullptr);
-        }
-
-        // 2. Skeletal — bone structure
-        // Doc WhyFlattened: for 3D view use solid material (ambient=0.25, diffuse=0.75)
-        //                   for fluoro keep X-ray flat (ambient=0.70, diffuse=0.30)
-        if (hasSkeletal) {
-            // 3D: 0.30 (clearly visible ghost), Fluoro: 0.08 (real X-ray = very faint bone)
-            // X-ray look: bone = dark projection on white (high opacity, flat shading)
-            // Fluoro: dark bone silhouette like real AP X-ray
-            // 3D: lighter, more transparent ghost hint
-            // Fluoro = DSA: same skeletal rendering
-            const float skelOp = arterial3D ? 0.25f : 0.22f;  // DSA/fluoro: 0.22
-            m_program->setUniformValue("uColor", QVector4D(0.86f, 0.86f, 0.84f, skelOp));
-            if (arterial3D) {
-                // 3D: solid directional shading
-                m_program->setUniformValue("uAmbient",  0.25f);
-                m_program->setUniformValue("uDiffuse",  0.75f);
-                m_program->setUniformValue("uSheen",    QVector3D(0.86f, 0.86f, 0.84f));
-                m_program->setUniformValue("uSpecular", 0.25f);
-                m_program->setUniformValue("uShininess",30.0f);
-            } else {
-                // DSA: medium flat
-                m_program->setUniformValue("uAmbient",  0.70f);
-                m_program->setUniformValue("uDiffuse",  0.30f);
-                m_program->setUniformValue("uSheen",    QVector3D(0.86f, 0.86f, 0.84f));
-                m_program->setUniformValue("uSpecular", 0.10f);
-                m_program->setUniformValue("uShininess",60.0f);
-            }
-            m_program->setUniformValue("uShaded",   1);
-            // Skeletal.stl likewise: bone does not move with the cardiac cycle.
-            m_program->setUniformValue("uPulsatile", 0);
-            QOpenGLVertexArrayObject::Binder bnd(&m_skeletalBatch.vao);
-            glDrawElements(GL_TRIANGLES, m_skeletalBatch.elementCount, GL_UNSIGNED_INT, nullptr);
-        }
-
-        // 3. Vessel — innermost
-        // Old project: 3D opacity=0.30 (red), fluoro opacity=0.0 (hidden)
-        // Wireframe = SetRepresentationToWireframe() toggle (Mesh View button)
-        if (m_showWall && !m_dsaActive && !fluoro) {
-            const bool isFluoro  = false;  // fluoro already excluded above
-            const bool vesselVis = true;   // 3D/mesh/roadmap: always show vessel
-            if (vesselVis) {
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
                 Material wm = wallMaterial();
+                bool wallShaded2 = true;
                 if (m_roadMapActive) {
-                    wm.colour   = QVector4D(0.92f, 0.24f, 0.33f, 0.85f);  // #EA3C53 road map
-                    wm.ambient  = 0.9f;
+                    // Same fix, same reasoning as the Fluoro vessel draw
+                    // above: grayscale only, unlit, mask-lifecycle-driven
+                    // opacity - not a fixed red, fully-shaded constant.
+                    const float grayLevel = 0.82f;
+                    wm.colour   = QVector4D(grayLevel, grayLevel, grayLevel, m_roadmapVesselOpacity);
+                    wm.ambient  = 1.0f;
                     wm.specular = 0.0f;
+                    wallShaded2 = false;
                 }
                 // Wireframe mode (Mesh View): draw as lines, full opacity
                 if (m_wireframe) {
                     // Wireframe: same colour+opacity as 3D view but rendered as mesh lines
-                    // wm already has the correct 3D colour (#EA3C53, opacity=m_wallOpacity)
                     // Draw filled surface first (gives depth), then wireframe lines on top
                     glPolygonOffset(1.f, 1.f);
                     glEnable(GL_POLYGON_OFFSET_FILL);
-                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, true, /*pulsatile=*/true);   // filled, same transparency
+                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, wallShaded2, /*pulsatile=*/true);   // filled, same transparency
                     glDisable(GL_POLYGON_OFFSET_FILL);
                     // Wireframe lines: same colour, slightly more opaque so edges read clearly
                     Material wire = wm;
@@ -2741,10 +2636,9 @@ void VesselView::paintGL() {
                     drawBatch(m_meshBatch, GL_TRIANGLES, wire, false, /*pulsatile=*/true);
                     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 } else {
-                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, true, /*pulsatile=*/true);
+                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, wallShaded2, /*pulsatile=*/true);
                 }
             }
-<<<<<<< HEAD
 
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
@@ -2779,6 +2673,16 @@ void VesselView::paintGL() {
                     tip.colour   = QVector4D(0.72f, 0.72f, 0.72f, 1.f);
                     band.colour  = QVector4D(0.82f, 0.82f, 0.82f, 1.f);
                     shaft.colour = QVector4D(0.55f, 0.55f, 0.55f, 1.f);
+                }
+                if (m_roadMapActive) {
+                    // Bright/white, unlit, per explicit request - the tip
+                    // needs to read clearly against the darker vessel mask/
+                    // bone, the way a real radiopaque catheter tip does
+                    // under roadmap fluoroscopy. Overrides the general
+                    // Fluoro tip colour above rather than replacing it,
+                    // since that appearance is still correct for non-
+                    // roadmap Fluoro use.
+                    tip.colour = QVector4D(1.f, 1.f, 1.f, 1.f);
                 }
                 host.colour  = QVector4D(0.45f, 0.45f, 0.45f, 0.65f);
             } else {
@@ -2824,43 +2728,6 @@ void VesselView::paintGL() {
                 host.shininess = 32.f;
                 host.ambient   = 0.20f;
             }
-=======
-        }
-
-        glDepthMask(GL_TRUE);
-        glDisable(GL_BLEND);
-
-        // Device on top in all views
-        if (m_deviceBatches) {
-            Material tip;
-            tip.colour = QVector4D(0.62f, 0.85f, 1.00f, 1.f);
-            tip.sheen = QVector3D(1.f, 1.f, 1.f);
-            tip.specular = 0.55f;
-            tip.shininess = 40.f;
-
-            Material band;
-            band.colour = QVector4D(0.88f, 0.89f, 0.93f, 1.f);
-            band.sheen = QVector3D(1.f, 1.f, 1.f);
-            band.specular = 0.95f;
-            band.shininess = 96.f;
-
-            Material shaft;
-            shaft.colour = QVector4D(0.36f, 0.72f, 0.94f, 1.f);
-            shaft.sheen = QVector3D(0.80f, 0.90f, 1.f);
-            shaft.specular = 0.50f;
-            shaft.shininess = 48.f;
-
-            // Host devices first: the guide a microcatheter was telescoped
-            // through is still in the patient and still visible, but it is no
-            // longer the thing being steered, so it is drawn desaturated and
-            // slightly translucent to keep the active device legible against it.
-            Material host;
-            host.colour    = QVector4D(0.55f, 0.60f, 0.68f, 0.75f);
-            host.sheen     = QVector3D(0.75f, 0.80f, 0.88f);
-            host.specular  = 0.30f;
-            host.shininess = 32.f;
-            host.ambient   = 0.20f;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
@@ -2879,7 +2746,6 @@ void VesselView::paintGL() {
 
             Material balloon;
             const float ap = static_cast<float>(m_overlay.ballooonAppositionPct / 100.0);
-<<<<<<< HEAD
             if (fluoro) {
                 balloon.colour = QVector4D(0.85f, 0.85f, 0.85f, 0.30f + 0.28f * ap);
             } else {
@@ -2888,17 +2754,10 @@ void VesselView::paintGL() {
                 balloon.specular = 0.95f;
                 balloon.shininess = 90.f;
             }
-=======
-            balloon.colour = QVector4D(0.90f, 0.95f, 1.00f, 0.30f + 0.28f * ap);
-            balloon.sheen = QVector3D(1.f, 1.f, 1.f);
-            balloon.specular = 0.95f;
-            balloon.shininess = 90.f;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             glDepthMask(GL_FALSE);
             drawBatch(m_deviceBatches->balloon, GL_TRIANGLES, balloon, true);
             glDepthMask(GL_TRUE);
         }
-<<<<<<< HEAD
 
         // Embolic cast — non-fluoro/3D view only now. Fluoro rendering moved
         // to the DRR accumulation pipeline above (Pass 1's uXrayIsVessel==2
@@ -2953,11 +2812,6 @@ void VesselView::paintGL() {
     // presentation at all. Every other view is unaffected: this is the
     // same condition as before with only `&& !fluoro` added.
     if (m_sheathVisible && !endo && !fluoro) {
-=======
-    }
-    // ── Introducer sheath (built by SheathManager, uploaded on setSheath) ──
-    if (m_sheathVisible && !endo) {
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         // Cannula: translucent PTFE. Drawn first so the opaque hub sits over it.
         Material cannula;
         cannula.colour    = QVector4D(0.86f, 0.88f, 0.90f, 0.55f);
@@ -3019,7 +2873,6 @@ void VesselView::paintOverlay() {
     // Labels sit back from their values, the way they do on the C-arm cluster:
     // the value is what is read, the label only says which value it is.
     const QColor dim(150, 156, 164);
-<<<<<<< HEAD
     QFont mono("Titillium Web", 9);
     // Two sizes: a small label over a larger value, matching the C-arm console.
     QFont labelFont("Titillium Web", 8);
@@ -3031,19 +2884,6 @@ void VesselView::paintOverlay() {
     p.setFont(mono);
 
     if (m_showBranchMarkers && m_overlay.decisionPending && !m_overlay.options.empty()) {
-=======
-    QFont mono("Monospace", 9);
-    // Two sizes: a small label over a larger value, matching the C-arm console.
-    QFont labelFont("Monospace", 8);
-    labelFont.setStyleHint(QFont::TypeWriter);
-    QFont valueFont("Monospace", 11, QFont::Bold);
-    valueFont.setStyleHint(QFont::TypeWriter);
-    const QFontMetrics fm2(labelFont), fmVal(valueFont);
-    mono.setStyleHint(QFont::TypeWriter);
-    p.setFont(mono);
-
-    if (m_overlay.decisionPending && !m_overlay.options.empty()) {
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         const QMatrix4x4 vp = viewProjection();
         for (const auto &o : m_overlay.options) {
             const QVector4D clip = vp * QVector4D(o.target, 1.f);
@@ -3075,7 +2915,6 @@ void VesselView::paintOverlay() {
                    tr("DISTAL VESSEL — no further advance"));
     }
 
-<<<<<<< HEAD
     // Shared row-spacing constants — pad/blockH/rowGap are also used by the
     // Fluoroscopy HUD block just below, which is why these stay even though
     // the telemetry column that used to be drawn here (ACCESS/DEVICE/BRANCH/
@@ -3084,25 +2923,12 @@ void VesselView::paintOverlay() {
     // drawing it a second time, directly on top of the anatomy, was a
     // genuine duplicate rather than something this view uniquely needed to
     // show.
-=======
-    // ── Telemetry, stacked label-over-value ──────────────────────────────────
-    //
-    // Same shape as the C-arm console read-outs: a small dim label with its
-    // value on the line beneath, one parameter per block, running down the
-    // right-hand side. Both lines are right-aligned to the same edge, so the
-    // values form a clean column and a long device name pushes only its own
-    // line leftward.
-    //
-    // Every block gets the same height, so the spacing between parameters is
-    // uniform — no group separator, which is what made the old layout uneven.
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const int pad     = 10;
     const int lineH   = fm2.height();          // label line
     const int valueH  = fmVal.height();        // value line
     const int rowGap  = 7;                     // between one parameter and the next
     const int blockH  = lineH + valueH + rowGap;
 
-<<<<<<< HEAD
     // ── Fluoroscopy HUD (FLUOROSCOPY header, LAO/CRAN/SID/MAG/FOV/FRAME,
     // kVp/mA/DAP/TIME, H/R/L/F orientation indicator) ───────────────────────
     // Shown in every palette now (3D/Fluoro/Mesh/DSA alike) - not gated to
@@ -3159,7 +2985,7 @@ void VesselView::paintOverlay() {
                                           {tr("SID"),   tr("%1 cm").arg(m_hudSidCm, 0, 'f', 0)},
                                           {tr("MAG"),   tr("%1 cm").arg(m_hudMagCm, 0, 'f', 0)},
                                           {tr("FOV"),   tr("25 cm")},
-                                          {tr("FRAME"), tr("15 fps")},
+                                          {tr("FRAME"), tr("%1 fps").arg(m_hudFrameFps)},
                                           };
             const int labelW = 56;   // fixed column so every value lines up
             int hy = 34 + fm2.ascent();
@@ -3222,35 +3048,6 @@ void VesselView::paintOverlay() {
             p.setPen(Qt::NoPen);
             p.drawEllipse(QPointF(box.center()), 5.0, 5.0);
         }
-=======
-    struct Row { QString label, value; };
-    const QVector<Row> rows = {
-                                {QStringLiteral("ACCESS"),   m_overlay.accessSite},
-                                {QStringLiteral("DEVICE"),   m_overlay.deviceName},
-                                {QStringLiteral("BRANCH"),   QString::number(m_overlay.branchId)},
-                                {QStringLiteral("TURNS"),    QString::number(m_overlay.turns)},
-                                {QStringLiteral("DEPTH"),    QStringLiteral("%1 mm").arg(m_overlay.depthMm,     0, 'f', 1)},
-                                {QStringLiteral("LUMEN ⌀"),  QStringLiteral("%1 mm").arg(m_overlay.lumenMm,     0, 'f', 2)},
-                                {QStringLiteral("DEVICE ⌀"), QStringLiteral("%1 mm").arg(m_overlay.deviceMm,    0, 'f', 2)},
-                                {QStringLiteral("CLEAR"),    QStringLiteral("%1 mm").arg(m_overlay.clearanceMm, 0, 'f', 2)},
-                                };
-
-    const int clearRow = rows.size() - 1;      // CLEAR reddens on wall contact
-    const int right    = width() - pad;
-    int y = pad + fm2.ascent();
-
-    for (int i = 0; i < rows.size(); ++i) {
-        p.setFont(labelFont);
-        p.setPen(dim);
-        p.drawText(right - fm2.horizontalAdvance(rows[i].label), y, rows[i].label);
-
-        p.setFont(valueFont);
-        p.setPen(i == clearRow && m_overlay.wallContact ? alarm : pale);
-        p.drawText(right - fmVal.horizontalAdvance(rows[i].value),
-                   y + valueH, rows[i].value);
-
-        y += blockH;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 
     if (m_overlay.wallContact) {
@@ -3270,11 +3067,45 @@ void VesselView::paintOverlay() {
                    tr("WALL CONTACT   %1%").arg(static_cast<int>(sev * 100)));
     }
 
-    QString modeTag = (m_mode == Mode::Endoluminal) ? tr("ENDOLUMINAL") : tr("REFERENCE");
-    if (m_mode != Mode::Endoluminal && m_cameraFollows) modeTag += tr("  ·  FOLLOWING TIP");
-    if (m_overlay.moving) modeTag += tr("   ▶ ADVANCING");
-    p.setPen(QColor(255, 255, 255, 100));
-    p.drawText(QRect(0, height() - 24, width(), 18), Qt::AlignHCenter, modeTag);
+    // Small, unobtrusive status line - explicit small font rather than
+    // whatever size was already active on the painter (which read as
+    // large/prominent, not the "small unobtrusive indicator" this is
+    // meant to be). ENDOLUMINAL still shows as plain text (a genuine mode
+    // label, not a status dot), but the ordinary Reference-mode case drops
+    // "REFERENCE" entirely per explicit request, showing just a green dot
+    // + "FOLLOWING TIP" when camera-follow is active, or nothing at all
+    // when it isn't.
+    QFont statusFont("Titillium Web", 9);
+    statusFont.setStyleHint(QFont::SansSerif);
+    p.setFont(statusFont);
+    const QFontMetrics statusFm(statusFont);
+
+    QString modeTag;
+    bool showDot = false;
+    if (m_mode == Mode::Endoluminal) {
+        modeTag = tr("ENDOLUMINAL");
+    } else if (m_cameraFollows) {
+        modeTag = tr("FOLLOWING TIP");
+        showDot = true;
+    }
+    if (m_overlay.moving) modeTag += (modeTag.isEmpty() ? QString() : tr("   ")) + tr("▶ ADVANCING");
+
+    if (!modeTag.isEmpty()) {
+        const int dotDiameter = 6;
+        const int gap = showDot ? 6 : 0;
+        const int textW = statusFm.horizontalAdvance(modeTag);
+        const int totalW = (showDot ? dotDiameter + gap : 0) + textW;
+        const int startX = (width() - totalW) / 2;
+        const int baselineY = height() - 16;
+
+        if (showDot) {
+            p.setPen(Qt::NoPen);
+            p.setBrush(QColor(46, 204, 113));   // #2ECC71 — same green as every other active/status indicator in this console
+            p.drawEllipse(QRect(startX, baselineY - dotDiameter, dotDiameter, dotDiameter));
+        }
+        p.setPen(QColor(255, 255, 255, 130));
+        p.drawText(startX + (showDot ? dotDiameter + gap : 0), baselineY, modeTag);
+    }
 
     if (m_mode == Mode::Endoluminal) {
         p.setPen(QPen(QColor(255, 255, 255, 46), 1));
@@ -3424,7 +3255,6 @@ void VesselView::setCarmAngles(float lao, float cran) {
     m_carmCRAN = cran;
 
     update();
-<<<<<<< HEAD
     // Deliberately NOT emit cameraChanged() here. CarmController already
     // applies the rig's angle directly to every linked view in its own loop
     // (rotateLinkedCamerasIncremental) — synchronizing the angle across
@@ -3450,9 +3280,6 @@ void VesselView::setCarmAngles(float lao, float cran) {
     // Mouse orbit/zoom and the explicit re-framing functions still go
     // through setCamera() directly and still sync correctly; only this one
     // spurious side channel is gone.
-=======
-    emit cameraChanged();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 void VesselView::setBodyMeshes(const QString &muscularPath, const QString &skeletalPath) {
@@ -3470,4 +3297,61 @@ void VesselView::setBodyMeshes(const QString &muscularPath, const QString &skele
         doneCurrent();
     }
     update();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Roadmap mask capture — real clinical roadmapping, not a live-rendered
+// overlay. See RoadmapState's own comment (VesselView.h) and the individual
+// function comments below for the full mechanism.
+// ─────────────────────────────────────────────────────────────────────────────
+void VesselView::captureRoadmapMask() {
+    if (!isValid() || !m_mesh) return;
+
+    // Boost the LIVE vessel to a visible grayscale level for exactly the
+    // one frame grabFramebuffer() is about to force - this is the moment a
+    // real roadmap mask is taken: contrast momentarily fills the vessel,
+    // the frame is captured, then the live vessel returns to its near-
+    // invisible baseline while the CAPTURED frame becomes the roadmap
+    // background from here on, not the live 3D mesh.
+    const float savedOpacity = m_roadmapVesselOpacity;
+    m_roadmapVesselOpacity = 0.90f;
+
+    // grabFramebuffer() (the same mechanism CineViewStudio already uses
+    // for frame capture) forces a fresh paintGL() with the boosted
+    // opacity in effect, then reads the result back as a QImage - this is
+    // the ONE moment the vessel is actually drawn from live 3D geometry;
+    // every frame after this reads back the frozen result instead.
+    const QImage frame = grabFramebuffer();
+
+    m_roadmapVesselOpacity = savedOpacity;   // revert the LIVE vessel immediately, regardless of capture success
+
+    if (frame.isNull()) return;
+
+    m_roadmapMaskImage = frame;
+    m_roadmapState = RoadmapState::Masked;
+    update();
+}
+
+void VesselView::clearRoadmapMask() {
+    m_roadmapMaskImage = QImage();
+    m_roadmapState = RoadmapState::NoMask;
+    m_roadmapVesselOpacity = 0.04f;
+    update();
+}
+
+void VesselView::drawRoadmapMaskLayer() {
+    if (m_roadmapState == RoadmapState::NoMask || m_roadmapMaskImage.isNull()) return;
+    // A complete, self-contained QPainter session — begun and fully ended
+    // here, before any raw GL shader work in paintGL() runs — rather than
+    // a custom textured-quad GL shader pass. Stretched to the widget's
+    // current size deliberately: the mask is a frozen SCREEN-SPACE image,
+    // so it fills the viewport exactly as captured regardless of any
+    // camera change since — that fixed relationship between the mask and
+    // the screen, even as the live layer drawn on top of it keeps
+    // responding normally to camera/C-arm changes, is what actually
+    // demonstrates real roadmap misregistration when the operator rotates
+    // without re-masking.
+    QPainter p(this);
+    p.drawImage(rect(), m_roadmapMaskImage);
+    p.end();
 }

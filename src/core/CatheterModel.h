@@ -7,7 +7,6 @@ namespace cn {
 
 /// Kinematic model of a catheter / guidewire riding a planned centerline path.
 ///
-<<<<<<< HEAD
 /// This is a *reduced* model, not an FEM: the device is a chain of
 /// inextensible segments whose lead node is driven along the path by
 /// insertion depth ("follow-the-leader", the standard reduced model for
@@ -43,19 +42,6 @@ namespace cn {
 /// batches. So the position, orientation, bend and roll computed here are, by
 /// construction, identical in every view - there is nothing here that could
 /// diverge per view, because no view ever computes any of it itself.
-=======
-/// This is a *navigation* model, not an FEM: the device is a chain of
-/// inextensible segments whose lead node is driven along the path by insertion
-/// depth ("follow-the-leader", the standard reduced model for endovascular
-/// navigation), with an articulating tip and a hard constraint that keeps
-/// every node inside the lumen. It is cheap enough to run at display rate and
-/// gives the quantities an operator actually watches: insertion depth, lumen
-/// calibre at the tip, wall clearance, and which branch the tip is in.
-///
-/// What it deliberately does not model: friction, torque wind-up along the
-/// shaft, vessel compliance, or buckling. Swap in a Cosserat-rod solver behind
-/// the same interface if you need those.
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 class CatheterModel {
 public:
     struct Params {
@@ -66,7 +52,6 @@ public:
         float maxTipDeflection = 1.2f;  ///< radians
         /// Pre-shaped primary curve, applied even at zero operator input. This
         /// is what makes a JR4 behave differently from a straight-tip wire.
-<<<<<<< HEAD
         ///
         /// This is the SINGLE-ARC case only: one constant-curvature bend from
         /// the pivot to the tip. Kept rather than folded away because it is
@@ -101,9 +86,6 @@ public:
         /// CatheterCatalog::TipShapeDef for the named presets (Simmons 1/2/3,
         /// Newton, Cobra, Headhunter, vertebral/angled-taper).
         std::vector<TipShapeSegment> tipShape;
-=======
-        float restingTipCurve = 0.f;    ///< radians; 0 keeps the tip on the axis
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         float wallSafety = 0.90f;       ///< fraction of lumen radius usable
         bool  clampToLumen = true;      ///< project nodes back inside the wall
 
@@ -119,7 +101,6 @@ public:
         bool  fitToLumen = true;
         float lumenFitFraction = 0.82f;
 
-<<<<<<< HEAD
         /// How strongly the shaft resists bending, 0..1. At 0 the chain
         /// traces the vessel centerline exactly - the old, purely-kinematic
         /// behaviour, useful for a very soft microcatheter. At 1 it behaves
@@ -151,8 +132,6 @@ public:
         /// to the tip the instant the operator turns it.
         float rollResponsiveness = 0.35f;
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         /// Fogarty-style embolectomy balloon: a compliant balloon set back a
         /// short distance from a small rounded atraumatic tip. Advanced
         /// deflated past the clot, inflated, then withdrawn to drag it out -
@@ -174,7 +153,6 @@ public:
         float remainingToTarget = 0.f;
         float lumenRadiusAtTip = 0.f;
         float minWallClearance = 0.f;    ///< negative means the wall is engaged
-<<<<<<< HEAD
         float rollAngle = 0.f;           ///< operator-commanded roll, radians
         /// Roll the tip has actually reached, easing toward rollAngle each
         /// update() at Params::rollResponsiveness - what applyTipArticulation
@@ -182,9 +160,6 @@ public:
         /// the wind-up of a long compliant shaft without a full torsional
         /// simulation.
         float rollAngleRealized = 0.f;
-=======
-        float rollAngle = 0.f;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         float tipDeflection = 0.f;
 
         int32_t currentNodeId = -1;
@@ -265,7 +240,6 @@ public:
     float balloonInflation() const { return m_params.balloonInflation; }
 
 private:
-<<<<<<< HEAD
     /// Bends the leading tip-flex-zone entries of `nodes` about a pivot into
     /// the tip's resting/steered shape - the same math as before, just
     /// writing into the caller's target array instead of m_state.nodes
@@ -288,16 +262,6 @@ private:
     /// so clamping against that stale sample would let a node escape the
     /// wall on a bend; the clamp has to be taken about the point the node is
     /// actually nearest to.
-=======
-    void applyTipArticulation();
-    void constrainToLumen();
-
-    /// Arc length of the centerline point closest to `p`, searched in a window
-    /// around `guess`. Articulating the tip moves a node away from the sample
-    /// it was assigned, so clamping it against that stale sample lets it escape
-    /// the wall on a bend - the clamp has to be taken about the point the node
-    /// is actually nearest to.
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     float nearestArc(const Vec3 &p, float guess) const;
 
     Params m_params;
@@ -305,7 +269,6 @@ private:
     CenterlinePath m_path;
     State m_state;
     std::vector<float> m_nodeArc;   ///< arc length assigned to each chain node
-<<<<<<< HEAD
 
     /// True once the chain has a real relaxed shape to carry forward. False
     /// right after construction or a plain setPath(path) (keepDepth=false —
@@ -318,8 +281,3 @@ private:
 };
 
 } // namespace cn
-=======
-};
-
-} // namespace cn
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7

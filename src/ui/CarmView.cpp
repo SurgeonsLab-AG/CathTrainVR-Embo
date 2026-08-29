@@ -151,9 +151,8 @@ bool CarmView::loadPart(const QString &path, int idx) {
             const float diag = std::sqrt(dx*dx + dy*dy + dz*dz);
 
             m_target   = QVector3D(cx, cy, cz);
-            m_eye      = QVector3D(cx - diag*0.20f,
-                              cy - diag*1.6f,   // zoomed out (was 1.2)
-                              cz + 0.f);
+            const QVector3D eyeOffset = QVector3D(-diag*0.20f, -diag*1.6f, 0.f) * m_zoomFactor;
+            m_eye      = m_target + eyeOffset;   // zoomed out (offset was diag*1.2 before m_zoomFactor existed)
             m_distance = (m_eye - m_target).length();
         }
     }
@@ -385,7 +384,6 @@ void CarmView::paintGL() {
 
     m_prog->release();
 
-<<<<<<< HEAD
     // ── Console read-out cluster, above the C-arm render ─────────────────────
     //
     // One row, four equal columns, each a small label above a large value,
@@ -407,32 +405,6 @@ void CarmView::paintGL() {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-=======
-    // ── Console read-out cluster, top-right ──────────────────────────────────
-    //
-    // Laid out as on a real C-arm console: three columns, each a small label
-    // above a large value, with a second row hanging under the middle and right
-    // columns.
-    //
-    //        LAO          CRAN         SID cm
-    //        51°          14°          100
-    //                  Magnification  TIME mm:ss
-    //                     32 cm         04:00
-    //
-    // Columns are placed from measured text widths rather than fixed pixel
-    // positions, so a value growing a digit (9° -> 51°, 09:59 -> 10:00) shifts
-    // the cluster instead of overlapping its neighbour. Rows are anchored to the
-    // top edge for the same reason: nothing here depends on the panel height.
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-
-    // Bank any elapsed fluoro time before formatting it.
-    double shownSec = m_fluoroSec;
-    if (m_fluoroActive && m_fluoroClock.isValid())
-        shownSec += m_fluoroClock.elapsed() / 1000.0;
-    const int totalSec = int(shownSec);
-
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const QString sLao  = m_lao  >= 0 ? QString("%1°").arg( m_lao,  0, 'f', 0)
                                     : QString("%1°").arg(-m_lao,  0, 'f', 0);
     const QString sCran = m_cran >= 0 ? QString("%1°").arg( m_cran, 0, 'f', 0)
@@ -444,11 +416,10 @@ void CarmView::paintGL() {
 
     const QString sSid  = QString::number(int(m_sidCm));
     const QString sMag  = QStringLiteral("%1 cm").arg(int(m_magCm));
-<<<<<<< HEAD
 
-    QFont valueFont("Titillium Web", 20, QFont::Bold);
+    QFont valueFont("Titillium Web", std::max(1, static_cast<int>(20 * m_hudFontScale)), QFont::Bold);
     valueFont.setStyleHint(QFont::SansSerif);
-    QFont labelFont("Titillium Web", 8);
+    QFont labelFont("Titillium Web", std::max(1, static_cast<int>(8 * m_hudFontScale)));
     labelFont.setStyleHint(QFont::SansSerif);
     const QFontMetrics fl(labelFont), fv(valueFont);
 
@@ -472,53 +443,6 @@ void CarmView::paintGL() {
     drawReadout(p, c2, rowLabel, rowValue, lCran, sCran, labelFont, valueFont);
     drawReadout(p, c3, rowLabel, rowValue, QStringLiteral("SID cm"), sSid, labelFont, valueFont);
     drawReadout(p, c4, rowLabel, rowValue, QStringLiteral("Magnification"), sMag, labelFont, valueFont);
-=======
-    const QString sTime = QStringLiteral("%1:%2")
-                              .arg(totalSec / 60, 2, 10, QLatin1Char('0'))
-                              .arg(totalSec % 60, 2, 10, QLatin1Char('0'));
-
-    QFont valueFont("Monospace", 20, QFont::Bold);
-    valueFont.setStyleHint(QFont::TypeWriter);
-    QFont labelFont("Monospace", 8);
-    labelFont.setStyleHint(QFont::TypeWriter);
-    const QFontMetrics fv(valueFont), fl(labelFont);
-
-    const int margin  = 10;
-    const int colGap  = 26;
-    const int rowGap  = 6;
-
-    auto colWidth = [&](const QString &lab, const QString &val) {
-        return std::max(fl.horizontalAdvance(lab), fv.horizontalAdvance(val));
-    };
-    const int w1 = colWidth(lLao,  sLao);
-    const int w2 = std::max(colWidth(lCran, sCran), colWidth(QStringLiteral("Magnification"), sMag));
-    const int w3 = std::max(colWidth(QStringLiteral("SID cm"), sSid),
-                            colWidth(QStringLiteral("TIME mm:ss"), sTime));
-
-    const int rowH  = fl.height() + rowGap + fv.height();
-    const int right = width() - margin;
-
-    // Anchored to the TOP edge: the first row's label baseline sits one ascent
-    // below the margin and the block grows downward, so the cluster stays put
-    // when the panel is resized vertically. Anchoring to the bottom (as this
-    // did) made it ride up and down with the splitter.
-    const int row1Label = margin + fl.ascent();
-    const int row1Value = row1Label + rowGap + fv.ascent();
-    const int row2Label = row1Label + rowH;
-    const int row2Value = row1Value + rowH;
-
-    const int c3 = right - w3 / 2;
-    const int c2 = right - w3 - colGap - w2 / 2;
-    const int c1 = right - w3 - colGap - w2 - colGap - w1 / 2;
-
-    // Row 1
-    drawReadout(p, c1, row1Label, row1Value, lLao,  sLao,  labelFont, valueFont);
-    drawReadout(p, c2, row1Label, row1Value, lCran, sCran, labelFont, valueFont);
-    drawReadout(p, c3, row1Label, row1Value, QStringLiteral("SID cm"), sSid, labelFont, valueFont);
-    // Row 2 — nothing under the LAO column, matching the reference.
-    drawReadout(p, c2, row2Label, row2Value, QStringLiteral("Magnification"), sMag,  labelFont, valueFont);
-    drawReadout(p, c3, row2Label, row2Value, QStringLiteral("TIME mm:ss"),    sTime, labelFont, valueFont);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 }
 
 // Centres a small label over a large value at `centreX`. Returns the column

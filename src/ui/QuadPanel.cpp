@@ -30,11 +30,7 @@ QuadPanel::QuadPanel(QWidget *parent) : QWidget(parent) {
     // ── View 1: Fluoro (Angiographic) ────────────────────────────────────
     m_viewFluoro = new VesselView(this);
     m_viewFluoro->setPalette(VesselView::Palette::Angiographic);
-<<<<<<< HEAD
     m_viewFluoro->setWallOpacity(0.35f);   // vessel now visible in fluoro (was 0.0 - hidden - per prior request)
-=======
-    m_viewFluoro->setWallOpacity(0.0f);   // old project: vessel hidden by default in fluoro
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // frontalLock removed — camera sync handles position sharing between views
 
     // FluoroOverlay: grain + vignette (doc spec)
@@ -43,7 +39,6 @@ QuadPanel::QuadPanel(QWidget *parent) : QWidget(parent) {
     m_viewFluoro->installEventFilter(fluoroOverlay);
     fluoroOverlay->show();
 
-<<<<<<< HEAD
     // Softness — real detector/scatter blur. Cut hard from 1.4: with the DRR
     // accumulation buffer now at full resolution (VesselView.cpp,
     // ensureXrayFbo) it contributes no softness of its own any more, so this
@@ -53,11 +48,6 @@ QuadPanel::QuadPanel(QWidget *parent) : QWidget(parent) {
     // that, not a meaningful softening.
     auto *fluoroBlur = new QGraphicsBlurEffect(m_viewFluoro);
     fluoroBlur->setBlurRadius(0.5);
-=======
-    // Subtle blur — real detector softness
-    auto *fluoroBlur = new QGraphicsBlurEffect(m_viewFluoro);
-    fluoroBlur->setBlurRadius(1.0);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     m_viewFluoro->setGraphicsEffect(fluoroBlur);
 
     // Mesh and DSA are NOT separate views — they are states of the 3D/fluoro
@@ -89,9 +79,14 @@ void QuadPanel::showPane(Pane p) {
         break;
 
     case Pane::Fluoro:
-        // Switch to fluoro renderer page, frame head region
+        // Switch to fluoro renderer page. Deliberately does NOT reframe the
+        // camera here any more (this used to force showFluoroDefault() on
+        // every switch, re-centring on the head region and discarding
+        // whatever camera the 3D view had just synced over) - the whole
+        // point of the shared camera is that switching panes must not move
+        // it. Whatever is currently synced (rib-cage by default) is what the
+        // operator sees here too.
         stack->setCurrentIndex(1);
-        if (m_viewFluoro) m_viewFluoro->showFluoroDefault();
         break;
 
     case Pane::Mesh:

@@ -1,5 +1,7 @@
 c:\surgeonslab\embonav\build\embonav_core.dir\release\mocs_compilation_release.obj
-c:\surgeonslab\embonav\build\embonav_core.dir\release\cathetermodel.obj
+c:\surgeonslab\embonav\build\embonav_core.dir\release\contrastinjectionmodel.obj
+c:\surgeonslab\embonav\build\embonav_core.dir\release\embolizationmodel.obj
+c:\surgeonslab\embonav\build\embonav_core.dir\release\cardiaccycle.obj
 c:\surgeonslab\embonav\build\embonav_core.dir\release\navigationcontroller.obj
 c:\surgeonslab\embonav\build\embonav_core.dir\release\accesssites.obj
 c:\surgeonslab\embonav\build\embonav_core.dir\release\sheathmanager.obj
@@ -8,14 +10,9 @@ c:\surgeonslab\embonav\build\embonav_core.dir\release\centerlineextractor.obj
 c:\surgeonslab\embonav\build\embonav_core.dir\release\centerlinegraph.obj
 c:\surgeonslab\embonav\build\embonav_core.dir\release\stlmesh.obj
 c:\surgeonslab\embonav\build\cmakefiles\generate.stamp
-c:\surgeonslab\embonav\build\release\embonav_core.lib
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\cl.command.1.tlog
-c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\cl.items.tlog
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\cl.read.1.tlog
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\cl.write.1.tlog
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\custombuild.command.1.tlog
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\custombuild.read.1.tlog
 c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\custombuild.write.1.tlog
-c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\lib-link.read.1.tlog
-c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\lib-link.write.1.tlog
-c:\surgeonslab\embonav\build\embonav_core.dir\release\embonav_core.tlog\lib.command.1.tlog

@@ -33,9 +33,16 @@ public:
         int   bpm = 72;                  ///< clamped to [30, 220]
 
         /// Respiratory sinus arrhythmia. Real heart rate is not metronomic: it
-        /// rises on inspiration and falls on expiration by a few percent. This
-        /// small wobble is most of what separates a live trace from a loop.
-        float rsaFraction     = 0.03f;   ///< peak deviation, fraction of rate
+        /// rises on inspiration and falls on expiration by a small amount.
+        /// Reduced from 0.03: at 72 BPM that caused cycle length to range
+        /// roughly 0.809-0.859s, a real +/-50ms spread around the 0.833s
+        /// target — measurable enough to read as "not exactly 72 BPM" per a
+        /// later, more precise timing request. At 0.008 the spread narrows
+        /// to about +/-7ms (0.827-0.840s), keeping a trace of the
+        /// physiological variation an earlier request specifically asked
+        /// for, without it being large enough to contradict "exactly 0.833
+        /// seconds" per cycle.
+        float rsaFraction     = 0.008f;   ///< peak deviation, fraction of rate
         float respirationSec  = 4.0f;    ///< breath period
 
         /// Beat-to-beat amplitude variation, again a few percent, applied to
@@ -65,20 +72,47 @@ public:
         // then decays exponentially — as wall motion that reads as a flick and
         // a stutter, not as a chamber filling.
         //
-        // The wall instead follows a chamber-volume shape: a smooth fill, a
-        // brief hold at peak, then a smooth release. Both ends are flat in
-        // derivative, so there is no visible tick where the cycle wraps.
+        // The wall instead follows a "lub-dub" shape: a quick, strong primary
+        // expansion (systolic ejection — the "lub"), a partial fall, a
+        // shorter and weaker secondary pulse (the dicrotic rebound as the
+        // aortic valve shuts — the "dub"), then a longer rest at baseline
+        // (diastole) until the next beat. This replaced an earlier single
+        // smooth fill-hold-release "balloon" shape, which moved as one
+        // symmetric bump per cycle rather than a real two-part heartbeat.
+        // All four segments use the same cubic smoothstep, so every
+        // transition is flat in derivative — no visible tick at any
+        // junction, including where the cycle wraps.
         //
         // Timing is unchanged — the shape still starts one pre-ejection period
         // after the R peak and still propagates at pulseWaveSpeed — so the wall
         // remains locked to the same beat the ECG is drawing.
 
-        /// 0 = follow the pressure pulse exactly, 1 = pure balloon fill/release.
+        /// 0 = follow the pressure pulse exactly, 1 = pure lub-dub wall shape.
         float balloonBlend  = 1.0f;
-        /// Fraction of the cycle spent filling.
+        /// Unused since the wall shape became biphasic (lub-dub); kept
+        /// declared rather than removed since neither is referenced outside
+        /// this class, and removing an unused field carries only downside.
         float fillFraction  = 0.36f;
-        /// Fraction held at full before the release begins.
         float holdFraction  = 0.08f;
+
+        /// Fraction of the cycle to reach the primary ("lub") peak.
+        float lubRiseFraction  = 0.08f;
+        /// Fraction of the cycle for the partial fall after the primary peak.
+        float lubFallFraction  = 0.10f;
+        /// The primary pulse does not fall all the way to baseline before
+        /// the secondary pulse begins — this is how far down it gets,
+        /// as a fraction of the primary peak.
+        float lubTroughFraction = 0.30f;
+        /// Fraction of the cycle for the shorter rise to the secondary
+        /// ("dub") peak.
+        float dubRiseFraction  = 0.06f;
+        /// Secondary peak amplitude, as a fraction of the primary peak —
+        /// well below it, per "shorter secondary pulse".
+        float dubPeakFraction  = 0.45f;
+        /// Fraction of the cycle for the fall from the secondary peak back
+        /// to baseline. Whatever remains of the cycle after all four
+        /// segments is the rest period (diastole) at baseline.
+        float dubFallFraction  = 0.14f;
     };
 
     CardiacCycle() = default;

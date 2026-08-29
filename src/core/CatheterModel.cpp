@@ -8,7 +8,6 @@ namespace cn {
 void CatheterModel::setPath(const CenterlinePath &path, bool keepDepth) {
     const float depth = keepDepth ? m_state.insertionDepth : 0.f;
     const float roll = keepDepth ? m_state.rollAngle : 0.f;
-<<<<<<< HEAD
     const float rollRealized = keepDepth ? m_state.rollAngleRealized : 0.f;
     const float deflect = keepDepth ? m_state.tipDeflection : 0.f;
 
@@ -41,16 +40,6 @@ void CatheterModel::setPath(const CenterlinePath &path, bool keepDepth) {
         std::copy(keptNodes.begin(), keptNodes.begin() + m, m_state.nodes.begin());
     }
     m_seeded = carryForward;   // false forces a clean seed on the next update()
-=======
-    const float deflect = keepDepth ? m_state.tipDeflection : 0.f;
-
-    m_path = path;
-    m_state = State{};
-    m_state.rollAngle = roll;
-    m_state.tipDeflection = deflect;
-    m_state.nodes.assign(std::max(2, m_params.segmentCount), Vec3());
-    m_nodeArc.assign(m_state.nodes.size(), 0.f);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     setInsertionDepth(depth);
 }
 
@@ -67,11 +56,8 @@ void CatheterModel::setTipDeflection(float radians) {
 void CatheterModel::update() {
     if (m_path.empty()) return;
 
-<<<<<<< HEAD
     const size_t prevSize = m_state.nodes.size();
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // The shaft must reach back to the puncture: a fixed-length chain leaves
     // the catheter floating in mid-vessel with no visible connection to the
     // access point, which reads as an artefact rather than as a device.
@@ -81,16 +67,11 @@ void CatheterModel::update() {
             static_cast<int>(std::ceil(m_state.insertionDepth / seg)) + 2,
             std::max(8, m_params.tipFlexSegments + 2), m_params.maxSegments);
         if (static_cast<int>(m_state.nodes.size()) != need) {
-<<<<<<< HEAD
             // resize(), not assign(): keeps whatever the existing nodes
             // already are - carried forward from the previous frame, or from
             // setPath()'s own carry-forward - instead of wiping the whole
             // chain to zero every time it needs to grow or shrink.
             m_state.nodes.resize(static_cast<size_t>(need), Vec3());
-=======
-            m_state.nodes.assign(static_cast<size_t>(need), Vec3());
-            m_nodeArc.assign(static_cast<size_t>(need), 0.f);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         }
     }
 
@@ -98,7 +79,6 @@ void CatheterModel::update() {
     if (m_nodeArc.size() != n) m_nodeArc.assign(n, 0.f);
     if (m_state.nodeRadius.size() != n) m_state.nodeRadius.assign(n, m_params.deviceRadius);
 
-<<<<<<< HEAD
     // --- 1. Target samples along the path -------------------------------------
     // What a perfectly compliant device would occupy: the tip at the insertion
     // depth, each trailing node one segment length further back *along the
@@ -157,21 +137,6 @@ void CatheterModel::update() {
     }
     relaxChain(target);
 
-=======
-    // --- follow-the-leader ---------------------------------------------------
-    // The tip sits at the insertion depth; every trailing node sits one segment
-    // length further back *along the path*, not along a straight line. This is
-    // what makes the shaft hug the vessel through a bend instead of chording
-    // across it.
-    const float depth = m_state.insertionDepth;
-    for (size_t i = 0; i < n; ++i) {
-        const float s = depth - static_cast<float>(i) * m_params.segmentLength;
-        m_nodeArc[i] = std::max(0.f, s);
-        m_state.nodes[i] = m_path.pointAt(m_nodeArc[i]);
-    }
-
-    applyTipArticulation();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     if (m_params.clampToLumen) constrainToLumen();
 
     // --- telemetry -----------------------------------------------------------
@@ -246,7 +211,6 @@ void CatheterModel::update() {
     m_state.oversized = m_params.deviceRadius >= m_state.lumenRadiusAtTip;
 }
 
-<<<<<<< HEAD
 namespace {
 
 /// Cumulative bend angle at normalised distance `d` (0 at the pivot, 1 at the
@@ -310,7 +274,7 @@ void CatheterModel::applyTipArticulation(std::vector<Vec3> &nodes) {
         // same way the resting curve is, so a steered compound tip still
         // flexes as one continuous piece rather than kinking at the pivot.
         const float angle = compound ? compoundShapeAngle(m_params.tipShape, d)
-                                           + m_state.tipDeflection * d
+                                              + m_state.tipDeflection * d
                                      : (m_state.tipDeflection + m_params.restingTipCurve) * d;
         const Vec3 rel = nodes[i] - pivot;
         nodes[i] = pivot + rotateAbout(rel, bendAxis, angle);
@@ -395,50 +359,18 @@ void CatheterModel::relaxChain(const std::vector<Vec3> &target) {
         if (pull > 1e-4f)
             for (size_t i = 0; i < n; ++i)
                 m_state.nodes[i] += (target[i] - m_state.nodes[i]) * pull;
-=======
-void CatheterModel::applyTipArticulation() {
-    const int k = std::min(m_params.tipFlexSegments,
-                           static_cast<int>(m_state.nodes.size()) - 1);
-    // Total curve = the catheter's own pre-shaped primary curve plus whatever
-    // the operator is adding.
-    const float curve = m_state.tipDeflection + m_params.restingTipCurve;
-    if (k < 2 || std::fabs(curve) < 1e-5f) return;
-
-    // Bend the leading k nodes about a pivot, in the plane selected by the roll
-    // angle. Deflection tapers linearly to zero at the pivot, which approximates
-    // the constant-curvature arc of a steerable tip.
-    const Vec3 pivot = m_state.nodes[k];
-    const Vec3 tangent = (m_state.nodes[0] - m_state.nodes[k]).normalized();
-    if (tangent.lengthSquared() < 1e-12f) return;
-
-    const Vec3 ref = anyPerpendicular(tangent);
-    const Vec3 up = rotateAbout(ref, tangent, m_state.rollAngle);
-    const Vec3 bendAxis = tangent.cross(up).normalized();
-
-    for (int i = 0; i < k; ++i) {
-        const float w = static_cast<float>(k - i) / static_cast<float>(k);
-        const Vec3 rel = m_state.nodes[i] - pivot;
-        m_state.nodes[i] = pivot + rotateAbout(rel, bendAxis, curve * w);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     }
 }
 
 float CatheterModel::nearestArc(const Vec3 &p, float guess) const {
     if (m_path.empty()) return guess;
     const float total = m_path.totalLength();
-<<<<<<< HEAD
     // Widened from 3x to 4x segmentLength: the relaxed shaft can now sit
     // further from its own arc-length target than a purely kinematic snap
     // ever did (that is the point of shaftStiffness), so the search has to
     // reach a little further to still find the true nearest cross-section
     // rather than settling for the nearest point inside too narrow a window.
     const float window = std::max(m_params.segmentLength * 4.f, total * 0.01f);
-=======
-    // A window of a few segment lengths is plenty: a node never strays further
-    // than the articulation can throw it, and a global search would cost O(n)
-    // per node per frame for no benefit.
-    const float window = std::max(m_params.segmentLength * 3.f, total * 0.01f);
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const float lo = std::clamp(guess - window, 0.f, total);
     const float hi = std::clamp(guess + window, 0.f, total);
     const int steps = 24;
@@ -463,7 +395,6 @@ void CatheterModel::constrainToLumen() {
     // Hard projection: a node may not sit further from the centerline than the
     // usable lumen radius minus the device radius.
     //
-<<<<<<< HEAD
     // The cross-section to clamp against is found by nearestArc(), not by
     // using the node's nominal arc position: both tip articulation and the
     // relaxation pass move a node away from the arc sample it was assigned,
@@ -474,30 +405,6 @@ void CatheterModel::constrainToLumen() {
     for (size_t i = 0; i < m_state.nodes.size(); ++i) {
         const Vec3 &node = m_state.nodes[i];
         const float bestS = nearestArc(node, m_nodeArc[i]);
-=======
-    // The cross-section to clamp against is found by a local search rather than
-    // by using the node's nominal arc position. Tip articulation *moves* a node
-    // away from the arc it was placed at, so clamping it against that original
-    // cross-section measured the wrong distance in the wrong direction - which
-    // let an articulated tip swing bodily outside the vessel while the
-    // constraint reported it as satisfied. This is the fix for the curved tip
-    // escaping the wall.
-    const float total = m_path.totalLength();
-    const float window = m_params.segmentLength * 3.f;
-    const float step = std::max(m_params.segmentLength * 0.25f, 1e-6f);
-
-    for (size_t i = 0; i < m_state.nodes.size(); ++i) {
-        const Vec3 &node = m_state.nodes[i];
-
-        float bestS = m_nodeArc[i];
-        float bestD = std::numeric_limits<float>::max();
-        const float lo = std::max(0.f, m_nodeArc[i] - window);
-        const float hi = std::min(total, m_nodeArc[i] + window);
-        for (float s = lo; s <= hi; s += step) {
-            const float d = (node - m_path.pointAt(s)).lengthSquared();
-            if (d < bestD) { bestD = d; bestS = s; }
-        }
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
         const Vec3 axis = m_path.pointAt(bestS);
         const Vec3 tangent = m_path.tangentAt(bestS);
@@ -614,11 +521,7 @@ void CatheterModel::buildTubeMesh(int sides,
     if (lo == 0) {
         const Vec3 t0 = tangentAt(0);
         const float noseR = m_state.nodeRadius.empty() ? m_params.deviceRadius
-<<<<<<< HEAD
-                                                       : m_state.nodeRadius[0];
-=======
                                                       : m_state.nodeRadius[0];
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
         const Vec3 apex = nodes[0] + t0 * (noseR * 0.7f);
         const uint32_t apexId = static_cast<uint32_t>(interleavedOut.size() / 6);
         interleavedOut.insert(interleavedOut.end(),
@@ -679,8 +582,4 @@ void CatheterModel::buildBalloonMesh(int rings, int sides,
     }
 }
 
-<<<<<<< HEAD
 } // namespace cn
-=======
-} // namespace cn
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7

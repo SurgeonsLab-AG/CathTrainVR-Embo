@@ -104,11 +104,15 @@ C:/SurgeonsLab/EmboNav/src/ui/CarmController.h
  mdp:C:/SurgeonsLab/EmboNav/src/ui/CarmController.h
 C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mmc:Q_OBJECT
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QDateTime
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QEvent
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QMutex
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QList
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QPair
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QRect
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSize
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSizeF
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QString
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QVector
@@ -133,6 +137,7 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayalgorithms.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearraylist.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayview.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcalendar.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qchar.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare_impl.h
@@ -144,13 +149,17 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainerinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainertools_impl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontiguouscache.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreevent.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdarwinhelpers.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatastream.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatetime.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdeadlinetimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdebug.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qelapsedtimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qendian.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qeventloop.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qexceptionhandling.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qflags.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qfloat16.h
@@ -162,12 +171,14 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qglobalstatic.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhash.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhashfunctions.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevicebase.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterable.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterator.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlatin1stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qline.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlist.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlocale.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlogging.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmalloc.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmap.h
@@ -176,7 +187,6 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetacontainer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetatype.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qminmax.h
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmutex.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnamespace.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnativeinterface.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnumeric.h
@@ -228,13 +238,13 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtnoop.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtpreprocessorsupport.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtresource.h
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtsan_impl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttranslation.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttypetraits.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversionchecks.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypeinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypes.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qurl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qutf8stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvariant.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvarlengtharray.h
@@ -245,7 +255,10 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QImage
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QMatrix4x4
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QPainter
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QShowEvent
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QSurfaceFormat
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QTransform
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector2D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector3D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector4D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qaction.h
@@ -253,12 +266,18 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qbrush.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcolor.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcursor.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qevent.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qeventpoint.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfont.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontmetrics.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qgenericmatrix.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qicon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qimage.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputdevice.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputmethod.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qkeysequence.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qmatrix4x4.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qopengl.h
@@ -271,17 +290,21 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpen.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixelformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixmap.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpointingdevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpolygon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qquaternion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qregion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgb.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgba64.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qsurfaceformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtextoption.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtgui-config.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiexports.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiglobal.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtransform.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector2d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector3d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector4d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvectornd.h
@@ -321,6 +344,8 @@ C:/SurgeonsLab/EmboNav/src/ui/MainWindow.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CenterlineExtractor.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/NavigationController.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/SheathManager.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/StlMesh.h
@@ -529,8 +554,9 @@ C:/SurgeonsLab/EmboNav/src/ui/CarmView.h
  mdp:C:/SurgeonsLab/EmboNav/src/ui/CarmView.h
 C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mmc:Q_OBJECT
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QDateTime
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QEvent
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QMutex
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QString
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QVector
@@ -555,6 +581,7 @@ C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayalgorithms.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearraylist.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qbytearrayview.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcalendar.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qchar.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcompare_impl.h
@@ -569,7 +596,7 @@ C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreevent.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdarwinhelpers.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatastream.h
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdeadlinetimer.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatetime.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdebug.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qelapsedtimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qendian.h
@@ -590,6 +617,7 @@ C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlatin1stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qline.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlist.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlocale.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlogging.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmalloc.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmap.h
@@ -598,7 +626,6 @@ C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetacontainer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmetatype.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qminmax.h
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmutex.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnamespace.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qnumeric.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qobject.h
@@ -649,7 +676,6 @@ C:/SurgeonsLab/EmboNav/src/ui/CineViewStudio.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtnoop.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtpreprocessorsupport.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtresource.h
- mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtsan_impl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttranslation.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qttypetraits.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversion.h
@@ -1022,8 +1048,13 @@ C:/SurgeonsLab/EmboNav/src/ui/FluoroOverlay.h
  mdp:C:/SurgeonsLab/EmboNav/src/ui/FluoroOverlay.h
 C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mmc:Q_OBJECT
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QList
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QPair
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QRect
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSize
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSizeF
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QString
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/q20functional.h
@@ -1058,10 +1089,16 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainerinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainertools_impl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontiguouscache.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication_platform.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreevent.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdarwinhelpers.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatastream.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdeadlinetimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdebug.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qelapsedtimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qendian.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qeventloop.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qexceptionhandling.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qflags.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qfloat16.h
@@ -1073,12 +1110,14 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qglobalstatic.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhash.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhashfunctions.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevicebase.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterable.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterator.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlatin1stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qline.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlist.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlocale.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlogging.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmalloc.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmap.h
@@ -1144,6 +1183,7 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversionchecks.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypeinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypes.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qurl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qutf8stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvariant.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvarlengtharray.h
@@ -1151,7 +1191,10 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qxptype_traits.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qyieldcpu.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QMatrix4x4
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QShowEvent
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QSurfaceFormat
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QTransform
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector2D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector3D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector4D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qaction.h
@@ -1159,12 +1202,18 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qbrush.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcolor.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcursor.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qevent.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qeventpoint.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfont.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontmetrics.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qgenericmatrix.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qicon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qimage.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputdevice.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputmethod.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qkeysequence.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qmatrix4x4.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qopengl.h
@@ -1175,16 +1224,20 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpalette.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixelformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixmap.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpointingdevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpolygon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qquaternion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qregion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgb.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgba64.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qsurfaceformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtgui-config.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiexports.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiglobal.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtransform.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector2d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector3d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector4d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvectornd.h
@@ -1216,6 +1269,8 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/SheathManager.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/StlMesh.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/Vec3.h
@@ -1223,8 +1278,13 @@ C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h
  mdp:C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
 C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mmc:Q_OBJECT
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QList
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QPair
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QRect
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSize
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QSizeF
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QString
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/q20functional.h
@@ -1259,10 +1319,16 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainerinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontainertools_impl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcontiguouscache.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreapplication_platform.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qcoreevent.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdarwinhelpers.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdatastream.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdeadlinetimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qdebug.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qelapsedtimer.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qendian.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qeventloop.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qexceptionhandling.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qflags.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qfloat16.h
@@ -1274,12 +1340,14 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qglobalstatic.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhash.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qhashfunctions.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiodevicebase.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterable.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qiterator.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlatin1stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qline.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlist.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlocale.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qlogging.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmalloc.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qmap.h
@@ -1345,6 +1413,7 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtversionchecks.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypeinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qtypes.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qurl.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qutf8stringview.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvariant.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qvarlengtharray.h
@@ -1352,7 +1421,10 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qxptype_traits.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/qyieldcpu.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QMatrix4x4
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QShowEvent
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QSurfaceFormat
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QTransform
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector2D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector3D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/QVector4D
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qaction.h
@@ -1360,12 +1432,18 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qbrush.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcolor.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qcursor.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qevent.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qeventpoint.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfont.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontinfo.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qfontmetrics.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qgenericmatrix.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qguiapplication_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qicon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qimage.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputdevice.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qinputmethod.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qkeysequence.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qmatrix4x4.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qopengl.h
@@ -1376,16 +1454,20 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpalette.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixelformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpixmap.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpointingdevice.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qpolygon.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qquaternion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qregion.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgb.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qrgba64.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qscreen_platform.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qsurfaceformat.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtgui-config.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiexports.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtguiglobal.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qtransform.h
+ mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector2d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector3d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvector4d.h
  mdp:C:/Software/Qt/6.8.3/msvc2022_64/include/QtGui/qvectornd.h
@@ -1417,6 +1499,8 @@ C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h
+ mdp:C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/SheathManager.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/StlMesh.h
  mdp:C:/SurgeonsLab/EmboNav/src/core/Vec3.h

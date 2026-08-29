@@ -143,12 +143,14 @@ float CardiacCycle::pleth(float p) const {
 // ─────────────────────────────────────────────────────────────────────────────
 // wallWaveform — what the vessel wall actually follows.
 //
-// Smoothstep in, hold, smoothstep out. Both transitions have zero derivative at
-// each end, so the fill eases in rather than snapping and the release settles
-// rather than stopping dead; and because the curve is flat at both 0 and 1 the
-// wrap between beats is invisible.
+// A "lub-dub" shape now, not a single smooth fill-hold-release bump: a quick,
+// strong primary expansion (systolic ejection), a partial fall, a shorter and
+// weaker secondary pulse (the dicrotic rebound as the aortic valve shuts),
+// then a rest at baseline (diastole) until the next beat. Every segment uses
+// the same cubic smoothstep, so each transition is flat in derivative — no
+// visible tick at any junction, including where the cycle wraps at rest.
 //
-// Anchored to the same ejection onset as the pressure pulse, so the balloon
+// Anchored to the same ejection onset as the pressure pulse, so the wall
 // still begins one pre-ejection period after the R peak.
 float CardiacCycle::wallWaveform(float p) const {
     const float cyc      = std::max(cycleSeconds(), 1e-4f);
@@ -157,18 +159,42 @@ float CardiacCycle::wallWaveform(float p) const {
     float u = wrapped(p) - wrapped(ejection);      // cycles since ejection began
     if (u < 0.f) u += 1.f;
 
-    const float fill = std::clamp(m_params.fillFraction, 0.02f, 0.9f);
-    const float hold = std::clamp(m_params.holdFraction, 0.f, 1.f - fill - 0.02f);
+    const float lubRise   = std::clamp(m_params.lubRiseFraction,   0.01f, 0.5f);
+    const float lubFall   = std::clamp(m_params.lubFallFraction,   0.01f, 0.5f);
+    const float lubTrough = std::clamp(m_params.lubTroughFraction, 0.f,   0.9f);
+    const float dubRise   = std::clamp(m_params.dubRiseFraction,   0.01f, 0.5f);
+    const float dubPeak   = std::clamp(m_params.dubPeakFraction,   0.f,   1.f);
+    const float dubFall   = std::clamp(m_params.dubFallFraction,   0.01f, 0.5f);
+
+    // Boundaries between the four segments, clamped so degenerate Params
+    // (all fractions pushed to their maximum) still leave at least a sliver
+    // of rest period rather than wrapping past 1.0.
+    const float t1 = std::min(lubRise, 0.97f);
+    const float t2 = std::min(t1 + lubFall, 0.98f);
+    const float t3 = std::min(t2 + dubRise, 0.99f);
+    const float t4 = std::min(t3 + dubFall, 0.995f);
+
+    auto smooth = [](float t) { return t * t * (3.f - 2.f * t); };
 
     float balloon;
-    if (u < fill) {
-        const float t = u / fill;
-        balloon = t * t * (3.f - 2.f * t);                    // fill
-    } else if (u < fill + hold) {
-        balloon = 1.f;                                        // brief hold at peak
+    if (u < t1) {
+        // Lub: quick rise to the primary peak.
+        balloon = smooth(u / t1);
+    } else if (u < t2) {
+        // Partial fall — does not return to baseline before the dub.
+        const float t = (u - t1) / (t2 - t1);
+        balloon = 1.f - smooth(t) * (1.f - lubTrough);
+    } else if (u < t3) {
+        // Dub: shorter rise to the secondary peak, well below the primary.
+        const float t = (u - t2) / (t3 - t2);
+        balloon = lubTrough + smooth(t) * (dubPeak - lubTrough);
+    } else if (u < t4) {
+        // Fall from the secondary peak back to baseline.
+        const float t = (u - t3) / (t4 - t3);
+        balloon = dubPeak * (1.f - smooth(t));
     } else {
-        const float t = (u - fill - hold) / std::max(1.f - fill - hold, 1e-4f);
-        balloon = 1.f - t * t * (3.f - 2.f * t);              // release
+        // Rest — diastole, flat at baseline until the next beat's ejection.
+        balloon = 0.f;
     }
 
     // The physiological alternative, kept so the two can be blended or compared.

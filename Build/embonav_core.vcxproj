@@ -411,6 +411,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\SurgeonsLab\EmboNav\src\core\CardiacCycle.h" />
     <ClCompile Include="C:\SurgeonsLab\EmboNav\src\core\CatheterCatalog.cpp" />
     <ClInclude Include="C:\SurgeonsLab\EmboNav\src\core\CatheterCatalog.h" />
+    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\core\EmbolizationModel.cpp" />
+    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\core\EmbolizationModel.h" />
+    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\core\ContrastInjectionModel.cpp" />
+    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\core\ContrastInjectionModel.h" />
     <ClCompile Include="C:\SurgeonsLab\EmboNav\Build\embonav_core_autogen\mocs_compilation_Release.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>

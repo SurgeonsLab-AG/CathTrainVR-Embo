@@ -347,6 +347,18 @@
 			null
 		],
 		[
+			"C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h",
+			"MU",
+			"PRMOGMWJPH/moc_ContrastInjectionModel.cpp",
+			null
+		],
+		[
+			"C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h",
+			"MU",
+			"PRMOGMWJPH/moc_EmbolizationModel.cpp",
+			null
+		],
+		[
 			"C:/SurgeonsLab/EmboNav/src/core/MeshDistance.h",
 			"MU",
 			"PRMOGMWJPH/moc_MeshDistance.cpp",
@@ -517,6 +529,12 @@
 		[ "C:/SurgeonsLab/EmboNav/src/core/CatheterModel.cpp", "MU", null ],
 		[ "C:/SurgeonsLab/EmboNav/src/core/CenterlineExtractor.cpp", "MU", null ],
 		[ "C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.cpp", "MU", null ],
+		[
+			"C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.cpp",
+			"MU",
+			null
+		],
+		[ "C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.cpp", "MU", null ],
 		[
 			"C:/SurgeonsLab/EmboNav/src/core/NavigationController.cpp",
 			"MU",

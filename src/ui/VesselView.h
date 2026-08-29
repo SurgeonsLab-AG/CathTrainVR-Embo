@@ -1,26 +1,17 @@
 #pragma once
 
 #include <QOpenGLWidget>
-<<<<<<< HEAD
 #include <QShowEvent>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QMatrix4x4>
-<<<<<<< HEAD
 #include <QVector2D>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <QVector3D>
 #include <QVector4D>
 #include <QString>
 #include <QTimer>
-<<<<<<< HEAD
 #include <QElapsedTimer>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <memory>
 #include <vector>
 
@@ -29,16 +20,11 @@
 #include "core/SheathManager.h"
 #include "core/CardiacCycle.h"
 #include "core/StlMesh.h"
-<<<<<<< HEAD
 #include "core/EmbolizationModel.h"
 #include "core/ContrastInjectionModel.h"
 
 class QOpenGLShaderProgram;
 class QOpenGLFramebufferObject;
-=======
-
-class QOpenGLShaderProgram;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 /// Vessel viewport.
 ///
@@ -101,7 +87,6 @@ public:
     void setMesh(const cn::StlMesh *mesh);
     void setGraph(const cn::CenterlineGraph *graph);
     void setDevice(const cn::CatheterModel *device);
-<<<<<<< HEAD
     /// Tells this view whether the currently active device (m_device) is a
     /// microcatheter, purely for Fluoro colour selection - CatheterModel
     /// itself has no notion of device class (that lives one level up, in
@@ -139,7 +124,9 @@ public:
     /// below had separately hardcoded 25cm), which is exactly the kind of
     /// inconsistency a single shared source of truth prevents by
     /// construction.
-    void setDetectorInfo(float sidCm, float magCm) { m_hudSidCm = sidCm; m_hudMagCm = magCm; update(); }
+    void setDetectorInfo(float sidCm, float magCm, int frameFps) {
+        m_hudSidCm = sidCm; m_hudMagCm = magCm; m_hudFrameFps = frameFps; update();
+    }
 
     /// Same shared-instance pattern as setDevice(): the caller owns one
     /// EmbolizationModel and hands the same pointer to every VesselView, so
@@ -158,8 +145,6 @@ public:
     /// contrast decays (and therefore visibly shrinks) even with no operator
     /// action at all.
     void refreshContrastInjection();
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     /// Drive the pulsating vessel wall from the console's cardiac clock. The
     /// same clock feeds the ECG, so the wall distends on the beat the trace is
@@ -243,6 +228,15 @@ public:
     /// eye and the follow camera's auto-zoom.
     void setCameraTrack(const cn::CenterlinePath *path, float arc);
     void setCameraFollows(bool v);
+    /// Changes only the orbit azimuth - target position and zoom distance
+    /// are left completely untouched. Needed because showHeadSagittal()
+    /// sets azimuth=90 deg (its own comment: "patient's left lateral" - a
+    /// side view, not a front one), and that angle otherwise persists
+    /// through sheath/catheter selection with nothing to switch it to a
+    /// front-facing view instead, without triggering a full camera
+    /// reset/refocus that would also move target/zoom (which must stay
+    /// exactly where the operator left them, per explicit requirement).
+    void setAzimuthOnly(float azimuthDeg) { m_azimuth = azimuthDeg; update(); emit cameraChanged(); }
     bool cameraFollows() const { return m_cameraFollows; }
 
     void setMode(Mode m);
@@ -256,7 +250,6 @@ public:
     bool showCenterline() const { return m_showCenterline; }
     void setWallOpacity(float v) { m_wallOpacity = v; update(); }
 
-<<<<<<< HEAD
     /// The circle-and-crosshair markers (with lumen/takeoff-angle labels) and
     /// the "BIFURCATION — LEFT/RIGHT" banner drawn at a pending branch
     /// choice. Off by default: with keyboard/arrow navigation there is
@@ -266,8 +259,6 @@ public:
     void setShowBranchMarkers(bool v) { m_showBranchMarkers = v; update(); }
     bool showBranchMarkers() const { return m_showBranchMarkers; }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Load Muscular.stl and Skeletal.stl for the body-layer background.
     ///
     /// These two meshes and the vessel STL are authored in ONE coordinate frame
@@ -299,7 +290,6 @@ public:
     /// dialling an unfamiliar asset in. Emits nothing; call from a shortcut.
     void nudgeBodyLayers(float dz, float dScale = 0.f);
 
-<<<<<<< HEAD
     /// Every parameter in the X-Ray Calibration dialog (MainWindow), read
     /// by kFragmentShader's uXrayMode==2 branch. Defaults match the
     /// requested calibration table. Changing any of these only affects the
@@ -378,8 +368,6 @@ public:
     void setXrayTuning(const XrayTuning &t) { m_xrayTuning = t; update(); }
     const XrayTuning &xrayTuning() const { return m_xrayTuning; }
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Legacy per-axis bounding-box fit: stretches each body mesh so its bbox
     /// matches the vessel's. Off by default. Only useful when a body mesh comes
     /// from a different source than the vessel and genuinely needs fitting; on
@@ -391,6 +379,31 @@ public:
     /// Road Map mode: draw the vessel in red at high opacity on a dark background,
     /// like the old project's road-map look (vessel colour 1.0, 0.20, 0.3686 at 0.75 opacity).
     void setRoadMapActive(bool on) { m_roadMapActive = on; update(); }
+
+    /// Real clinical roadmapping state machine. NoMask: vessel is at
+    /// baseline near-invisible opacity, no frozen image exists. Masked: a
+    /// static snapshot has been captured and is being composited as a
+    /// fixed background layer - it does NOT move if the camera/C-arm
+    /// angle subsequently changes, which is deliberate: that mismatch
+    /// (misregistration) between a stale mask and live anatomy is a real,
+    /// clinically important behavior of roadmapping, not a bug to hide.
+    /// RoadmapActive: same as Masked, plus the operator has explicitly
+    /// toggled the roadmap overlay on for active use (setRoadMapActive).
+    enum class RoadmapState { NoMask, Masked, RoadmapActive };
+    RoadmapState roadmapState() const { return m_roadmapState; }
+
+    /// Boosts the vessel to visible opacity for exactly one rendered
+    /// frame, captures that frame into an offscreen texture, then reverts
+    /// the LIVE vessel back to its near-invisible baseline. From this
+    /// point on the captured texture - not the live 3D mesh - is what
+    /// represents the vessel on screen, drawn as a static background layer
+    /// underneath the live bone/muscle/catheter render. Call again
+    /// ("Re-mask") to intentionally refresh it at the current C-arm angle.
+    void captureRoadmapMask();
+    /// Discards the captured mask and returns to NoMask (vessel invisible,
+    /// grayscale baseline) - called on new patient/case load so a stale
+    /// mask from a previous case can never silently carry over.
+    void clearRoadmapMask();
     /// DSA mode: dark background, skeleton visible, vessel surface hidden (opacity 0).
     void setDSAActive(bool on) { m_dsaActive = on; update(); }
     void setWireframe(bool on)  { m_wireframe = on; update(); }
@@ -407,7 +420,6 @@ public:
 
     /// Frame the entire tree, frontal and upright. The startup view.
     void showWholeVessel();
-<<<<<<< HEAD
     /// Frame the rib cage specifically — closer than showWholeVessel(), and
     /// centred on the heart/aortic-root region rather than the whole mesh's
     /// bounding box. Uses the same Z-offset reasoning as the Fluoro rib-cage
@@ -415,8 +427,6 @@ public:
     /// own level, so no separate anatomical query is needed beyond
     /// heartCentre(), which is already computed from the loaded centerline.
     void focusRibCage();
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     /// Vertical field of view for the current palette, in degrees.
     ///
@@ -428,7 +438,6 @@ public:
     // the old project's frameOnFace() + parallel-scale zoom.
     void showFluoroDefault();
 
-<<<<<<< HEAD
     /// Close sagittal (lateral) view of the head and cerebral vasculature.
     ///
     /// Looks along the patient's X axis rather than the AP direction the other
@@ -440,8 +449,6 @@ public:
     /// cerebral region proper.
     void showHeadSagittal();
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Copy camera state from another VesselView so all views share the same position.
     void syncCameraFrom(const VesselView &other);
 
@@ -498,7 +505,6 @@ protected:
     void mouseMoveEvent(QMouseEvent *e) override;
     void wheelEvent(QWheelEvent *e) override;
     void keyPressEvent(QKeyEvent *e) override;
-<<<<<<< HEAD
     /// Snaps the follow/endoluminal camera to its current goal the instant
     /// this view becomes visible again (see the .cpp implementation's own
     /// comment for the exact bug this fixes: paintGL() - the only place
@@ -509,8 +515,6 @@ protected:
     /// stale position toward the correct one over the next several frames
     /// instead of already being there).
     void showEvent(QShowEvent *e) override;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 private:
     struct Batch {
@@ -554,7 +558,6 @@ private:
     void rebuildMeshBatch();
     void rebuildCenterlineBatch();
     void rebuildDeviceBatches();
-<<<<<<< HEAD
     void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth = 0.f);
     /// One from/to graph-node pair with a 0..1 fill fraction along it -
     /// the common shape both EmbolizationModel::CastLink and
@@ -601,11 +604,6 @@ private:
     /// covering the whole viewport regardless of where that camera is.
     void ensureXrayQuad();
 
-=======
-    void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b);
-    void rebuildBodyMeshBatch(const QString &path, Batch &batch, const BodyAlign &align);
-
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     void updateEndoluminalFrame();
     void updateFollowFrame();
     void rebuildBalloonBatch();
@@ -620,7 +618,6 @@ private:
     const cn::StlMesh *m_mesh = nullptr;
     const cn::CenterlineGraph *m_graph = nullptr;
     const cn::CatheterModel *m_device = nullptr;
-<<<<<<< HEAD
     /// See setDeviceIsMicrocatheter() - Fluoro colour only.
     bool m_deviceIsMicrocatheter = false;
     /// See setDeviceColor() - 3D View only. Default matches
@@ -633,20 +630,18 @@ private:
     /// value through - see buildUi().
     float m_hudSidCm = 100.f;
     float m_hudMagCm = 32.f;
+    int   m_hudFrameFps = 15;   ///< Same value Cine acquisition captures at - see setDetectorInfo()'s own comment.
     const cn::EmbolizationModel *m_emboli = nullptr;
     Batch m_emboliBatch;
     bool  m_emboliDirty = true;
     const cn::ContrastInjectionModel *m_contrast = nullptr;
     Batch m_contrastBatches[kContrastBuckets];
     bool  m_contrastDirty = true;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     Overlay m_overlay;
 
     std::unique_ptr<QOpenGLShaderProgram> m_program;
     Batch m_meshBatch, m_centerlineBatch;
     Batch m_muscularBatch, m_skeletalBatch;   // body layer meshes (Muscular + Skeletal)
-<<<<<<< HEAD
     Batch m_xrayQuadBatch;   // fullscreen triangle, Fluoro compositing pass
     /// Offscreen render target the Fluoro X-ray pass accumulates raw,
     /// unclamped attenuation into (R=muscle, G=bone, B=vessel), before a
@@ -657,8 +652,6 @@ private:
     /// buffer ever does.
     std::unique_ptr<QOpenGLFramebufferObject> m_xrayFbo;
     XrayTuning m_xrayTuning;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     std::unique_ptr<DeviceBatches> m_deviceBatches;
     std::vector<const cn::CatheterModel *> m_hostDevices;
     std::vector<std::unique_ptr<DeviceBatches>> m_hostBatches;
@@ -692,13 +685,10 @@ private:
     bool m_frontalLock = false;  // orbit enabled in all views by default
     float m_carmLAO = 0.f;   /// degrees, drives azimuth offset
     float m_carmCRAN = 0.f;  /// degrees, drives elevation offset
-<<<<<<< HEAD
     /// Backs the Fluoroscopy HUD's TIME read-out (paintOverlay()) - started
     /// once in the constructor, so it is genuinely live elapsed time, not a
     /// static placeholder like the HUD's other fixed-default fields.
     QElapsedTimer m_fluoroClock;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     QVector3D m_target;
     QPoint m_lastMouse;
 
@@ -719,7 +709,6 @@ private:
     /// deliberately left alone — its rig framing is set in CarmView::loadPart.
     static constexpr float kAnatomyFrameMargin = 1.25f;
 
-<<<<<<< HEAD
     /// Where the cerebral region starts, as a fraction of the model's Z span.
     /// 0.82 = Z 1401 mm on this model, above which the tree narrows to +/-103 mm.
     static constexpr float kHeadCropFraction = 0.82f;
@@ -730,9 +719,6 @@ private:
     /// See setShowBranchMarkers() - off by default, since keyboard/arrow
     /// navigation needs no on-screen circle-and-crosshair prompt.
     bool m_showBranchMarkers = false;
-=======
-    bool m_showWall = true, m_showCenterline = false;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // ── Cardiac pulsation ─────────────────────────────────────────────────
     static const int kPulseLutSize = 64;
@@ -746,6 +732,25 @@ private:
     QString m_muscularPath, m_skeletalPath;
     bool  m_bodyMeshDirty  = false;
     bool  m_roadMapActive  = false;
+
+    // ── Roadmap mask capture ──────────────────────────────────────────────
+    RoadmapState m_roadmapState = RoadmapState::NoMask;
+    /// The LIVE vessel's own opacity while roadmapping, driven entirely by
+    /// captureRoadmapMask() rather than a fixed constant: near-invisible
+    /// baseline (~0.04) whenever no capture is in progress, briefly raised
+    /// to a visible level for the exact one frame being captured, then
+    /// immediately restored - see captureRoadmapMask()'s own comment.
+    float m_roadmapVesselOpacity = 0.04f;
+    /// The captured mask frame, via QOpenGLWidget's own grabFramebuffer()
+    /// (the same proven mechanism CineViewStudio already uses for frame
+    /// capture). Drawn as a plain QPainter image at the very start of
+    /// paintGL(), in its own fully self-contained QPainter session
+    /// completed before any raw GL draw call begins - simpler and lower-
+    /// risk than interleaving a custom textured-quad GL shader pass with
+    /// the rest of this view's raw OpenGL rendering. Never re-rendered
+    /// from the 3D mesh again until the next explicit capture.
+    QImage m_roadmapMaskImage;
+    void drawRoadmapMaskLayer();
     bool  m_dsaActive      = false;
     bool  m_wireframe     = false;
     // Body-layer placement. Identity by default: the assets are already

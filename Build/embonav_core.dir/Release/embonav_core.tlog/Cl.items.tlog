@@ -8,4 +8,6 @@ C:\SurgeonsLab\EmboNav\src\core\NavigationController.cpp;C:\SurgeonsLab\EmboNav\
 C:\SurgeonsLab\EmboNav\src\core\CatheterModel.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\CatheterModel.obj
 C:\SurgeonsLab\EmboNav\src\core\CardiacCycle.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\CardiacCycle.obj
 C:\SurgeonsLab\EmboNav\src\core\CatheterCatalog.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\CatheterCatalog.obj
+C:\SurgeonsLab\EmboNav\src\core\EmbolizationModel.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\EmbolizationModel.obj
+C:\SurgeonsLab\EmboNav\src\core\ContrastInjectionModel.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\ContrastInjectionModel.obj
 C:\SurgeonsLab\EmboNav\Build\embonav_core_autogen\mocs_compilation_Release.cpp;C:\SurgeonsLab\EmboNav\Build\embonav_core.dir\Release\mocs_compilation_Release.obj

@@ -49,7 +49,6 @@ void FluoroOverlay::paintEvent(QPaintEvent *) {
     QPainter p(this);
     const QRect r = rect();
 
-<<<<<<< HEAD
     // Widget-level full-screen grain used to be drawn here. Removed: this
     // overlay is a separate QWidget compositing on top of VesselView with
     // no access to what it actually rendered, so it has no way to know
@@ -73,34 +72,6 @@ void FluoroOverlay::paintEvent(QPaintEvent *) {
     vg.setColorAt(0.0,  QColor(0, 0, 0,   0));
     vg.setColorAt(0.60, QColor(0, 0, 0,  35));
     vg.setColorAt(1.0,  QColor(0, 0, 0, 130));
-=======
-    // ── 1. Fine detector grain ───────────────────────────────────────────────
-    // Half-resolution noise buffer scaled up — cheaper and reads more like
-    // real detector grain than per-pixel noise at full res.
-    // Alpha 5-18: very subtle, matches real fluoro grain (not a heavy veil).
-    const int nw = std::max(1, r.width()  / 2);
-    const int nh = std::max(1, r.height() / 2);
-    QImage noise(nw, nh, QImage::Format_ARGB32);
-    QRandomGenerator rng(m_noiseSeed);
-    for (int y = 0; y < nh; ++y) {
-        QRgb *line = reinterpret_cast<QRgb *>(noise.scanLine(y));
-        for (int x = 0; x < nw; ++x) {
-            // Triangular distribution centred ~128 — softer than uniform
-            const int gray = (rng.bounded(256) + rng.bounded(256)) / 2;
-            const int a    = 5 + rng.bounded(13);   // 5..18 — faint grain only
-            line[x] = qRgba(gray, gray, gray, a);
-        }
-    }
-    p.setRenderHint(QPainter::SmoothPixmapTransform, false);
-    p.drawImage(r, noise);
-
-    // ── 2. Vignette — image intensifier edge falloff ─────────────────────────
-    // Outer alpha 90 — subtle but clearly visible darkening at the edges
-    QRadialGradient vg(r.center(), std::max(r.width(), r.height()) * 0.78);
-    vg.setColorAt(0.0,  QColor(0, 0, 0,  0));
-    vg.setColorAt(0.75, QColor(0, 0, 0, 22));
-    vg.setColorAt(1.0,  QColor(0, 0, 0, 90));
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     p.fillRect(r, vg);
 
     // ── 3. Collimation — clinical field narrowing (animated) ─────────────────

@@ -63,7 +63,18 @@ public:
     ///     starts draining at the fast (flush) rate rather than the slow
     ///     (natural washout) one.
     ///   Idle — clears everything.
-    void beginPhase(ContrastPhase phase, int32_t node = -1);
+    ///
+    /// `excludeNeighbor`, if >= 0, is treated as unreachable directly from
+    /// `node` - the same fix EmbolizationModel::begin() already has, and
+    /// for the identical reason: kContrastViscosity (0.12) is small but
+    /// non-zero, so the weighted flood-fill still has a weaker version of
+    /// the same wide-channel-preferring bias that made embolic material
+    /// reflux backward into a wider parent vessel before that fix. Contrast
+    /// is thinner and cares about it less, but the bias is not actually
+    /// zero, so a genuinely correct fix needs the same exclusion, not just
+    /// a smaller viscosity constant. The caller (MainWindow) already has
+    /// findProximalNeighbor() for exactly this.
+    void beginPhase(ContrastPhase phase, int32_t node = -1, int32_t excludeNeighbor = -1);
 
     /// Injects `dVolume` (>= 0) more contrast. No-op outside an angiogram
     /// phase (Idle/Flush do not accept new injection - a real operator does
@@ -91,6 +102,9 @@ private:
     const EmbolizationModel *m_emboli = nullptr;
     State m_state;
     std::vector<float> m_weightedDist;
+    /// See beginPhase()'s own comment - the proximal neighbor node the
+    /// catheter's own body blocks, or -1 if none was given.
+    int32_t m_excludedNeighbor = -1;
 };
 
 } // namespace cn

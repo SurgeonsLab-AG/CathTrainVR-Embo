@@ -3,10 +3,7 @@
 #include <QStackedWidget>
 #include <QElapsedTimer>
 #include <memory>
-<<<<<<< HEAD
 #include <array>
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 #include <vector>
 #include <QString>
 
@@ -19,11 +16,8 @@
 #include "core/CenterlineGraph.h"
 #include "core/NavigationController.h"
 #include "core/StlMesh.h"
-<<<<<<< HEAD
 #include "core/EmbolizationModel.h"
 #include "core/ContrastInjectionModel.h"
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 #include "ui/VesselView.h"
 #include "ui/CarmView.h"
@@ -38,6 +32,7 @@ class QCheckBox;
 class QComboBox;
 class QDialog;
 class QDoubleSpinBox;
+class QHBoxLayout;
 class QLabel;
 class QMenu;
 class QPlainTextEdit;
@@ -46,15 +41,11 @@ class QSlider;
 class QSpinBox;
 class QTimer;
 class QPushButton;
-<<<<<<< HEAD
 class QButtonGroup;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MainWindow — combined EmboNav console
 //
-<<<<<<< HEAD
 //   ┌──────────────────────┬──────────────────────────────────────────────┐
 //   │ File View C-arm Help │ Calibration Cine Studio 3D Fluro Mesh DSA … │
 //   ├───────────────────┬──────────────────────────────────────────────────┤
@@ -83,22 +74,6 @@ class QButtonGroup;
 // "Embolisation — Step N/7" banner under QuadPanel is gone too; m_emboLabel
 // stays declared as nullptr and every setText() call site is already
 // guarded with `if (m_emboLabel)`.
-=======
-//   ┌───────────────────┬──────────────────────────────┬────────────────┐
-//   │ File View C-arm    Help  │ Cine Studio │ 3D Fluro Mesh DSA        │
-//   ├───────────────────┼──────────────────────────────┼────────────────┤
-//   │ C-arm OpenGL view │                              │ Procedure dock │
-//   │  (CarmView)       │   QuadPanel                  │  Access &      │
-//   │  + angle HUD      │   (VesselView stack:         │    devices     │
-//   │                   │    3D / Fluoro / Mesh / DSA) │  Device status │
-//   ├───────────────────┤                              │  Calibration   │
-//   │ ECG / ABP / Pleth │                              │  Catheter nav  │
-//   │  (ECGWidget)      ├──────────────────────────────┤  Procedure log │
-//   │                   │ [Contrast][Road Map]         │                │
-//   │                   │ embolisation step label      │                │
-//   │                   │ [Squid][Onyx][DMS][Glue][Gel]│                │
-//   └───────────────────┴──────────────────────────────┴────────────────┘
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 //
 // The view-mode buttons live in the menu bar's right corner (buildViewBar), not
 // in a strip between the panels; the middle column they used to occupy is gone.
@@ -164,7 +139,6 @@ private:
     void onRetract();
     void onChooseLeft();
     void onChooseRight();
-<<<<<<< HEAD
     /// Rotate the catheter about its own axis — the missing operator input
     /// this conversation identified: setTipDeflection()/setRollAngle() were
     /// never called from anywhere in this file, so the sophisticated tip-
@@ -175,8 +149,6 @@ private:
     /// navigation could read as "on autopilot" rather than operator-driven.
     void onRollLeft();
     void onRollRight();
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     void onCarmLAO();
     void onCarmRAO();
     void onCarmCRAN();
@@ -187,10 +159,6 @@ private:
     void onCarmAnglesChanged(double lao, double cran);
     void onSheathSelection();
     void onCatheterSelection();
-<<<<<<< HEAD
-=======
-    void onContrastInjection();
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     void onRoadMap();
     void onDSAView();
     void onDeployEmbolic(const QString &agent);
@@ -203,7 +171,6 @@ private:
     void showDeviceSpecDialog(const QString &stageName);
     /// Load a catalogue device by its display name and make it the live
     /// catheter. Returns false when the name is not in the catalogue.
-<<<<<<< HEAD
     ///
     /// `tipShapeName` only applies to the diagnostic-catheter body
     /// ("Terumo Guide", DeviceClass::BaseGuide) — see
@@ -211,32 +178,28 @@ private:
     /// which carries its own fixed shape in the catalogue as before.
     bool applyCatheterSpec(const QString &displayName, const QString &sizeLabel = QString(),
                            const QString &tipShapeName = QString());
-=======
-    bool applyCatheterSpec(const QString &displayName, const QString &sizeLabel = QString());
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// Navigation is enabled only when there is both an access and a device.
     void updateDeviceGating();
     /// Tick a display-mode action without re-triggering it.
     void checkViewAction(int id);
+    /// Sets the "active" dynamic property on a nav tile and re-polishes it
+    /// so the QSS [active="true"] rule takes effect immediately - see that
+    /// rule's own comment in the stylesheet for why this replaced relying
+    /// on setChecked()/the :checked pseudo-state for the visual border.
+    void setNavTileActive(QPushButton *tile, bool active);
     /// Depth in the coaxial stack; larger is further inside the patient.
     static int deviceStackLevel(cn::DeviceClass c);
-<<<<<<< HEAD
     /// The X-Ray Calibration dialog's 28 spin boxes (m_xraySpins) and
     /// VesselView::XrayTuning's 28 fields, converted between each other
     /// positionally — one fixed order, used by "Save / Apply" (spins ->
     /// struct), "Reset to defaults" and reopening the dialog (struct ->
     /// spins), so all three always agree on which value is which.
-    void setNavTileActive(QPushButton *tile, bool active);
-
     static std::array<double, 28> xrayTuningToArray(const VesselView::XrayTuning &t);
     static VesselView::XrayTuning xrayArrayToTuning(const std::array<double, 28> &v);
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     /// nav.advance() with the coaxial floor applied.
     float advanceDevice(float ds);
     /// Resize the loaded catheter from the Calibration French dropdown.
     void onCatheterFrenchChanged(int index);
-<<<<<<< HEAD
     void log(const QString &line);
     QString mm(float modelUnits, int decimals = 1) const;
 
@@ -269,19 +232,12 @@ private:
     void updateContrastReadout();
     void refreshContrastViews();
 
-=======
-    bool showContrastControlDialog();
-    void log(const QString &line);
-    QString mm(float modelUnits, int decimals = 1) const;
-
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     // ── Geometry / navigation core ──────────────────────────────────────────
     cn::StlMesh                     m_mesh;
     cn::CenterlineGraph             m_graph;
     cn::CenterlineExtractor::Report m_report;
     cn::NavigationController        m_nav;
     cn::CatheterModel               m_catheter;
-<<<<<<< HEAD
     /// Embolisation Module's shared cast-growth model — one instance, handed
     /// to every VesselView exactly the way m_catheter already is.
     cn::EmbolizationModel           m_emboli;
@@ -289,8 +245,6 @@ private:
     /// (setEmbolization) so it can see - and be genuinely blocked by -
     /// whatever the embolic cast currently occludes.
     cn::ContrastInjectionModel      m_contrastModel;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     std::vector<cn::AccessPoint>    m_sites;
     std::vector<int32_t>             m_vtpLeafNodes;
     cn::SheathManager                m_sheath;
@@ -303,13 +257,10 @@ private:
     bool   m_catheterReady = false;
     QString m_activeCatheter;
     QString m_activeCatheterSize;
-<<<<<<< HEAD
     /// Which named tip shape (Angled taper/VERT, SIM1-3, Newt, CK1, H1) is
     /// baked onto the diagnostic-catheter body, when that is the active
     /// device. Empty for every other device class.
     QString m_activeTipShape;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     const cn::CatheterSpec *m_activeSpec = nullptr;
     /// Devices already placed and left in the patient, outermost first. A
     /// microcatheter telescoped through a guide does not make the guide vanish.
@@ -326,14 +277,6 @@ private:
     double  m_carmCRAN = 0.0;
     bool    m_roadMapActive = false;
     bool    m_dsaViewActive = false;
-<<<<<<< HEAD
-=======
-    QString m_contrastFlowRate = "Medium";
-    QString m_contrastVolume   = "Medium";
-    /// Agent chosen in the injector dialog; empty means a diagnostic run with
-    /// contrast only, which is the default.
-    QString m_contrastAgent;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     QString m_bodyMeshDir;
 
     // Device spec (from dialog — informational, drives log)
@@ -346,6 +289,10 @@ private:
 
     // ── Page stack ──────────────────────────────────────────────────────────
     QStackedWidget *m_pageStack     = nullptr;
+    /// [left vertical nav sidebar][m_pageStack] - see buildUi()'s own
+    /// comment for why the nav sidebar has to live here, as a persistent
+    /// sibling of the page stack, rather than inside just one page.
+    QHBoxLayout *m_contentRow = nullptr;
     QWidget        *m_simulatorPage = nullptr;
     CineViewStudio *m_cineStudio    = nullptr;
 
@@ -356,7 +303,6 @@ private:
     VesselView *m_view       = nullptr;   // alias → m_quad->view3D()
     ECGWidget  *m_ecgWidget  = nullptr;
 
-<<<<<<< HEAD
     // ── Bottom tile navigation bar (replaces the old menu-bar view actions) ──
     // 3D VIEW / FLUORO / DSA are mutually exclusive (m_viewTileGroup); index
     // 2 (Mesh) is deliberately left null - the reference design this bar
@@ -368,17 +314,12 @@ private:
     QButtonGroup *m_viewTileGroup = nullptr;
     QPushButton  *m_viewTiles[4]  = {nullptr, nullptr, nullptr, nullptr};
     QPushButton  *m_roadMapTile   = nullptr;
-=======
-    // ── Menu-bar display-mode actions ───────────────────────────────────────
-    // Exclusive group, so exactly one of 3D / Fluoro / Mesh / DSA is ticked.
-    QActionGroup *m_viewActGroup = nullptr;
-    bool m_contrastDone = false;
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
+    QPushButton  *m_cineTile      = nullptr;
+    QPushButton  *m_hamburgerBtn  = nullptr;
 
     // ── Access site radio buttons ───────────────────────────────────────────
     std::vector<QRadioButton *> m_siteButtons;
 
-<<<<<<< HEAD
     // ── Calibration widgets — live in m_calibrationDialog, opened from the
     // menu bar (buildViewBar) rather than a right-hand dock. Same widgets,
     // same connections; only the container changed.
@@ -429,9 +370,6 @@ private:
     /// every time the dialog is reopened — showing whatever was last
     /// actually applied, not a stale or discarded in-progress edit.
     std::vector<QDoubleSpinBox *> m_xraySpins;
-=======
-    // ── Procedure panel widgets (right dock) ────────────────────────────────
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     QDoubleSpinBox *m_odSpin        = nullptr;
     QDoubleSpinBox *m_stepSpin      = nullptr;
     QDoubleSpinBox *m_speedSpin     = nullptr;
@@ -440,21 +378,12 @@ private:
     QCheckBox      *m_autoCalibrate = nullptr;
     QPlainTextEdit *m_log           = nullptr;
 
-<<<<<<< HEAD
     // Catheter navigation (Advance/Retract/Left/Right) has no on-screen
     // buttons — it is driven only by the I/K/J/L keyboard shortcuts wired in
     // buildUi(), which call the same onAdvance()/onRetract()/onChooseLeft()/
     // onChooseRight() handlers the buttons used to.
     // Access & devices — a horizontal bar along the bottom of the whole
     // window (buildUi), not a boxed group in a side dock.
-=======
-    // Navigation buttons (in right dock)
-    QPushButton *m_btnAdvance  = nullptr;
-    QPushButton *m_btnRetract  = nullptr;
-    QPushButton *m_btnLeft     = nullptr;
-    QPushButton *m_btnRight    = nullptr;
-    // Access & devices group (moved out of the middle strip into this dock)
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     QPushButton *m_btnSheathSelect   = nullptr;
     QPushButton *m_btnCatheterSelect = nullptr;
     QLabel      *m_fSheath   = nullptr;
@@ -477,7 +406,6 @@ private:
     QLabel *m_fBranch    = nullptr;
     QLabel *m_fTurns     = nullptr;
     QLabel *m_fStatus    = nullptr;   ///< no longer shown; updateReadouts guards it
-<<<<<<< HEAD
     /// New for the right-side "Procedure Info" card (buildUi()) - access site
     /// name has never had a dedicated label before now.
     QLabel *m_fAccess = nullptr;
@@ -487,18 +415,12 @@ private:
     QLabel *m_deviceStatusSheath   = nullptr;
     QLabel *m_deviceStatusCatheter = nullptr;
     QLabel *m_deviceStatusEmbolic  = nullptr;
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Device area — the loaded catheter's model name plus a quick working-size
     // selector. The full per-size dimensions live in the Catheter Selection
     // dialog; duplicating them here made the panel long without adding control.
     QLabel    *m_fDevModel = nullptr;
-<<<<<<< HEAD
     QComboBox *m_frCombo   = nullptr;   ///< quick working size, 1-3 Fr, default 2 Fr
-=======
-    QComboBox *m_frCombo   = nullptr;   ///< quick working size, 2-5 Fr
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 
     // Actions
     QAction *m_balloonAction = nullptr;
@@ -516,7 +438,6 @@ private:
     // Timers
     QTimer *m_motion = nullptr;
     int     m_cineRunCounter = 0;
-<<<<<<< HEAD
 
     // ── Cine acquisition — real continuous recording, not a single captured
     // frame on opening Cine Studio ─────────────────────────────────────────
@@ -530,8 +451,6 @@ private:
     // Ended explicitly on End Procedure.
     QTimer *m_cineCaptureTimer = nullptr;
     bool    m_cineRecording    = false;
-    static constexpr int kCineCaptureFps = 15;
-
     void startCineRecordingIfNeeded();
     void stopCineRecording();
     void onCineCaptureTick();
@@ -569,6 +488,4 @@ private:
     void onScreenshot();
     void onGenerateReport();
     void onEndProcedure();
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 };

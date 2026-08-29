@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QOpenGLWidget>
+#include <algorithm>
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
@@ -79,6 +80,33 @@ public:
     void setMagnification(float cm);
     float magnification() const { return m_magCm; }
 
+    /// Pulsed fluoroscopy frame rate, fps - the same "FRAME" figure the
+    /// Fluoroscopy HUD displays (VesselView::setDetectorInfo()) and Cine
+    /// acquisition actually captures at (MainWindow::startCineRecordingIfNeeded()).
+    /// A single real value both read, rather than two independently
+    /// hardcoded "15"s that happen to agree right now but have no
+    /// structural reason to stay that way if either is ever changed alone.
+    void setFrameRate(int fps) { m_frameRateFps = std::clamp(fps, 1, 60); }
+
+    /// Multiplies the camera distance computed from the model's own
+    /// bounding box - >1.0 moves the camera farther away (zoomed out).
+    /// The distance calculation itself is based purely on the model's own
+    /// size, not this widget's own size/aspect ratio, so a much smaller,
+    /// more square embedded instance (versus the main simulator page's
+    /// wide C-Arm Status card) can end up with a narrower effective
+    /// horizontal field of view at the same fixed vertical FOV, cropping a
+    /// wide model like the C-arm rig out of frame. This is the direct,
+    /// explicit way to compensate, rather than fighting the aspect ratio.
+    void setZoomFactor(float f) { m_zoomFactor = std::max(0.1f, f); update(); }
+
+    /// Scales the HUD readout font sizes (normally 20pt values / 8pt
+    /// labels) - the main simulator page's own C-Arm Status card has
+    /// plenty of width for those sizes, but a much narrower embedded
+    /// instance (like Cine Studio's C-Arm Quick View) needs them scaled
+    /// down to avoid the text overflowing or getting cropped at the edge.
+    void setHudFontScale(float scale) { m_hudFontScale = std::max(0.1f, scale); update(); }
+    int frameRate() const { return m_frameRateFps; }
+
     /// Fluoroscopy time accumulates only while this is true, the way a real
     /// console counts only while the pedal is down.
     void setFluoroActive(bool on);
@@ -147,6 +175,9 @@ private:
     // ── Console read-outs ───────────────────────────────────────────────────
     float  m_sidCm        = 100.f;
     float  m_magCm        =  32.f;
+    int    m_frameRateFps = 15;
+    float  m_zoomFactor = 1.f;   ///< see setZoomFactor()
+    float  m_hudFontScale = 1.f;   ///< see setHudFontScale()
     double m_fluoroSec    =   0.0;
     bool   m_fluoroActive = true;
     QElapsedTimer m_fluoroClock;   ///< measured, not counted in timer ticks

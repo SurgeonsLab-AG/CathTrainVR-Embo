@@ -45,7 +45,7 @@ bool ContrastInjectionModel::linkOccluded(int32_t a, int32_t b) const {
     return false;
 }
 
-void ContrastInjectionModel::beginPhase(ContrastPhase phase, int32_t node) {
+void ContrastInjectionModel::beginPhase(ContrastPhase phase, int32_t node, int32_t excludeNeighbor) {
     if (phase == ContrastPhase::Idle) { reset(); return; }
 
     if (phase == ContrastPhase::Flush) {
@@ -62,6 +62,7 @@ void ContrastInjectionModel::beginPhase(ContrastPhase phase, int32_t node) {
     // cast that exists NOW, not a snapshot from whenever setEmbolization()
     // was first called.
     m_state = State{};
+    m_excludedNeighbor = excludeNeighbor;
     if (!m_graph || node < 0 || node >= static_cast<int32_t>(m_graph->nodeCount())) return;
     m_state.phase = phase;
     m_state.injectionNode = node;
@@ -88,6 +89,12 @@ void ContrastInjectionModel::recomputeWeightedDistances() {
             // corresponding embolic link is occluded - contrast cannot flow
             // past it, full stop, not "flows past it slowly".
             if (linkOccluded(v, w)) continue;
+            // The catheter's own body occupies this one specific segment -
+            // same fix as EmbolizationModel::begin(), see beginPhase()'s
+            // own comment. Only the DIRECT edge out of the injection node
+            // is blocked, not every route that happens to lead toward the
+            // access site in general.
+            if (v == m_state.injectionNode && w == m_excludedNeighbor) continue;
 
             const float radius = std::min(m_graph->nodes()[static_cast<size_t>(v)].radius,
                                           m_graph->nodes()[static_cast<size_t>(w)].radius);
@@ -114,6 +121,15 @@ void ContrastInjectionModel::rebuildLinks() {
             static_cast<size_t>(link.to)   >= m_weightedDist.size())
             continue;
         if (linkOccluded(link.from, link.to)) continue;   // never draw contrast past a blocked link
+        // Same exclusion as recomputeWeightedDistances(), independently
+        // necessary here for the identical reason the embolic fix needed
+        // it in both places: this exact edge would otherwise still render
+        // starting from dNear=0 (the injection node's own distance is
+        // always 0, regardless of what the Dijkstra pass found for the
+        // excluded neighbor via some other path).
+        if ((link.from == m_state.injectionNode && link.to == m_excludedNeighbor) ||
+            (link.to == m_state.injectionNode && link.from == m_excludedNeighbor))
+            continue;
 
         const float dFrom = m_weightedDist[static_cast<size_t>(link.from)];
         const float dTo   = m_weightedDist[static_cast<size_t>(link.to)];

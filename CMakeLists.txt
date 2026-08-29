@@ -40,13 +40,10 @@ add_library(embonav_core STATIC
     src/core/CardiacCycle.h
     src/core/CatheterCatalog.cpp
     src/core/CatheterCatalog.h
-<<<<<<< HEAD
     src/core/EmbolizationModel.cpp
     src/core/EmbolizationModel.h
     src/core/ContrastInjectionModel.cpp
     src/core/ContrastInjectionModel.h
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
 )
 target_include_directories(embonav_core PUBLIC src src/core)
 # VtpCenterlineLoader uses qUncompress (Qt-bundled zlib) — Qt6::Core provides it
@@ -111,7 +108,6 @@ if(BUILD_GUI)
         Qt6::OpenGLWidgets
     )
 
-<<<<<<< HEAD
     # ---------------------------------------------------------------------
     # Automatic windeployqt — runs after every build, using the EXACT Qt
     # install find_package(Qt6 ...) above already resolved (derived from the
@@ -140,21 +136,14 @@ if(BUILD_GUI)
         endif()
     endif()
 
-=======
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
     # Copy assets next to the executable at build time
     set(EMBO_ASSETS_DIR "${CMAKE_SOURCE_DIR}/Data/3D" CACHE PATH
         "Directory with Vessel_Reconstructed.stl, VTPs, Muscular/Skeletal.stl and C-arm STLs")
 
     # Copy each asset individually so a missing optional file doesn't abort the build
     foreach(_asset
-<<<<<<< HEAD
             Vessel.stl
             Vessel_centerlines.vtp
-=======
-            Simplified_Vessel_2.stl
-            Simplified_Vessel_2_centerlines.vtp
->>>>>>> 5411818b8ce7f0b7e0ae0f509f0558ac367a04c7
             Muscular.stl
             Skeletal.stl
             carm_head.stl
