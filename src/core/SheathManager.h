@@ -173,8 +173,29 @@ public:
     // Expressed as fractions of the graph's own bounding box, not absolute
     // millimetres, so they hold for any model whose legs are at the bottom and
     // whose arms are its most lateral structure.
-    /// A groin entry must sit below this fraction of the model's Z span.
-    static constexpr float kFemoralZMaxFraction      = 0.20f;
+    /// A groin entry must sit within this Z band - the femoral resolver
+    /// targets whichever of two available graph nodes actually reads as
+    /// clearly below hip level (~31.5% of body height, verified against
+    /// this project's own model - the graph has a large gap with no
+    /// intermediate node between that and the next one up at ~51.5%).
+    /// Generous around that so click-to-refine has room to move without
+    /// tripping the alarm, while still catching a genuinely wrong vessel.
+    static constexpr float kFemoralZMinFraction = 0.22f;
+    static constexpr float kFemoralZMaxFraction = 0.75f;
+    /// A popliteal entry (behind the knee) must sit below this fraction of
+    /// the model's Z span - the same band the original femoral resolver
+    /// used before it was corrected to find the true groin-level entry
+    /// instead; that band was always correctly describing a genuine leg
+    /// terminal, just for the wrong access site name.
+    static constexpr float kPoplitealZMaxFraction = 0.20f;
+    /// A brachial entry (upper arm) must sit within this Z band - verified
+    /// at ~63.3% of body height against this project's own model (lowered
+    /// from the original resolution, per explicit request, to the
+    /// elbow-crease/antecubital transition rather than mid-upper-arm).
+    /// Generous around that so click-to-refine has room to move without
+    /// tripping the alarm, while still catching a genuinely wrong vessel.
+    static constexpr float kBrachialZMinFraction = 0.55f;
+    static constexpr float kBrachialZMaxFraction = 0.92f;
     /// A wrist entry must sit beyond this fraction of the model's half-width.
     static constexpr float kRadialLateralMinFraction = 0.45f;
 

@@ -319,7 +319,7 @@ public:
         // result, rather than requiring the dialog to be re-run each time.
         // Nothing here is derived or re-justified — these are the numbers
         // that were actually dialed in and confirmed to look right.
-        QVector3D backgroundColor{0.0f, 0.0f, 0.0f};
+        QVector3D backgroundColor{0.09f, 0.09f, 0.09f};
 
         QVector3D boneColor{0.90f, 0.88f, 0.82f};
         float boneOpacity  = 0.50f;
@@ -478,6 +478,15 @@ signals:
     void retractRequested();
     void chooseLeftRequested();
     void chooseRightRequested();
+    /// Continue straight through a junction - the option whose takeoff
+    /// angle deviates least from the current travel direction, not
+    /// necessarily the leftmost or rightmost one on screen. The only way
+    /// to reach a junction's middle option when it presents more than two
+    /// candidates (e.g. the aortic bifurcation reached from femoral/
+    /// popliteal access, typically degree-4 and presenting 3 options
+    /// after excluding the direction the catheter came from) - Left/Right
+    /// alone only ever reach the leftmost/rightmost screen-sorted option.
+    void chooseStraightRequested();
     void cameraChanged();
     /// Emitted when the user Alt+clicks on the vessel surface (picking enabled).
     /// worldPt is the nearest graph node position to the click ray.
@@ -572,10 +581,20 @@ private:
     /// CatheterModel::buildTubeMesh, which is tied to a single ordered node
     /// chain) since either a cast or a contrast column can branch across
     /// several links at once, unlike a catheter's own single-file chain.
+    ///
+    /// `irregularity` (0 = perfectly smooth, the default) perturbs each
+    /// ring vertex's radius by a deterministic, position-seeded amount -
+    /// stable across frames (no flicker), but breaks up the perfectly
+    /// circular, machine-smooth cross-section a plain tube always has.
+    /// Left at 0 for contrast (a real liquid has no business looking
+    /// lumpy); embolic material uses a nonzero value scaled by the
+    /// agent's own viscosity, so a deposited cast reads as an irregular
+    /// plug/accumulation rather than a manufactured-looking cylinder.
     void buildTubesFromSpans(const cn::CenterlineGraph *graph,
-                             const std::vector<CastSpan> &spans, Batch &out);
+                             const std::vector<CastSpan> &spans, Batch &out,
+                             float irregularity = 0.f);
     /// Extracts spans from the shared EmbolizationModel and builds them.
-    void buildEmboliInto(const cn::EmbolizationModel *emb, Batch &out);
+    void buildEmboliInto(const cn::EmbolizationModel *emb, Batch &outSet, Batch &outGrowing);
     /// Extracts spans from the shared ContrastInjectionModel and builds them
     /// into kContrastBuckets separate batches, one per concentration tier
     /// (ContrastInjectionModel::ContrastLink::level, already 0..1 per link -
@@ -632,7 +651,12 @@ private:
     float m_hudMagCm = 32.f;
     int   m_hudFrameFps = 15;   ///< Same value Cine acquisition captures at - see setDetectorInfo()'s own comment.
     const cn::EmbolizationModel *m_emboli = nullptr;
-    Batch m_emboliBatch;
+    // Split rather than one batch: lets the still-filling leading edge (the
+    // active precipitation front) render with a different density than the
+    // already-set trailing cast behind it - see buildEmboliInto()'s own
+    // comment for why that distinction matters for "realistic release".
+    Batch m_emboliBatchSet;      ///< fillFraction >= kEmboliSetThreshold - fully formed
+    Batch m_emboliBatchGrowing;  ///< still actively filling - the growing tip
     bool  m_emboliDirty = true;
     const cn::ContrastInjectionModel *m_contrast = nullptr;
     Batch m_contrastBatches[kContrastBuckets];

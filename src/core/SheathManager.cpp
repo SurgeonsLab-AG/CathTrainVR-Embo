@@ -323,13 +323,19 @@ bool SheathManager::sanityCheck(AccessSite site, const Vec3 &pt,
     switch (site) {
     case AccessSite::RightFemoral:
     case AccessSite::LeftFemoral: {
-        // Generous relative to the resolver's 0.12 band so click-to-refine can
-        // walk the entry a little way up the iliac without tripping the alarm.
+        // Femoral resolution was fixed to find the actual groin-level
+        // common femoral artery (previously it was using the leg's own
+        // ankle terminal, ~2.7% of body height - see AccessSites.cpp's own
+        // comment on that resolver for the full story), which sits much
+        // higher up the body. Generous band around the verified ~57%
+        // value so click-to-refine has room to move without tripping the
+        // alarm, while still catching a genuinely wrong vessel.
+        const float zMin = b.lo.z + zSpan * kFemoralZMinFraction;
         const float zMax = b.lo.z + zSpan * kFemoralZMaxFraction;
-        if (pt.z > zMax) {
+        if (pt.z < zMin || pt.z > zMax) {
             s << siteName << ": entry point Z=" << pt.z * m_mmPerUnit
-              << " mm is above the groin band (max "
-              << zMax * m_mmPerUnit << " mm). "
+              << " mm is outside the groin band (" << zMin * m_mmPerUnit
+              << "-" << zMax * m_mmPerUnit << " mm). "
               << "Access site detection may have chosen the wrong vessel.";
             outMsg = s.str();
             return false;
@@ -347,6 +353,36 @@ bool SheathManager::sanityCheck(AccessSite site, const Vec3 &pt,
             s << siteName << ": entry point is " << lat * m_mmPerUnit
               << " mm from the midline, inside the wrist band (min "
               << latMin * m_mmPerUnit << " mm). "
+              << "Access site detection may have chosen the wrong vessel.";
+            outMsg = s.str();
+            return false;
+        }
+        return true;
+    }
+    case AccessSite::RightPopliteal:
+    case AccessSite::LeftPopliteal: {
+        // Same band the original femoral resolver used before it was
+        // corrected to find the true groin-level entry - a genuine leg
+        // terminal near the bottom of the model.
+        const float zMax = b.lo.z + zSpan * kPoplitealZMaxFraction;
+        if (pt.z > zMax) {
+            s << siteName << ": entry point Z=" << pt.z * m_mmPerUnit
+              << " mm is above the popliteal band (max "
+              << zMax * m_mmPerUnit << " mm). "
+              << "Access site detection may have chosen the wrong vessel.";
+            outMsg = s.str();
+            return false;
+        }
+        return true;
+    }
+    case AccessSite::RightBrachial:
+    case AccessSite::LeftBrachial: {
+        const float zMin = b.lo.z + zSpan * kBrachialZMinFraction;
+        const float zMax = b.lo.z + zSpan * kBrachialZMaxFraction;
+        if (pt.z < zMin || pt.z > zMax) {
+            s << siteName << ": entry point Z=" << pt.z * m_mmPerUnit
+              << " mm is outside the brachial band (" << zMin * m_mmPerUnit
+              << "-" << zMax * m_mmPerUnit << " mm). "
               << "Access site detection may have chosen the wrong vessel.";
             outMsg = s.str();
             return false;

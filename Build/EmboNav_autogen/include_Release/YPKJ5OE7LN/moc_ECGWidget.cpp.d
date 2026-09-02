@@ -1,4 +1,4 @@
-C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_ECGWidget.cpp: C:/SurgeonsLab/EmboNav/src/ui/ECGWidget.h \
+C:/SurgeonsLab/EmboNav_Git/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_ECGWidget.cpp: C:/SurgeonsLab/EmboNav_Git/src/ui/ECGWidget.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QTimer \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QVector \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/q20functional.h \
@@ -160,4 +160,4 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_ECGW
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsexports.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsglobal.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qwidget.h \
-  C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.h
+  C:/SurgeonsLab/EmboNav_Git/src/core/CardiacCycle.h

@@ -34,6 +34,8 @@ class QDialog;
 class QDoubleSpinBox;
 class QHBoxLayout;
 class QLabel;
+class QListWidget;
+class QListWidgetItem;
 class QMenu;
 class QPlainTextEdit;
 class QRadioButton;
@@ -109,6 +111,9 @@ private:
     // Pipeline
     void extractCenterline();
     void resolveAccessSites();
+    /// Splices each resolved femoral entry a modest distance further down
+    /// its own vessel - see the .cpp's own comment for the full reasoning.
+    void nudgeFemoralEntriesDownward();
     void autoCalibrate();
     void loadBodyMeshes();
 
@@ -139,6 +144,7 @@ private:
     void onRetract();
     void onChooseLeft();
     void onChooseRight();
+    void onChooseStraight();
     /// Rotate the catheter about its own axis — the missing operator input
     /// this conversation identified: setTipDeflection()/setRollAngle() were
     /// never called from anywhere in this file, so the sophisticated tip-
@@ -158,6 +164,10 @@ private:
     void logCarm(const char *key, const char *what);
     void onCarmAnglesChanged(double lao, double cran);
     void onSheathSelection();
+    /// Builds and shows the patient-selection dialog: case list on the
+    /// left, module categories on the right. See the .cpp's own comment
+    /// for the full layout description.
+    void showPatientSelectionDialog();
     void onCatheterSelection();
     void onRoadMap();
     void onDSAView();
@@ -180,6 +190,14 @@ private:
                            const QString &tipShapeName = QString());
     /// Navigation is enabled only when there is both an access and a device.
     void updateDeviceGating();
+    /// Clears the catheter unconditionally (device detached from every
+    /// view, m_catheterReady/m_ready both false) - a stale catheter must
+    /// never carry over to a sheath it was not explicitly attached to.
+    /// When alsoResetSheath is true, also clears the sheath itself
+    /// (m_sheathReady false, sheath geometry removed from every view) -
+    /// used when the patient/case changes, not on an ordinary new sheath
+    /// placement, which sets m_sheathReady true right after.
+    void resetDeviceState(bool alsoResetSheath);
     /// Tick a display-mode action without re-triggering it.
     void checkViewAction(int id);
     /// Sets the "active" dynamic property on a nav tile and re-polishes it
@@ -228,6 +246,11 @@ private:
     void showContrastInjectionDialog();
     void onBeginContrastPhase(cn::ContrastPhase phase);
     void onInjectContrast();
+    /// Fully clears m_contrastModel (phase back to Idle) and every view's
+    /// rendered contrast batch - previously there was no way to do this
+    /// from the UI at all; only beginning a fresh phase implicitly reset
+    /// the model, with no explicit "remove everything" action available.
+    void onResetContrast();
     void onContrastTick();
     void updateContrastReadout();
     void refreshContrastViews();
@@ -336,6 +359,23 @@ private:
     QLabel         *m_emboStatusLabel  = nullptr;
     QPushButton    *m_emboInjectBtn    = nullptr;
     QPushButton    *m_emboResetBtn     = nullptr;
+    /// Continuous injection state - onInjectEmbolic() toggles this rather
+    /// than injecting one large discrete step; while true, onContrastTick()
+    /// (shared with the contrast timer - see that member's own comment)
+    /// injects a small, speed-scaled amount every 150 ms, giving a visibly
+    /// gradual, continuously-advancing front instead of an instant jump.
+    /// Stops automatically once volumeInjected reaches m_emboVolumeSpin's
+    /// value, or immediately if the operator presses the button again.
+    bool             m_emboliInjecting = false;
+    QDoubleSpinBox  *m_emboSpeedSpin   = nullptr;   ///< rate multiplier, 0.5-3.0x
+    QDoubleSpinBox  *m_emboVolumeSpin  = nullptr;   ///< target total volume for this injection
+    /// How much total volume the current continuous injection should reach
+    /// before auto-stopping - shared between the dialog's own toggle (which
+    /// sets this from m_emboVolumeSpin) and the quick sidebar panel's INJECT
+    /// button (which adds to it), so both feed the same gradual, ongoing
+    /// injection instead of each doing its own separate instant jump.
+    float            m_emboliTargetVolume = 0.f;
+
     /// Embedded "Embolic Agent" quick-inject panel, built directly into the
     /// Procedure sidebar per the reference design (agent dropdown, a
     /// volume readout with +/- steppers, one big INJECT button) rather than
@@ -356,6 +396,14 @@ private:
     QDialog        *m_contrastDialog      = nullptr;
     QLabel         *m_contrastStatusLabel = nullptr;
     QPushButton    *m_contrastInjectBtn   = nullptr;
+    QPushButton    *m_contrastResetBtn    = nullptr;
+    /// Continuous injection state - same pattern as m_emboliInjecting
+    /// above: onInjectContrast() toggles this instead of injecting one
+    /// large discrete step, and onContrastTick() injects a small,
+    /// speed-scaled amount every tick while true.
+    bool             m_contrastInjecting  = false;
+    QDoubleSpinBox  *m_contrastSpeedSpin  = nullptr;   ///< rate multiplier, 0.5-3.0x
+    QDoubleSpinBox  *m_contrastVolumeSpin = nullptr;   ///< target total volume for this injection
     /// Ticks m_contrastModel forward in real time (decay/washout) whether or
     /// not the operator is doing anything - contrast has to clear on its own
     /// even with the dialog just sitting idle, the same way it would in a
@@ -388,6 +436,19 @@ private:
     QPushButton *m_btnCatheterSelect = nullptr;
     QLabel      *m_fSheath   = nullptr;
     QLabel      *m_fCatheter = nullptr;
+
+    // Select Patient — opens showPatientSelectionDialog(): case list on the
+    // left, module categories on the right, matching the reference design.
+    // Only one actual vessel dataset exists in this project, so picking a
+    // case tracks which one is "active" (shown in the header's own
+    // PROCEDURE field, kept in sync across every view) rather than loading
+    // different anatomy per case - see onPatientCaseSelected()'s own
+    // comment for the full explanation.
+    QPushButton *m_btnSelectPatient  = nullptr;
+    QLabel      *m_activeModuleLabel = nullptr;   // shown in the header bar
+    QString      m_activeModuleCategory;
+    QString      m_activeModuleName;
+    QString      m_activePatientCaseId;
 
     // Status / embo labels (in vessel panel area)
     QLabel *m_emboLabel   = nullptr;

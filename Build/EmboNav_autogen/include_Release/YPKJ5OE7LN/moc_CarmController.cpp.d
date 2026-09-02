@@ -1,4 +1,4 @@
-C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_CarmController.cpp: C:/SurgeonsLab/EmboNav/src/ui/CarmController.h \
+C:/SurgeonsLab/EmboNav_Git/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_CarmController.cpp: C:/SurgeonsLab/EmboNav_Git/src/ui/CarmController.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/q20functional.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/q20memory.h \

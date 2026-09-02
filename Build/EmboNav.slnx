@@ -7,19 +7,19 @@
 		<BuildType Name="RelWithDebInfo"/>
 		<Platform Name="x64"/>
 	</Configurations>
-	<Project Path="EmboNav.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="97424efc-eb72-3cdd-aabb-01fd526cb537">
+	<Project Path="EmboNav.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c8532964-b4e4-310a-b125-ff6a664cfb28">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="embonav_core.vcxproj"/>
 	</Project>
-	<Project Path="embonav_cli.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ec3c809a-f3cb-3836-9314-ef98bd20ed85">
+	<Project Path="embonav_cli.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="860a3c00-aaa8-37cc-834b-15c943e1b3e7">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="embonav_core.vcxproj"/>
 	</Project>
-	<Project Path="embonav_core.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="069e9b0a-5989-37eb-92d5-c3e02ad44988">
+	<Project Path="embonav_core.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d0dc87e8-5d99-3a8e-a271-b8e4491ed6a7">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Folder Name="/CMakePredefinedTargets/">
-		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6de2c8bc-5507-32e9-ae22-0ba60077f64e" DefaultStartup="true">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d43bd2cc-dc44-3a47-9ae9-15a163e29174" DefaultStartup="true">
 			<BuildDependency Project="EmboNav.vcxproj"/>
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 			<BuildDependency Project="embonav_cli.vcxproj"/>
@@ -29,6 +29,6 @@
 			<Build Solution="MinSizeRel|*" Project="false"/>
 			<Build Solution="RelWithDebInfo|*" Project="false"/>
 		</Project>
-		<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8ea85be9-2dfe-33be-8f6a-f5be8371aefc"/>
+		<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b8d850bb-fd4a-38cd-ac5b-ac2dbd3479af"/>
 	</Folder>
 </Solution>

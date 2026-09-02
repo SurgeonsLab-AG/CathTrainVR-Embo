@@ -24,6 +24,27 @@ void NavigationController::startFrom(int32_t accessNode) {
     computeOptions();
 }
 
+void NavigationController::startFrom(int32_t accessNode, int32_t forwardNeighbour) {
+    m_route.clear();
+    m_committed.clear();
+    m_options.clear();
+    m_pendingJunction = -1;
+    m_deadEnd = false;
+    m_depth = 0.f;
+    m_path = CenterlinePath{};
+
+    if (!m_graph || accessNode < 0 || forwardNeighbour < 0 ||
+        accessNode >= static_cast<int32_t>(m_graph->nodeCount()) ||
+        forwardNeighbour >= static_cast<int32_t>(m_graph->nodeCount()))
+        return;
+
+    m_route.push_back(accessNode);
+    m_route.push_back(forwardNeighbour);
+    extendRoute();
+    rebuildPath();
+    computeOptions();
+}
+
 void NavigationController::setViewFrame(const Vec3 &screenRight, const Vec3 &screenUp) {
     m_screenRight = screenRight.normalized();
     m_screenUp = screenUp.normalized();

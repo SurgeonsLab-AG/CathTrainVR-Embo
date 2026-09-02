@@ -1,4 +1,4 @@
-C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_CarmView.cpp: C:/SurgeonsLab/EmboNav/src/ui/CarmView.h \
+C:/SurgeonsLab/EmboNav_Git/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_CarmView.cpp: C:/SurgeonsLab/EmboNav_Git/src/ui/CarmView.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QPair \
@@ -189,5 +189,5 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Carm
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsexports.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsglobal.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qwidget.h \
-  C:/SurgeonsLab/EmboNav/src/core/StlMesh.h \
-  C:/SurgeonsLab/EmboNav/src/core/Vec3.h
+  C:/SurgeonsLab/EmboNav_Git/src/core/StlMesh.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/Vec3.h

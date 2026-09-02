@@ -12,7 +12,7 @@
 // draws it.
 
 ECGWidget::ECGWidget(QWidget *parent) : QWidget(parent) {
-    setMinimumHeight(220);
+    setMinimumHeight(160);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     connect(&m_timer, &QTimer::timeout, this, &ECGWidget::onTick);
@@ -90,8 +90,8 @@ namespace {
 /// "read backward from the live write position" convention every trace here
 /// shares, so all three stay pixel-aligned to the same moment in the cycle.
 void drawTrace(QPainter &p, const QRect &field, const QVector<double> &buf,
-              int writePos, double baselineFraction, double gainFraction,
-              const QColor &colour, qreal penWidth) {
+               int writePos, double baselineFraction, double gainFraction,
+               const QColor &colour, qreal penWidth) {
     if (buf.isEmpty()) return;
     const double base = field.top() + field.height() * baselineFraction;
     const double gain = field.height() * gainFraction;
@@ -176,11 +176,11 @@ void ECGWidget::paintEvent(QPaintEvent *) {
     // it rather than competing on top of it. Strokes thinned from the
     // previous pass (1.6/1.2 -> 1.1/0.9/1.3) for a lighter, less heavy look.
     drawTrace(p, field, m_pressureBuffer, m_writePos,
-             kPressureBaselineFraction, kPressureGainFraction, PRESSURE_COLOR, 1.1);
+              kPressureBaselineFraction, kPressureGainFraction, PRESSURE_COLOR, 1.1);
     drawTrace(p, field, m_plethBuffer, m_writePos,
-             kPlethBaselineFraction, kPlethGainFraction, PLETH_COLOR, 0.9);
+              kPlethBaselineFraction, kPlethGainFraction, PLETH_COLOR, 0.9);
     drawTrace(p, field, m_ecgBuffer, m_writePos,
-             kEcgBaselineFraction, kEcgGainFraction, ECG_COLOR, 1.3);
+              kEcgBaselineFraction, kEcgGainFraction, ECG_COLOR, 1.3);
 
     // ── Scale marker ─────────────────────────────────────────────────────────
     // A real monitor always labels the ceiling of whichever trace owns the

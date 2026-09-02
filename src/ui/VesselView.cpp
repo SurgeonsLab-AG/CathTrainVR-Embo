@@ -170,8 +170,27 @@ uniform float uMuscleBrightness;
 // Lambert response coefficient, set once in Pass 2.
 uniform float uForeignDensityScale;
 uniform float uForeignOpacity;
+// Contrast pools bright/white (per explicit request: "look like a real
+// radiopaque contrast bolus... bright/white initially") rather than dark,
+// but ONLY in plain Fluoro mode with no embolic material active. Road Map
+// keeps the original dark appearance (explicitly not to be changed), and so
+// does any moment embolic material is present: contrast and embolic share
+// this same accumulated channel (summed together in Pass 1, already
+// combined by the time Pass 2 reads it here), so there is no way to colour
+// one bright and the other dark at a pixel where both happen to overlap -
+// keeping embolic's own, unmodified dark appearance correct takes priority
+// over contrast's bright one in that shared situation.
+uniform float uContrastBrightMode;
 uniform float uForeignGrainAmount;
 uniform float uForeignIsFluid;    // 1.0 for contrast (a real flowing liquid), 0.0 for embolic cast (a permanent solid deposit) - see the fluid-flow noise term below for why this distinction exists
+// Fluoro vessel glitch — tiny, animated dropout speckle along the vessel
+// wall only, mimicking small live-fluoroscopy detector artifacts. Zero for
+// every other draw call sharing this shaded path (catheter, bone/muscle in
+// the 3D view, host devices, etc.) - only ever set non-zero right around
+// the Fluoro vessel wall's own draw call, and restored to 0 immediately
+// after, so nothing else sharing this program is affected.
+uniform float uVesselGlitchAmount;
+uniform float uVesselGlitchTime;
 out vec4 fragColor;
 
 // Cheap deterministic hash, 0..1. Textures bone/muscle with grain instead of
@@ -562,7 +581,40 @@ void main() {
         // contrast/embolic material pools dark on top of the tissue image
         // regardless of what's underneath, rather than competing with bone/
         // muscle for whichever is brighter.
-        float foreignShape = smoothstep(0.05, 0.6, acc.a);
+        // Two different saturation curves for the same accumulated density,
+        // chosen by uContrastBrightMode - NOT the same shape stretched by a
+        // brightness multiplier further down, because the actual problem is
+        // where this curve saturates to 1.0, not how bright 1.0 itself ends
+        // up being.
+        //
+        // Dark mode (Road Map, or whenever embolic material is active - see
+        // uContrastBrightMode's own comment) keeps the original narrow
+        // (0.05, 0.6) range completely unchanged: it was deliberately tuned
+        // to saturate quickly, for a crisp, well-defined dark edge rather
+        // than a soft haze - correct for that look, and left exactly as-is.
+        //
+        // Bright mode (uContrastBrightMode's plain-Fluoro state - the name
+        // is legacy from when this mode's target colour was white; it now
+        // targets a dark gray instead, but the widened range below is still
+        // needed for the same reason regardless of target colour) uses a
+        // much wider (0.05, 2.5) range instead - 2.5 matches the top of the
+        // per-bucket density scale contrast's own concentration tiers
+        // already produce (ContrastInjectionModel / buildContrastInto's
+        // own uForeignDensityScale, 0.9x-2.5x). The narrow range was the
+        // actual bug behind an earlier "purely whitish" report: any
+        // reasonably concentrated contrast easily exceeds 0.6 in
+        // accumulated density well before reaching the top of that real
+        // 0.9-2.5 range, so nearly the entire column was saturating to
+        // foreignShape=1.0 regardless of which concentration tier it
+        // actually came from - reading as uniformly, maximally saturated
+        // rather than showing "concentrated at the injection point,
+        // gradually less concentrated as it travels". The wider range lets
+        // that real concentration variation actually reach the screen as a
+        // visible difference instead of being saturated away before it
+        // gets there.
+        float foreignShapeDark   = smoothstep(0.05, 0.6, acc.a);
+        float foreignShapeBright = smoothstep(0.05, 2.5, acc.a);
+        float foreignShape = mix(foreignShapeDark, foreignShapeBright, uContrastBrightMode);
 
         // Tissue-only sum - foreignShape/uForeignOpacity intentionally do
         // NOT appear here any more.
@@ -631,12 +683,22 @@ void main() {
         // it reads as a consistently dark, radiopaque signal regardless of
         // how bright/contrasty the tissue calibration happens to be set,
         // rather than being just another additive brightness competing with
-        // bone for the same pixel. uForeignOpacity controls how dark it
-        // pools - near-black at 1.0, only a subtle darkening at low values -
-        // the same single shared coefficient Pass 2 already sets once per
-        // frame for this channel.
+        // bone for the same pixel. uForeignOpacity controls how strongly it
+        // pools toward the target colour - near-saturated at 1.0, only a
+        // subtle shift at low values - the same single shared coefficient
+        // Pass 2 already sets once per frame for this channel.
+        //
+        // Target colour itself now depends on uContrastBrightMode (see its
+        // own uniform comment): a dark grayish tone for plain Fluoro mode
+        // (per explicit request, changed from an earlier near-white
+        // target), or the original near-black otherwise (Road Map, or
+        // whenever embolic material is active - the two genuinely cannot
+        // be coloured independently once summed into this one shared
+        // accumulated channel).
         vec3 kContrastDark = vec3(0.03, 0.03, 0.035);
-        rgb = mix(rgb, kContrastDark, clamp(foreignShape * uForeignOpacity, 0.0, 1.0));
+        vec3 kContrastPlainFluoro = vec3(0.30, 0.30, 0.28);
+        vec3 kContrastTarget = mix(kContrastDark, kContrastPlainFluoro, uContrastBrightMode);
+        rgb = mix(rgb, kContrastTarget, clamp(foreignShape * uForeignOpacity, 0.0, 1.0));
 
         // The screen-space detector grain that used to sit here is removed
         // entirely. Two prior rounds tried to fix it in place — replacing
@@ -711,6 +773,25 @@ void main() {
     // down to a soft, still-bright peak instead.
     rgb = rgb / (1.0 + rgb * 0.18);
     float a = clamp(uColor.a + fres * uColor.a * 1.2, 0.0, 1.0);
+    // Sparse, animated dropout speckle - zero-cost (a single extra hash
+    // call) for every other draw call sharing this path, since
+    // uVesselGlitchAmount defaults to 0 and the branch below is then a
+    // no-op. Coarse hash picks small eligible patches (~a few mm across,
+    // matching "tiny irregular dotted/fragmented POINTS", not per-pixel
+    // grain), re-salted by uVesselGlitchTime so which patches are eligible
+    // changes over time; fine hash then decides the actual per-fragment
+    // dropout within an eligible patch, giving each glitch point an
+    // irregular, fragmented edge rather than a hard-edged dot. Alpha
+    // reduction only, never brightened and never fully to zero - keeps the
+    // vessel shape and color intact underneath, satisfying "must not
+    // obscure the vessel".
+    if (uVesselGlitchAmount > 0.0) {
+        float patchHash = hash13(floor(vWorld * 180.0) + uVesselGlitchTime);
+        if (patchHash < uVesselGlitchAmount) {
+            float fineHash = hash13(vWorld * 900.0 + uVesselGlitchTime * 1.7);
+            a *= mix(1.0, 0.35, smoothstep(0.15, 0.85, fineHash));
+        }
+    }
     fragColor = vec4(rgb, a);
 }
 )";
@@ -977,6 +1058,19 @@ void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt)
 }
 
 void VesselView::syncCameraFrom(const VesselView &other) {
+    // Effective target/distance, not the raw static ones. While camera-
+    // follow is active, other's own m_target/m_distance sit stale and
+    // completely unused for rendering (paintGL() itself branches on
+    // m_cameraFollows to pick between the static and follow pair - see
+    // that branch's own comment) - syncing the static pair instead of
+    // whatever is actually on screen was pulling in wherever the static
+    // camera was left before follow-mode took over (typically the
+    // head-sagittal startup default), not the tracked device position
+    // other is actually showing.
+    const bool otherFollowing = other.m_cameraFollows && other.m_device;
+    const QVector3D otherTarget   = otherFollowing ? other.m_followTarget   : other.m_target;
+    const float      otherDistance = otherFollowing ? other.m_followDistance : other.m_distance;
+
     // Distance is scaled by the ratio of each view's own FOV, not copied
     // verbatim. 3D and Fluoro deliberately use different FOVs (40°/30° -
     // see fovDegrees()'s own comment: Fluoro's narrower cone approximates a
@@ -990,8 +1084,20 @@ void VesselView::syncCameraFrom(const VesselView &other) {
     // regardless of which of the two FOVs is doing the looking.
     const float tanHalfMine  = std::tan(qDegreesToRadians(fovDegrees() * 0.5f));
     const float tanHalfTheir = std::tan(qDegreesToRadians(other.fovDegrees() * 0.5f));
-    const float scaledDistance = other.distance() * (tanHalfTheir / std::max(tanHalfMine, 1e-4f));
-    setCamera(other.azimuth(), other.elevation(), scaledDistance, other.target());
+    const float scaledDistance = otherDistance * (tanHalfTheir / std::max(tanHalfMine, 1e-4f));
+    setCamera(other.azimuth(), other.elevation(), scaledDistance, otherTarget);
+
+    // setCamera() above unconditionally turns follow-mode off (see its own
+    // comment) - that is correct for an actual manual camera move, but
+    // wrong here: if the source view is actively tracking the device, the
+    // destination should be too, not permanently knocked out of follow
+    // mode by the very sync that is supposed to keep them showing the same
+    // thing. Re-enabling it afterward (rather than skipping setCamera()
+    // entirely when following) still gives this view a sane static
+    // fallback position - wherever the device currently is - for the
+    // instant before its own next follow-frame update, rather than
+    // whatever stale static state it happened to have from before.
+    if (otherFollowing) setCameraFollows(true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1287,12 +1393,18 @@ VesselView::Material VesselView::wallMaterial() const {
         m.ambient  = 0.22f;   // lower ambient — less bright
         break;
     case Palette::Angiographic:
-        // Non-endo opacity now follows m_wallOpacity like every other
-        // palette, instead of a hardcoded 0.0 that made the vessel
-        // undrawable in Fluoro regardless of what any caller set. Road Map
-        // mode still overrides colour/opacity in the draw section below.
+        // Barely visible by default in plain Fluoro, per explicit spec:
+        // "No injection -> vessel barely visible" - contrast is what makes
+        // a vessel actually show up on a real fluoroscopy frame, not the
+        // vessel wall itself, which has similar radiodensity to
+        // surrounding tissue. Deliberately a low, non-zero opacity (0.10)
+        // rather than fully hidden - "barely visible" is not the same as
+        // invisible, and this is independent of m_wallOpacity, which stays
+        // a global slider affecting the other palettes (3D, Monochrome)
+        // unchanged. Road Map mode still overrides colour/opacity in the
+        // draw section below, unaffected by this.
         m.colour = endo ? QVector4D(0.88f, 0.88f, 0.90f, 1.f)
-                        : QVector4D(0.85f, 0.86f, 0.90f, m_wallOpacity);
+                        : QVector4D(0.85f, 0.86f, 0.90f, 0.10f);
         m.sheen = QVector3D(0.f, 0.f, 0.f);
         m.specular = 0.0f;
         m.shininess = 1.f;
@@ -1955,7 +2067,8 @@ void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b,
 }
 
 void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
-                                     const std::vector<CastSpan> &spans, Batch &out) {
+                                     const std::vector<CastSpan> &spans, Batch &out,
+                                     float irregularity) {
     std::vector<float> verts;
     std::vector<uint32_t> idx;
     if (!graph || spans.empty()) { uploadBatch(out, verts, idx); return; }
@@ -1967,6 +2080,15 @@ void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
     // radius: the cast/contrast should read as filling the vessel, not
     // exceeding it, regardless of the coarse per-node radius sampling.
     constexpr float kFitFraction = 0.85f;
+
+    // Simple, deterministic (not time-based) hash - same inputs always give
+    // the same output, so the irregularity pattern is stable across frames
+    // rather than flickering, but varies with position so it does not
+    // repeat an identical bump at every single ring.
+    auto jitterHash = [](float x, float y, float z) -> float {
+        float h = std::sin(x * 127.1f + y * 311.7f + z * 74.7f) * 43758.5453f;
+        return h - std::floor(h);   // 0..1
+    };
 
     for (const auto &span : spans) {
         if (span.frac <= 0.f || span.from < 0 || span.to < 0) continue;
@@ -2005,7 +2127,19 @@ void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
             for (int s = 0; s < kSides; ++s) {
                 const float ang = (2.0f * float(M_PI) * float(s)) / float(kSides);
                 const cn::Vec3 rim = cn::rotateAbout(refv, dir, ang);
-                const cn::Vec3 pos = centre + rim * r;
+                // Deterministic radius jitter, zero when irregularity is 0
+                // (every existing caller's exact prior behaviour). Seeded
+                // from the ring centre's own position and side index, so
+                // the bumps sit at fixed points in space rather than
+                // spinning or flickering, and differ from one ring to the
+                // next along the span instead of repeating identically.
+                float rJit = r;
+                if (irregularity > 0.f) {
+                    const float h = jitterHash(centre.x * 40.f + float(s) * 3.1f,
+                                               centre.y * 40.f, centre.z * 40.f);
+                    rJit = r * (1.f + irregularity * (h - 0.5f));
+                }
+                const cn::Vec3 pos = centre + rim * rJit;
                 const cn::Vec3 nrm = rim.normalized();
                 verts.insert(verts.end(), {pos.x, pos.y, pos.z, nrm.x, nrm.y, nrm.z});
             }
@@ -2035,16 +2169,38 @@ void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
     uploadBatch(out, verts, idx);
 }
 
-void VesselView::buildEmboliInto(const cn::EmbolizationModel *emb, Batch &out) {
+void VesselView::buildEmboliInto(const cn::EmbolizationModel *emb, Batch &outSet, Batch &outGrowing) {
     if (!emb || !emb->graph() || !emb->active()) {
-        std::vector<float> v; std::vector<uint32_t> i; uploadBatch(out, v, i);
+        std::vector<float> v; std::vector<uint32_t> i;
+        uploadBatch(outSet, v, i);
+        uploadBatch(outGrowing, v, i);
         return;
     }
-    std::vector<CastSpan> spans;
-    spans.reserve(emb->state().links.size());
-    for (const auto &link : emb->state().links)
-        spans.push_back({link.from, link.to, link.fillFraction});
-    buildTubesFromSpans(emb->graph(), spans, out);
+    // 0.98 rather than exactly 1.0: tolerates float accumulation in
+    // fillFraction so a link that is visually indistinguishable from fully
+    // set renders as set immediately, rather than spending one extra tick
+    // looking like it's still actively growing.
+    constexpr float kEmboliSetThreshold = 0.98f;
+    std::vector<CastSpan> setSpans, growingSpans;
+    setSpans.reserve(emb->state().links.size());
+    for (const auto &link : emb->state().links) {
+        CastSpan span{link.from, link.to, link.fillFraction};
+        if (link.fillFraction >= kEmboliSetThreshold) setSpans.push_back(span);
+        else                                          growingSpans.push_back(span);
+    }
+    // Irregularity scaled by (1 - viscosity), the same real distinction
+    // uForeignGrainAmount's own comment already establishes: a viscous,
+    // cohesive agent (Onyx/SQUID) forms a smooth, dense, uniform cast; a
+    // thin, fast-polymerizing one (Glue) forms a visibly irregular, patchy
+    // deposit. Applied to the actual mesh geometry here (a lumpy
+    // cross-section, not a perfect cylinder), on top of the shader's own
+    // grain texture, so a deposited cast reads as accumulated material
+    // rather than a machine-smooth tube regardless of viewing angle or
+    // zoom level.
+    const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(emb->agent());
+    const float irregularity = std::clamp(0.35f * (1.f - spec.viscosity), 0.03f, 0.35f);
+    buildTubesFromSpans(emb->graph(), setSpans, outSet, irregularity);
+    buildTubesFromSpans(emb->graph(), growingSpans, outGrowing, irregularity);
 }
 
 void VesselView::buildContrastInto(const cn::ContrastInjectionModel *contrast,
@@ -2113,7 +2269,7 @@ void VesselView::paintGL() {
     if (m_meshDirty) rebuildMeshBatch();
     if (m_centerlineDirty) rebuildCenterlineBatch();
     if (m_deviceDirty) rebuildDeviceBatches();
-    if (m_emboliDirty) { buildEmboliInto(m_emboli, m_emboliBatch); m_emboliDirty = false; }
+    if (m_emboliDirty) { buildEmboliInto(m_emboli, m_emboliBatchSet, m_emboliBatchGrowing); m_emboliDirty = false; }
     if (m_contrastDirty) { buildContrastInto(m_contrast, m_contrastBatches); m_contrastDirty = false; }
     if (m_sheathDirty) rebuildSheathBatches();
     if (m_bodyMeshDirty) {
@@ -2376,7 +2532,8 @@ void VesselView::paintGL() {
                     }
                 }
 
-                if (m_emboli && m_emboli->active() && m_emboliBatch.elementCount > 0) {
+                if (m_emboli && m_emboli->active() &&
+                    (m_emboliBatchSet.elementCount > 0 || m_emboliBatchGrowing.elementCount > 0)) {
                     // uForeignIsFluid explicitly off here - a set embolic
                     // cast is a genuinely permanent solid deposit and must
                     // never show the flow animation, regardless of whatever
@@ -2389,7 +2546,7 @@ void VesselView::paintGL() {
                     // agent-dependent brightness decision in this file
                     // already uses.
                     const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli->agent());
-                    m_program->setUniformValue("uForeignDensityScale", 0.6f + 1.8f * spec.radiopacity);
+                    const float baseDensity = 0.6f + 1.8f * spec.radiopacity;
                     // Grain amount derived from the SAME real viscosity
                     // value that already governs how each agent flows and
                     // branches (EmbolizationModel) - a viscous, cohesive,
@@ -2401,8 +2558,29 @@ void VesselView::paintGL() {
                     // knob. PHIL falls naturally in between.
                     const float grainAmount = std::clamp(1.3f - 1.3f * spec.viscosity, 0.1f, 1.1f);
                     m_program->setUniformValue("uForeignGrainAmount", grainAmount);
-                    QOpenGLVertexArrayObject::Binder bnd(&m_emboliBatch.vao);
-                    glDrawElements(GL_TRIANGLES, m_emboliBatch.elementCount, GL_UNSIGNED_INT, nullptr);
+
+                    if (m_emboliBatchSet.elementCount > 0) {
+                        m_program->setUniformValue("uForeignDensityScale", baseDensity);
+                        QOpenGLVertexArrayObject::Binder bnd(&m_emboliBatchSet.vao);
+                        glDrawElements(GL_TRIANGLES, m_emboliBatchSet.elementCount, GL_UNSIGNED_INT, nullptr);
+                    }
+                    if (m_emboliBatchGrowing.elementCount > 0) {
+                        // Boosted density for the still-actively-filling
+                        // leading edge - real embolic material at its own
+                        // growing/precipitating front reads visibly
+                        // different (fresher, denser-looking before fully
+                        // set) than the already-solidified cast behind it.
+                        // This is the actual "realistic release" signal:
+                        // during active injection the growing tip is now
+                        // visually distinct, not indistinguishable from a
+                        // static final result. A link crossing the set
+                        // threshold moves to the normal-density batch on
+                        // the very next rebuild, so there is no visible
+                        // seam or pop once it fully forms.
+                        m_program->setUniformValue("uForeignDensityScale", baseDensity * 1.22f);
+                        QOpenGLVertexArrayObject::Binder bnd(&m_emboliBatchGrowing.vao);
+                        glDrawElements(GL_TRIANGLES, m_emboliBatchGrowing.elementCount, GL_UNSIGNED_INT, nullptr);
+                    }
                 }
 
                 m_program->setUniformValue("uXrayIsVessel", 0);
@@ -2457,6 +2635,18 @@ void VesselView::paintGL() {
                 // underlying tissue/vessel-wall texture faintly visible
                 // through it, rather than a flat, textureless silhouette.
                 m_program->setUniformValue("uForeignOpacity", 0.85f);
+                // Bright/white contrast (per explicit request: "look like a
+                // real radiopaque contrast bolus... bright/white initially")
+                // only in plain Fluoro mode, with no embolic material
+                // currently active - Road Map keeps its original dark
+                // appearance (explicitly not to be changed), and so does
+                // any moment embolic material is present, since it shares
+                // this same accumulated channel with contrast and the two
+                // cannot be coloured independently once summed - see
+                // kContrastTarget's own comment in the composite pass.
+                const bool emboliActive = m_emboli && m_emboli->active();
+                m_program->setUniformValue("uContrastBrightMode",
+                                           (!m_roadMapActive && !emboliActive) ? 1.0f : 0.0f);
                 // Identity: the quad's vertices are already in clip space
                 // (see ensureXrayQuad), so this draw must not be pushed
                 // through the scene camera the way everything else is.
@@ -2619,6 +2809,24 @@ void VesselView::paintGL() {
                     wm.specular = 0.0f;
                     wallShaded2 = false;
                 }
+                // Sparse, animated dropout speckle - plain Fluoro only (not
+                // Road Map, which has its own separately-tuned appearance
+                // per explicit prior requirement not to touch it; not 3D/
+                // DSA, which are not a live fluoroscopy feed at all).
+                // uVesselGlitchTime reuses m_fluoroClock (already running,
+                // already backing the Fluoro HUD's own TIME read-out)
+                // rather than adding a second clock - divided down so the
+                // hash pattern visibly re-salts a few times a second, not
+                // once a millisecond (which would just look like flat
+                // random per-frame noise instead of small evolving glitch
+                // points).
+                const bool vesselGlitchActive = fluoro && !m_roadMapActive;
+                if (vesselGlitchActive) {
+                    const float t = m_fluoroClock.isValid()
+                    ? static_cast<float>(m_fluoroClock.elapsed()) * 0.004f : 0.f;
+                    m_program->setUniformValue("uVesselGlitchAmount", 0.10f);
+                    m_program->setUniformValue("uVesselGlitchTime", t);
+                }
                 // Wireframe mode (Mesh View): draw as lines, full opacity
                 if (m_wireframe) {
                     // Wireframe: same colour+opacity as 3D view but rendered as mesh lines
@@ -2638,6 +2846,7 @@ void VesselView::paintGL() {
                 } else {
                     drawBatch(m_meshBatch, GL_TRIANGLES, wm, wallShaded2, /*pulsatile=*/true);
                 }
+                if (vesselGlitchActive) m_program->setUniformValue("uVesselGlitchAmount", 0.0f);
             }
 
             glDepthMask(GL_TRUE);
@@ -2668,11 +2877,21 @@ void VesselView::paintGL() {
                 if (m_deviceIsMicrocatheter) {
                     tip.colour   = QVector4D(0.30f, 0.30f, 0.30f, 1.f);
                     band.colour  = QVector4D(0.38f, 0.38f, 0.38f, 1.f);
-                    shaft.colour = QVector4D(0.16f, 0.16f, 0.16f, 1.f);
+                    // Slightly translucent shaft (not the tip/band) - a
+                    // real microcatheter's thin braid already reads as a
+                    // faint line on fluoroscopy; full opacity here made it
+                    // look like a solid drawn tube rather than a thin
+                    // radiopaque line, per explicit request. The tip and
+                    // marker band stay fully opaque so the distal tip
+                    // remains unambiguously identifiable against the
+                    // now-thinner-looking shaft.
+                    shaft.colour = QVector4D(0.16f, 0.16f, 0.16f, 0.80f);
                 } else {
-                    tip.colour   = QVector4D(0.72f, 0.72f, 0.72f, 1.f);
-                    band.colour  = QVector4D(0.82f, 0.82f, 0.82f, 1.f);
-                    shaft.colour = QVector4D(0.55f, 0.55f, 0.55f, 1.f);
+                    tip.colour   = QVector4D(0.42f, 0.42f, 0.42f, 1.f);
+                    band.colour  = QVector4D(0.50f, 0.50f, 0.50f, 1.f);
+                    // Same reasoning as the microcatheter branch above -
+                    // slightly translucent shaft only, tip/band untouched.
+                    shaft.colour = QVector4D(0.30f, 0.30f, 0.30f, 0.80f);
                 }
                 if (m_roadMapActive) {
                     // Bright/white, unlit, per explicit request - the tip
@@ -2740,7 +2959,12 @@ void VesselView::paintGL() {
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
 
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
             drawBatch(m_deviceBatches->shaft, GL_TRIANGLES, shaft, true);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
             drawBatch(m_deviceBatches->band,  GL_TRIANGLES, band,  true);
             drawBatch(m_deviceBatches->tip,   GL_TRIANGLES, tip,   true);
 
@@ -2770,7 +2994,8 @@ void VesselView::paintGL() {
         // the old colored overlay -
         // so this block no longer runs there at all. The 3D view's own
         // appearance (colour, sheen, specular) is completely unchanged.
-        if (!fluoro && m_emboli && m_emboli->active() && m_emboliBatch.elementCount > 0) {
+        if (!fluoro && m_emboli && m_emboli->active() &&
+            (m_emboliBatchSet.elementCount > 0 || m_emboliBatchGrowing.elementCount > 0)) {
             const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli->agent());
             Material cast;
             cast.colour = QVector4D(spec.colour[0], spec.colour[1], spec.colour[2], spec.opacity);
@@ -2780,7 +3005,10 @@ void VesselView::paintGL() {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
-            drawBatch(m_emboliBatch, GL_TRIANGLES, cast, true);
+            // Same material for both - the 3D view's own appearance is
+            // unchanged by this request, scoped to Fluoroscopy View only.
+            drawBatch(m_emboliBatchSet, GL_TRIANGLES, cast, true);
+            drawBatch(m_emboliBatchGrowing, GL_TRIANGLES, cast, true);
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
         }
@@ -2905,8 +3133,21 @@ void VesselView::paintOverlay() {
                            .arg(o.takeoffDeg, 0, 'f', 0));
         }
         p.setPen(amber);
+        // Dynamically reflects however many options actually exist - a
+        // trifurcation draws a middle marker labeled "2" (see pushOverlay()'s
+        // own labeling: index 0 = LEFT, last index = RIGHT, anything between
+        // gets its plain 1-based number), but the help text used to always
+        // say only "LEFT RIGHT", never mentioning that middle option or how
+        // to reach it (Up-Arrow -> chooseStraightRequested -> the option
+        // with the smallest takeoff angle) - an operator facing a real
+        // trifurcation (e.g. the aortic arch: subclavian/carotid/back
+        // toward the heart) had no on-screen indication a third choice was
+        // even selectable, only its bare marker with no matching instruction.
+        const QString junctionWord = (m_overlay.options.size() > 2) ? tr("JUNCTION") : tr("BIFURCATION");
+        QString hint = tr("← LEFT   RIGHT →");
+        if (m_overlay.options.size() > 2) hint += tr("   ↑ STRAIGHT");
         p.drawText(QRect(0, height() - 46, width(), 20), Qt::AlignHCenter,
-                   tr("BIFURCATION — ← LEFT   RIGHT →"));
+                   junctionWord + tr(" — ") + hint);
     }
 
     if (m_overlay.deadEnd) {
@@ -3227,6 +3468,7 @@ void VesselView::keyPressEvent(QKeyEvent *e) {
     case Qt::Key_PageDown: emit retractRequested();     e->accept(); return;
     case Qt::Key_Left:     emit chooseLeftRequested();  e->accept(); return;
     case Qt::Key_Right:    emit chooseRightRequested(); e->accept(); return;
+    case Qt::Key_Up:       emit chooseStraightRequested(); e->accept(); return;
     case Qt::Key_Space:    emit balloonToggleRequested(); e->accept(); return;
     default: break;
     }

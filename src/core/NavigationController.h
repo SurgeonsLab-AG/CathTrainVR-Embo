@@ -44,6 +44,16 @@ public:
 
     /// Reset the route to start at `accessNode` with zero insertion.
     void startFrom(int32_t accessNode);
+    /// Same, but for a mid-pathway access point (Femoral, Brachial) whose
+    /// entry node has more than one neighbour: `accessNode` alone would
+    /// immediately see multiple candidates at the very first step and stop
+    /// as a pending junction without ever extending the route, asking the
+    /// operator to choose between continuing further down the limb
+    /// (physically impossible - that is where the sheath already sits) and
+    /// the correct direction toward the body. Seeds the route with the
+    /// known-correct `forwardNeighbour` first, so the walk starts already
+    /// moving in the right direction.
+    void startFrom(int32_t accessNode, int32_t forwardNeighbour);
 
     /// Camera basis, used only to order branch options left-to-right.
     void setViewFrame(const Vec3 &screenRight, const Vec3 &screenUp);

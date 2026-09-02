@@ -116,9 +116,9 @@ events:
       The output was:
       0
       MSBuild version 18.7.1+024f5b037 for .NET Framework
-      Build started 25-08-2026 5.54.26 PM.
+      Build started 02-09-2026 11.22.45 AM.
       
-      Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
+      Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
         Creating directory "Debug\\".
         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
@@ -131,7 +131,7 @@ events:
         CMakeCXXCompilerId.cpp
       Link:
         C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
-        CompilerIdCXX.vcxproj -> C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.exe
+        CompilerIdCXX.vcxproj -> C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.exe
       PostBuildEvent:
         for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
         :VCEnd
@@ -139,13 +139,13 @@ events:
       FinalizeBuildStatus:
         Deleting file "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
         Touching "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate".
-      Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (default targets).
+      Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\4.3.1-msvc1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (default targets).
       
       Build succeeded.
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.63
+      Time Elapsed 00:00:00.86
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -153,7 +153,7 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
       
       The CXX compiler identification is MSVC, found in:
-        C:/SurgeonsLab/EmboNav/Build/CMakeFiles/4.3.1-msvc1/CompilerIdCXX/CompilerIdCXX.exe
+        C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/4.3.1-msvc1/CompilerIdCXX/CompilerIdCXX.exe
       
   -
     kind: "find-v1"
@@ -1121,8 +1121,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-3d701g"
-      binary: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-3d701g"
+      source: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-rkx9kz"
+      binary: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-rkx9kz"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1133,39 +1133,39 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-3d701g'
+        Change Dir: 'C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-rkx9kz'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_ff03e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8a99f.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.1+024f5b037 for .NET Framework
-        Build started 25-08-2026 5.54.27 PM.
+        Build started 02-09-2026 11.22.47 AM.
         
-        Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-3d701g\\cmTC_ff03e.vcxproj" on node 1 (default targets).
+        Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-rkx9kz\\cmTC_8a99f.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-3d701g\\Debug\\".
-          Creating directory "cmTC_ff03e.dir\\Debug\\cmTC_ff03e.tlog\\".
+          Creating directory "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-rkx9kz\\Debug\\".
+          Creating directory "cmTC_8a99f.dir\\Debug\\cmTC_8a99f.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_ff03e.dir\\Debug\\cmTC_ff03e.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_ff03e.dir\\Debug\\cmTC_ff03e.tlog\\unsuccessfulbuild".
+          Creating "cmTC_8a99f.dir\\Debug\\cmTC_8a99f.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_8a99f.dir\\Debug\\cmTC_8a99f.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_ff03e.dir\\Debug\\\\" /Fd"cmTC_ff03e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_8a99f.dir\\Debug\\\\" /Fd"cmTC_8a99f.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36247 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_ff03e.dir\\Debug\\\\" /Fd"cmTC_ff03e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_8a99f.dir\\Debug\\\\" /Fd"cmTC_8a99f.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-4.3\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-3d701g\\Debug\\cmTC_ff03e.exe" /INCREMENTAL /ILK:"cmTC_ff03e.dir\\Debug\\cmTC_ff03e.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-3d701g/Debug/cmTC_ff03e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-3d701g/Debug/cmTC_ff03e.lib" /MACHINE:X64  /machine:x64 cmTC_ff03e.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_ff03e.vcxproj -> C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-3d701g\\Debug\\cmTC_ff03e.exe
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-rkx9kz\\Debug\\cmTC_8a99f.exe" /INCREMENTAL /ILK:"cmTC_8a99f.dir\\Debug\\cmTC_8a99f.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-rkx9kz/Debug/cmTC_8a99f.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-rkx9kz/Debug/cmTC_8a99f.lib" /MACHINE:X64  /machine:x64 cmTC_8a99f.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_8a99f.vcxproj -> C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-rkx9kz\\Debug\\cmTC_8a99f.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_ff03e.dir\\Debug\\cmTC_ff03e.tlog\\unsuccessfulbuild".
-          Touching "cmTC_ff03e.dir\\Debug\\cmTC_ff03e.tlog\\cmTC_ff03e.lastbuildstate".
-        Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-3d701g\\cmTC_ff03e.vcxproj" (default targets).
+          Deleting file "cmTC_8a99f.dir\\Debug\\cmTC_8a99f.tlog\\unsuccessfulbuild".
+          Touching "cmTC_8a99f.dir\\Debug\\cmTC_8a99f.tlog\\cmTC_8a99f.lastbuildstate".
+        Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-rkx9kz\\cmTC_8a99f.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.60
+        Time Elapsed 00:00:00.57
         
       exitCode: 0
   -
@@ -1212,8 +1212,8 @@ events:
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-oek0ds"
-      binary: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-oek0ds"
+      source: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2v3ufm"
+      binary: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2v3ufm"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1224,39 +1224,39 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-oek0ds'
+        Change Dir: 'C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2v3ufm'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_e5786.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_6fbae.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.1+024f5b037 for .NET Framework
-        Build started 25-08-2026 5.54.29 PM.
+        Build started 02-09-2026 11.22.48 AM.
         
-        Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\cmTC_e5786.vcxproj" on node 1 (default targets).
+        Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\cmTC_6fbae.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\Debug\\".
-          Creating directory "cmTC_e5786.dir\\Debug\\cmTC_e5786.tlog\\".
+          Creating directory "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\Debug\\".
+          Creating directory "cmTC_6fbae.dir\\Debug\\cmTC_6fbae.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_e5786.dir\\Debug\\cmTC_e5786.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_e5786.dir\\Debug\\cmTC_e5786.tlog\\unsuccessfulbuild".
+          Creating "cmTC_6fbae.dir\\Debug\\cmTC_6fbae.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_6fbae.dir\\Debug\\cmTC_6fbae.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_e5786.dir\\Debug\\\\" /Fd"cmTC_e5786.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\src.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_6fbae.dir\\Debug\\\\" /Fd"cmTC_6fbae.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\src.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36247 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_e5786.dir\\Debug\\\\" /Fd"cmTC_e5786.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_6fbae.dir\\Debug\\\\" /Fd"cmTC_6fbae.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\src.cxx"
           src.cxx
-        C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\cmTC_e5786.vcxproj]
-        Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\cmTC_e5786.vcxproj" (default targets) -- FAILED.
+        C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\cmTC_6fbae.vcxproj]
+        Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\cmTC_6fbae.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\cmTC_e5786.vcxproj" (default target) (1) ->
+        "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\cmTC_6fbae.vcxproj" (default target) (1) ->
         (ClCompile target) -> 
-          C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-oek0ds\\cmTC_e5786.vcxproj]
+          C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\src.cxx(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2v3ufm\\cmTC_6fbae.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.34
+        Time Elapsed 00:00:00.31
         
       exitCode: 1
   -
@@ -1274,8 +1274,8 @@ events:
     checks:
       - "Looking for pthread_create in pthreads"
     directories:
-      source: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-vscqxs"
-      binary: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-vscqxs"
+      source: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-7ftdyc"
+      binary: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-7ftdyc"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1286,41 +1286,41 @@ events:
       variable: "CMAKE_HAVE_PTHREADS_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-vscqxs'
+        Change Dir: 'C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-7ftdyc'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_0cf20.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_dd51e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.1+024f5b037 for .NET Framework
-        Build started 25-08-2026 5.54.29 PM.
+        Build started 02-09-2026 11.22.49 AM.
         
-        Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\cmTC_0cf20.vcxproj" on node 1 (default targets).
+        Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\cmTC_dd51e.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\Debug\\".
-          Creating directory "cmTC_0cf20.dir\\Debug\\cmTC_0cf20.tlog\\".
+          Creating directory "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\Debug\\".
+          Creating directory "cmTC_dd51e.dir\\Debug\\cmTC_dd51e.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_0cf20.dir\\Debug\\cmTC_0cf20.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_0cf20.dir\\Debug\\cmTC_0cf20.tlog\\unsuccessfulbuild".
+          Creating "cmTC_dd51e.dir\\Debug\\cmTC_dd51e.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_dd51e.dir\\Debug\\cmTC_dd51e.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_0cf20.dir\\Debug\\\\" /Fd"cmTC_0cf20.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_dd51e.dir\\Debug\\\\" /Fd"cmTC_dd51e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36247 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_0cf20.dir\\Debug\\\\" /Fd"cmTC_0cf20.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_dd51e.dir\\Debug\\\\" /Fd"cmTC_dd51e.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\Debug\\cmTC_0cf20.exe" /INCREMENTAL /ILK:"cmTC_0cf20.dir\\Debug\\cmTC_0cf20.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-vscqxs/Debug/cmTC_0cf20.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-vscqxs/Debug/cmTC_0cf20.lib" /MACHINE:X64  /machine:x64 cmTC_0cf20.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\cmTC_0cf20.vcxproj]
-        Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\cmTC_0cf20.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\Debug\\cmTC_dd51e.exe" /INCREMENTAL /ILK:"cmTC_dd51e.dir\\Debug\\cmTC_dd51e.ilk" /NOLOGO pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-7ftdyc/Debug/cmTC_dd51e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-7ftdyc/Debug/cmTC_dd51e.lib" /MACHINE:X64  /machine:x64 cmTC_dd51e.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\cmTC_dd51e.vcxproj]
+        Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\cmTC_dd51e.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\cmTC_0cf20.vcxproj" (default target) (1) ->
+        "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\cmTC_dd51e.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-vscqxs\\cmTC_0cf20.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-7ftdyc\\cmTC_dd51e.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.48
+        Time Elapsed 00:00:00.44
         
       exitCode: 1
   -
@@ -1338,8 +1338,8 @@ events:
     checks:
       - "Looking for pthread_create in pthread"
     directories:
-      source: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-n07bv9"
-      binary: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-n07bv9"
+      source: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2uxjap"
+      binary: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2uxjap"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1350,41 +1350,41 @@ events:
       variable: "CMAKE_HAVE_PTHREAD_CREATE"
       cached: true
       stdout: |
-        Change Dir: 'C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-n07bv9'
+        Change Dir: 'C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2uxjap'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_6198b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_be877.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.1+024f5b037 for .NET Framework
-        Build started 25-08-2026 5.54.30 PM.
+        Build started 02-09-2026 11.22.49 AM.
         
-        Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\cmTC_6198b.vcxproj" on node 1 (default targets).
+        Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\cmTC_be877.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\Debug\\".
-          Creating directory "cmTC_6198b.dir\\Debug\\cmTC_6198b.tlog\\".
+          Creating directory "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\Debug\\".
+          Creating directory "cmTC_be877.dir\\Debug\\cmTC_be877.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_6198b.dir\\Debug\\cmTC_6198b.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_6198b.dir\\Debug\\cmTC_6198b.tlog\\unsuccessfulbuild".
+          Creating "cmTC_be877.dir\\Debug\\cmTC_be877.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_be877.dir\\Debug\\cmTC_be877.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_6198b.dir\\Debug\\\\" /Fd"cmTC_6198b.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\CheckFunctionExists.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_be877.dir\\Debug\\\\" /Fd"cmTC_be877.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\CheckFunctionExists.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36247 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_6198b.dir\\Debug\\\\" /Fd"cmTC_6198b.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\CheckFunctionExists.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_be877.dir\\Debug\\\\" /Fd"cmTC_be877.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\CheckFunctionExists.cxx"
           CheckFunctionExists.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\Debug\\cmTC_6198b.exe" /INCREMENTAL /ILK:"cmTC_6198b.dir\\Debug\\cmTC_6198b.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-n07bv9/Debug/cmTC_6198b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-n07bv9/Debug/cmTC_6198b.lib" /MACHINE:X64  /machine:x64 cmTC_6198b.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\cmTC_6198b.vcxproj]
-        Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\cmTC_6198b.vcxproj" (default targets) -- FAILED.
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\Debug\\cmTC_be877.exe" /INCREMENTAL /ILK:"cmTC_be877.dir\\Debug\\cmTC_be877.ilk" /NOLOGO pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2uxjap/Debug/cmTC_be877.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-2uxjap/Debug/cmTC_be877.lib" /MACHINE:X64  /machine:x64 cmTC_be877.dir\\Debug\\CheckFunctionExists.obj
+        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\cmTC_be877.vcxproj]
+        Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\cmTC_be877.vcxproj" (default targets) -- FAILED.
         
         Build FAILED.
         
-        "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\cmTC_6198b.vcxproj" (default target) (1) ->
+        "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\cmTC_be877.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-n07bv9\\cmTC_6198b.vcxproj]
+          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-2uxjap\\cmTC_be877.vcxproj]
         
             0 Warning(s)
             1 Error(s)
         
-        Time Elapsed 00:00:00.46
+        Time Elapsed 00:00:00.43
         
       exitCode: 1
   -
@@ -1441,27 +1441,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6CoreToolsConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6CoreToolsConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6coretools-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6coretools-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6CoreTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6CoreTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6coretools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6coretools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6CoreTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6CoreTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6coretools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6coretools.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -1610,27 +1610,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6GuiToolsConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6GuiToolsConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6guitools-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6guitools-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6GuiTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6GuiTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6guitools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6guitools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6GuiTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6GuiTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6guitools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6guitools.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -1776,27 +1776,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6WidgetsToolsConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6WidgetsToolsConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6widgetstools-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6widgetstools-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6WidgetsTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6WidgetsTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6widgetstools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6widgetstools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6WidgetsTools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6WidgetsTools.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6widgetstools.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6widgetstools.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -1912,8 +1912,8 @@ events:
     checks:
       - "Performing Test HAVE_STDATOMIC"
     directories:
-      source: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-65xies"
-      binary: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-65xies"
+      source: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-1s4eps"
+      binary: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-1s4eps"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -1924,33 +1924,33 @@ events:
       variable: "HAVE_STDATOMIC"
       cached: true
       stdout: |
-        Change Dir: 'C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-65xies'
+        Change Dir: 'C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-1s4eps'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_37930.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8e8ce.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
         MSBuild version 18.7.1+024f5b037 for .NET Framework
-        Build started 25-08-2026 5.54.31 PM.
+        Build started 02-09-2026 11.22.50 AM.
         
-        Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\cmTC_37930.vcxproj" on node 1 (default targets).
+        Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\cmTC_8e8ce.vcxproj" on node 1 (default targets).
         PrepareForBuild:
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\Debug\\".
-          Creating directory "cmTC_37930.dir\\Debug\\cmTC_37930.tlog\\".
+          Creating directory "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\Debug\\".
+          Creating directory "cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_37930.dir\\Debug\\cmTC_37930.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_37930.dir\\Debug\\cmTC_37930.tlog\\unsuccessfulbuild".
+          Creating "cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D HAVE_STDATOMIC /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_37930.dir\\Debug\\\\" /Fd"cmTC_37930.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\src.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D HAVE_STDATOMIC /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_8e8ce.dir\\Debug\\\\" /Fd"cmTC_8e8ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\src.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36247 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D HAVE_STDATOMIC /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_37930.dir\\Debug\\\\" /Fd"cmTC_37930.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D HAVE_STDATOMIC /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /std:c++17 /Fo"cmTC_8e8ce.dir\\Debug\\\\" /Fd"cmTC_8e8ce.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\src.cxx"
           src.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\Debug\\cmTC_37930.exe" /INCREMENTAL /ILK:"cmTC_37930.dir\\Debug\\cmTC_37930.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-65xies/Debug/cmTC_37930.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/CMakeScratch/TryCompile-65xies/Debug/cmTC_37930.lib" /MACHINE:X64  /machine:x64 cmTC_37930.dir\\Debug\\src.obj
-          cmTC_37930.vcxproj -> C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\Debug\\cmTC_37930.exe
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\Debug\\cmTC_8e8ce.exe" /INCREMENTAL /ILK:"cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-1s4eps/Debug/cmTC_8e8ce.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/CMakeScratch/TryCompile-1s4eps/Debug/cmTC_8e8ce.lib" /MACHINE:X64  /machine:x64 cmTC_8e8ce.dir\\Debug\\src.obj
+          cmTC_8e8ce.vcxproj -> C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\Debug\\cmTC_8e8ce.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_37930.dir\\Debug\\cmTC_37930.tlog\\unsuccessfulbuild".
-          Touching "cmTC_37930.dir\\Debug\\cmTC_37930.tlog\\cmTC_37930.lastbuildstate".
-        Done Building Project "C:\\SurgeonsLab\\EmboNav\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-65xies\\cmTC_37930.vcxproj" (default targets).
+          Deleting file "cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.tlog\\unsuccessfulbuild".
+          Touching "cmTC_8e8ce.dir\\Debug\\cmTC_8e8ce.tlog\\cmTC_8e8ce.lastbuildstate".
+        Done Building Project "C:\\SurgeonsLab\\EmboNav_Git\\Build\\CMakeFiles\\CMakeScratch\\TryCompile-1s4eps\\cmTC_8e8ce.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
@@ -2030,51 +2030,51 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6ZlibConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6ZlibConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6zlib-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6zlib-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6ZlibPrivateConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6ZlibPrivateConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6zlibprivate-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6zlibprivate-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Zlib.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Zlib.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6zlib.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6zlib.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6ZlibPrivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6ZlibPrivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6zlibprivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6zlibprivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Zlib.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Zlib.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6zlib.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6zlib.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6ZlibPrivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6ZlibPrivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6zlibprivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6zlibprivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -2240,51 +2240,51 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6EntryPointConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6EntryPointConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6entrypoint-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6entrypoint-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6EntryPointPrivateConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6EntryPointPrivateConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6entrypointprivate-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6entrypointprivate-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6EntryPoint.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6EntryPoint.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6entrypoint.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6entrypoint.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6EntryPointPrivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6EntryPointPrivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6entrypointprivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6entrypointprivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6EntryPoint.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6EntryPoint.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6entrypoint.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6entrypoint.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6EntryPointPrivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6EntryPointPrivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6entrypointprivate.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6entrypointprivate.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -2585,27 +2585,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6CoreConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6CoreConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6core-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6core-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Core.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Core.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6core.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6core.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Core.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Core.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6core.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6core.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -3847,27 +3847,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6GuiConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6GuiConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6gui-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6gui-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Gui.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Gui.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6gui.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6gui.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Gui.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Gui.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6gui.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6gui.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -4001,27 +4001,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6WidgetsConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6WidgetsConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6widgets-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6widgets-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Widgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6Widgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6widgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6widgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Widgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6Widgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6widgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6widgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -4155,27 +4155,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6OpenGLConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6OpenGLConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6opengl-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6opengl-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6OpenGL.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6OpenGL.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6opengl.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6opengl.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6OpenGL.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6OpenGL.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6opengl.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6opengl.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -4309,27 +4309,27 @@ events:
         CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
     candidates:
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/Qt6OpenGLWidgetsConfig.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/Qt6OpenGLWidgetsConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/qt6openglwidgets-config.cmake"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/qt6openglwidgets-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6OpenGLWidgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/Qt6OpenGLWidgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/lib/cps/qt6openglwidgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/lib/cps/qt6openglwidgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/Qt6OpenGLWidgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/Qt6OpenGLWidgets.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/pkgRedirects/share/cps/qt6openglwidgets.cps"
+        path: "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/pkgRedirects/share/cps/qt6openglwidgets.cps"
         mode: "cps"
         reason: "no_exist"
       -

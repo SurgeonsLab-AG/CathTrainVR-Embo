@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\SurgeonsLab\EmboNav\Build\CMakeFiles\d1caefb6e8a728b1c62655dce042e861\generate.stamp.rule">
+    <CustomBuild Include="C:\SurgeonsLab\EmboNav_Git\Build\CMakeFiles\1c23d434f7b79fc7071f1612b2d7d3bf\generate.stamp.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{9FA61571-8A07-3247-BD96-D19D935D6DC6}</UniqueIdentifier>
+      <UniqueIdentifier>{1048B07F-D309-3673-B740-9F5EEC5CFCD5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

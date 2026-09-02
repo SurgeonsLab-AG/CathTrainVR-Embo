@@ -11,7 +11,11 @@ enum class AccessSite {
     RightFemoral,
     LeftFemoral,
     RightRadial,
-    LeftRadial
+    LeftRadial,
+    RightPopliteal,
+    LeftPopliteal,
+    RightBrachial,
+    LeftBrachial
 };
 
 const char *accessSiteName(AccessSite s);
@@ -56,6 +60,49 @@ public:
         /// diameter). Rejects the sub-millimetre distal stubs.
         float femoralMinDiameter = 0.0015f;   // 1.5 mm at mmPerUnit = 1000
 
+        /// How far back (in mm, along the vessel) the femoral entry sits
+        /// from the iliac bifurcation. The segment leading up to that
+        /// bifurcation is uniform femoral caliber for several hundred mm
+        /// in this model (it merges the external iliac, common femoral,
+        /// and superficial femoral into one continuous segment, since
+        /// they are not distinguished separately at this centerline
+        /// resolution) - this targets a point clearly down in the thigh,
+        /// verified against this project's own model, rather than right
+        /// at the bifurcation itself (still effectively the pelvis).
+        ///
+        /// This graph has only two real node options across the entire
+        /// relevant range, with a genuine ~334mm gap between them and no
+        /// intermediate node available: one at ~150mm back (51.5% of body
+        /// height) that still read as hip-level in practice, and this one
+        /// at ~350mm+ back (31.5% of body height) - which happens to be a
+        /// real anatomical landmark on its own, not an arbitrary position:
+        /// it is exactly where the vessel radius transitions from the
+        /// narrower popliteal segment to full femoral caliber, i.e. where
+        /// the femoral artery proper actually begins.
+        float femoralBackoffFromBifurcationMm = 350.f;
+
+        /// A junction node must be at least this wide (radius, model units)
+        /// to count as the iliac bifurcation landmark, not just any degree
+        /// >=3 junction. Degree alone is not enough to tell the iliac
+        /// bifurcation apart from an ordinary popliteal trifurcation lower
+        /// in the same leg (both are simple 3-way branches) - the iliac
+        /// bifurcation is dramatically wider (verified ~8mm radius against
+        /// this project's own model) than a popliteal one (~1.5mm), so
+        /// radius is what actually distinguishes them. Previously this used
+        /// degree>=4 alone, which happened to work only because a graph
+        /// extraction artifact (since fixed by CenterlineGraph::
+        /// simplifyLocalCycles()) inflated the bifurcation's own degree to
+        /// 4; its real, correct degree is 3, same as the popliteal one.
+        float femoralBifurcationMinRadius = 0.006f;   // 6 mm at mmPerUnit = 1000
+
+        /// The brachial artery (upper arm) is distinctly wider than the
+        /// forearm vessels below it - this is the radius, in model units,
+        /// that marks the transition. Verified against this project's own
+        /// model: forearm sits around 2.0mm radius, brachial jumps to
+        /// 2.5mm right where it starts, giving a comfortable margin between
+        /// the two either side of this threshold.
+        float brachialMinRadius = 0.0022f;   // 2.2 mm at mmPerUnit = 1000
+
         /// A radial candidate must lie at least this far from the midline, as a
         /// fraction of the model's half-width. Guards against picking an iliac
         /// terminal on a model that has no arms.
@@ -90,6 +137,14 @@ public:
     /// True when the site is a groin puncture rather than a wrist puncture.
     static bool isFemoral(AccessSite s) {
         return s == AccessSite::RightFemoral || s == AccessSite::LeftFemoral;
+    }
+    /// True when the site is a behind-the-knee puncture.
+    static bool isPopliteal(AccessSite s) {
+        return s == AccessSite::RightPopliteal || s == AccessSite::LeftPopliteal;
+    }
+    /// True when the site is an upper-arm puncture.
+    static bool isBrachial(AccessSite s) {
+        return s == AccessSite::RightBrachial || s == AccessSite::LeftBrachial;
     }
 };
 

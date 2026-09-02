@@ -4,6 +4,7 @@
 #include <QCommandLineParser>
 #include <QFont>
 #include <QFontDatabase>
+#include <QFile>
 #include <QPalette>
 #include <QStyleFactory>
 #include <QSurfaceFormat>
@@ -112,10 +113,21 @@ int main(int argc, char **argv) {
     // wide, this picks it up directly; if neither a bundled file nor a
     // system install exists, Qt falls back to a substitute font rather
     // than failing, so this is safe either way.
+    //
+    // QFile::exists() is checked first, before calling addApplicationFont()
+    // at all - a missing file was already being silently skipped either
+    // way, but Qt's own internal font-loading code prints a
+    // "Cannot open ... for reading" warning to the console whenever that
+    // call itself fails to open a file, regardless of how gracefully this
+    // code handles the result. Skipping the call entirely for a file that
+    // isn't there removes that console noise without changing anything
+    // about the actual fallback behavior.
     for (const QString &weight : {"TitilliumWeb-Regular.ttf", "TitilliumWeb-Bold.ttf",
                                   "TitilliumWeb-SemiBold.ttf", "TitilliumWeb-Light.ttf",
                                   "TitilliumWeb-Italic.ttf"}) {
-        QFontDatabase::addApplicationFont(QStringLiteral("C:/SurgeonsLab/EmboNav/Data/") + weight);
+        const QString path = QStringLiteral("C:/SurgeonsLab/EmboNav/Data/Fonts/") + weight;
+        if (QFile::exists(path))
+            QFontDatabase::addApplicationFont(path);
     }
     QFont appFont(QStringLiteral("Titillium Web"));
     appFont.setStyleHint(QFont::SansSerif);   // Titillium Web is a sans-serif; a sane fallback family if it's unavailable

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 20.0.0, 2026-08-28T18:25:44. -->
+<!-- Written by QtCreator 20.0.0, 2026-09-02T14:24:56. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -90,7 +90,7 @@
 -DQt6_FIND_VERSION:UNINITIALIZED=6.8
 -DVTK_DIR:PATH=C:/Software/vcpkg/installed/x64-windows/share/vtk
 -DVTK_QT_VERSION:UNINITIALIZED=6</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\SurgeonsLab\EmboNav\Build</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\SurgeonsLab\EmboNav_Git\Build</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="QString" key="CMakeProjectManager.MakeStep.BuildPreset"></value>

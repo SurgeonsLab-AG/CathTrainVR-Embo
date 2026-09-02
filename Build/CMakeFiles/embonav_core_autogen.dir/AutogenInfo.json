@@ -1,19 +1,19 @@
 {
 	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
-	"BUILD_DIR" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen",
-	"CMAKE_BINARY_DIR" : "C:/SurgeonsLab/EmboNav/Build",
-	"CMAKE_CURRENT_BINARY_DIR" : "C:/SurgeonsLab/EmboNav/Build",
-	"CMAKE_CURRENT_SOURCE_DIR" : "C:/SurgeonsLab/EmboNav",
+	"BUILD_DIR" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen",
+	"CMAKE_BINARY_DIR" : "C:/SurgeonsLab/EmboNav_Git/Build",
+	"CMAKE_CURRENT_BINARY_DIR" : "C:/SurgeonsLab/EmboNav_Git/Build",
+	"CMAKE_CURRENT_SOURCE_DIR" : "C:/SurgeonsLab/EmboNav_Git",
 	"CMAKE_EXECUTABLE" : "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
 	"CMAKE_LIST_FILES" : 
 	[
-		"C:/SurgeonsLab/EmboNav/CMakeLists.txt",
-		"C:/SurgeonsLab/EmboNav/Build/.qtcreator/cmake-helper/qtcreator-project.cmake",
-		"C:/SurgeonsLab/EmboNav/Build/.qtcreator/cmake-helper/package-manager.cmake",
-		"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/4.3.1-msvc1/CMakeSystem.cmake",
+		"C:/SurgeonsLab/EmboNav_Git/CMakeLists.txt",
+		"C:/SurgeonsLab/EmboNav_Git/Build/.qtcreator/cmake-helper/qtcreator-project.cmake",
+		"C:/SurgeonsLab/EmboNav_Git/Build/.qtcreator/cmake-helper/package-manager.cmake",
+		"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/4.3.1-msvc1/CMakeSystem.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInitialize.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Platform/Windows-Initialize.cmake",
-		"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/4.3.1-msvc1/CMakeCXXCompiler.cmake",
+		"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/4.3.1-msvc1/CMakeCXXCompiler.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInformation.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeGenericSystem.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeInitializeConfigs.cmake",
@@ -26,7 +26,7 @@
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Compiler/CMakeCommonCompilerMacros.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC-CXX.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC.cmake",
-		"C:/SurgeonsLab/EmboNav/Build/CMakeFiles/4.3.1-msvc1/CMakeRCCompiler.cmake",
+		"C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/4.3.1-msvc1/CMakeRCCompiler.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeRCInformation.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/CMakeCommonLanguageInclude.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/Internal/CMakeCXXLinkerInformation.cmake",
@@ -304,108 +304,108 @@
 		"C:/Software/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6OpenGLWidgets/Qt6OpenGLWidgetsVersionlessAliasTargets.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.3/Modules/GNUInstallDirs.cmake"
 	],
-	"CMAKE_SOURCE_DIR" : "C:/SurgeonsLab/EmboNav",
+	"CMAKE_SOURCE_DIR" : "C:/SurgeonsLab/EmboNav_Git",
 	"CROSS_CONFIG" : false,
 	"DEP_FILE" : "",
 	"DEP_FILE_RULE_NAME" : "",
 	"HEADERS" : 
 	[
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/AccessSites.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/AccessSites.h",
 			"MU",
 			"PRMOGMWJPH/moc_AccessSites.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CardiacCycle.h",
 			"MU",
 			"PRMOGMWJPH/moc_CardiacCycle.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/CatheterCatalog.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CatheterCatalog.h",
 			"MU",
 			"PRMOGMWJPH/moc_CatheterCatalog.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CatheterModel.h",
 			"MU",
 			"PRMOGMWJPH/moc_CatheterModel.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/CenterlineExtractor.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CenterlineExtractor.h",
 			"MU",
 			"PRMOGMWJPH/moc_CenterlineExtractor.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CenterlineGraph.h",
 			"MU",
 			"PRMOGMWJPH/moc_CenterlineGraph.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/ContrastInjectionModel.h",
 			"MU",
 			"PRMOGMWJPH/moc_ContrastInjectionModel.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/EmbolizationModel.h",
 			"MU",
 			"PRMOGMWJPH/moc_EmbolizationModel.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/MeshDistance.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/MeshDistance.h",
 			"MU",
 			"PRMOGMWJPH/moc_MeshDistance.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/NavigationController.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/NavigationController.h",
 			"MU",
 			"PRMOGMWJPH/moc_NavigationController.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/SheathManager.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/SheathManager.h",
 			"MU",
 			"PRMOGMWJPH/moc_SheathManager.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/StlMesh.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/StlMesh.h",
 			"MU",
 			"PRMOGMWJPH/moc_StlMesh.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/Vec3.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/Vec3.h",
 			"MU",
 			"PRMOGMWJPH/moc_Vec3.cpp",
 			null
 		],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/VtpCenterlineLoader.h",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/VtpCenterlineLoader.h",
 			"MU",
 			"PRMOGMWJPH/moc_VtpCenterlineLoader.cpp",
 			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
-	"INCLUDE_DIR" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/include",
-	"INCLUDE_DIR_Debug" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/include_Debug",
-	"INCLUDE_DIR_MinSizeRel" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/include_MinSizeRel",
-	"INCLUDE_DIR_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/include_RelWithDebInfo",
-	"INCLUDE_DIR_Release" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/include_Release",
-	"MOC_COMPILATION_FILE" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/mocs_compilation.cpp",
-	"MOC_COMPILATION_FILE_Debug" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/mocs_compilation_Debug.cpp",
-	"MOC_COMPILATION_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/mocs_compilation_MinSizeRel.cpp",
-	"MOC_COMPILATION_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/mocs_compilation_RelWithDebInfo.cpp",
-	"MOC_COMPILATION_FILE_Release" : "C:/SurgeonsLab/EmboNav/Build/embonav_core_autogen/mocs_compilation_Release.cpp",
+	"INCLUDE_DIR" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/include",
+	"INCLUDE_DIR_Debug" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/include_Debug",
+	"INCLUDE_DIR_MinSizeRel" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/include_MinSizeRel",
+	"INCLUDE_DIR_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/include_RelWithDebInfo",
+	"INCLUDE_DIR_Release" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/include_Release",
+	"MOC_COMPILATION_FILE" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/mocs_compilation.cpp",
+	"MOC_COMPILATION_FILE_Debug" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/mocs_compilation_Debug.cpp",
+	"MOC_COMPILATION_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/mocs_compilation_MinSizeRel.cpp",
+	"MOC_COMPILATION_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/mocs_compilation_RelWithDebInfo.cpp",
+	"MOC_COMPILATION_FILE_Release" : "C:/SurgeonsLab/EmboNav_Git/Build/embonav_core_autogen/mocs_compilation_Release.cpp",
 	"MOC_DEFINITIONS" : [],
 	"MOC_DEFINITIONS_Debug" : 
 	[
@@ -460,32 +460,32 @@
 	"MOC_INCLUDES" : [],
 	"MOC_INCLUDES_Debug" : 
 	[
-		"C:/SurgeonsLab/EmboNav/src",
-		"C:/SurgeonsLab/EmboNav/src/core",
+		"C:/SurgeonsLab/EmboNav_Git/src",
+		"C:/SurgeonsLab/EmboNav_Git/src/core",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include",
 		"C:/Software/Qt/6.8.3/msvc2022_64/mkspecs/win32-msvc"
 	],
 	"MOC_INCLUDES_MinSizeRel" : 
 	[
-		"C:/SurgeonsLab/EmboNav/src",
-		"C:/SurgeonsLab/EmboNav/src/core",
+		"C:/SurgeonsLab/EmboNav_Git/src",
+		"C:/SurgeonsLab/EmboNav_Git/src/core",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include",
 		"C:/Software/Qt/6.8.3/msvc2022_64/mkspecs/win32-msvc"
 	],
 	"MOC_INCLUDES_RelWithDebInfo" : 
 	[
-		"C:/SurgeonsLab/EmboNav/src",
-		"C:/SurgeonsLab/EmboNav/src/core",
+		"C:/SurgeonsLab/EmboNav_Git/src",
+		"C:/SurgeonsLab/EmboNav_Git/src/core",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include",
 		"C:/Software/Qt/6.8.3/msvc2022_64/mkspecs/win32-msvc"
 	],
 	"MOC_INCLUDES_Release" : 
 	[
-		"C:/SurgeonsLab/EmboNav/src",
-		"C:/SurgeonsLab/EmboNav/src/core",
+		"C:/SurgeonsLab/EmboNav_Git/src",
+		"C:/SurgeonsLab/EmboNav_Git/src/core",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore",
 		"C:/Software/Qt/6.8.3/msvc2022_64/include",
 		"C:/Software/Qt/6.8.3/msvc2022_64/mkspecs/win32-msvc"
@@ -499,11 +499,11 @@
 	"MOC_SKIP" : [],
 	"MULTI_CONFIG" : true,
 	"PARALLEL" : 16,
-	"PARSE_CACHE_FILE" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache.txt",
-	"PARSE_CACHE_FILE_Debug" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_Debug.txt",
-	"PARSE_CACHE_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_MinSizeRel.txt",
-	"PARSE_CACHE_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_RelWithDebInfo.txt",
-	"PARSE_CACHE_FILE_Release" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_Release.txt",
+	"PARSE_CACHE_FILE" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE_Debug" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_Debug.txt",
+	"PARSE_CACHE_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_MinSizeRel.txt",
+	"PARSE_CACHE_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_RelWithDebInfo.txt",
+	"PARSE_CACHE_FILE_Release" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/ParseCache_Release.txt",
 	"QT_MOC_EXECUTABLE" : "",
 	"QT_MOC_EXECUTABLE_Debug" : "C:/Software/Qt/6.8.3/msvc2022_64/bin/moc.exe",
 	"QT_MOC_EXECUTABLE_MinSizeRel" : "C:/Software/Qt/6.8.3/msvc2022_64/bin/moc.exe",
@@ -516,33 +516,45 @@
 	"QT_UIC_EXECUTABLE_Release" : "C:/Software/Qt/6.8.3/msvc2022_64/bin/uic.exe",
 	"QT_VERSION_MAJOR" : 6,
 	"QT_VERSION_MINOR" : 8,
-	"SETTINGS_FILE" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed.txt",
-	"SETTINGS_FILE_Debug" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_Debug.txt",
-	"SETTINGS_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_MinSizeRel.txt",
-	"SETTINGS_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_RelWithDebInfo.txt",
-	"SETTINGS_FILE_Release" : "C:/SurgeonsLab/EmboNav/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_Release.txt",
+	"SETTINGS_FILE" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE_Debug" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_Debug.txt",
+	"SETTINGS_FILE_MinSizeRel" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_MinSizeRel.txt",
+	"SETTINGS_FILE_RelWithDebInfo" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_RelWithDebInfo.txt",
+	"SETTINGS_FILE_Release" : "C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core_autogen.dir/AutogenUsed_Release.txt",
 	"SOURCES" : 
 	[
-		[ "C:/SurgeonsLab/EmboNav/src/core/AccessSites.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/CatheterCatalog.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/CatheterModel.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/CenterlineExtractor.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/AccessSites.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/CardiacCycle.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/CatheterCatalog.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/CatheterModel.cpp", "MU", null ],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.cpp",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/CenterlineExtractor.cpp",
 			"MU",
 			null
 		],
-		[ "C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/CenterlineGraph.cpp", "MU", null ],
 		[
-			"C:/SurgeonsLab/EmboNav/src/core/NavigationController.cpp",
+			"C:/SurgeonsLab/EmboNav_Git/src/core/ContrastInjectionModel.cpp",
 			"MU",
 			null
 		],
-		[ "C:/SurgeonsLab/EmboNav/src/core/SheathManager.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/StlMesh.cpp", "MU", null ],
-		[ "C:/SurgeonsLab/EmboNav/src/core/VtpCenterlineLoader.cpp", "MU", null ]
+		[
+			"C:/SurgeonsLab/EmboNav_Git/src/core/EmbolizationModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"C:/SurgeonsLab/EmboNav_Git/src/core/NavigationController.cpp",
+			"MU",
+			null
+		],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/SheathManager.cpp", "MU", null ],
+		[ "C:/SurgeonsLab/EmboNav_Git/src/core/StlMesh.cpp", "MU", null ],
+		[
+			"C:/SurgeonsLab/EmboNav_Git/src/core/VtpCenterlineLoader.cpp",
+			"MU",
+			null
+		]
 	],
 	"UIC_OPTIONS" : [],
 	"UIC_SEARCH_PATHS" : [],

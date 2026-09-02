@@ -1,84 +1,84 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\Build\EmboNav_autogen\mocs_compilation_Debug.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\Build\EmboNav_autogen\mocs_compilation_Debug.cpp">
       <Filter>Source Files\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\main.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\MainWindow.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\MainWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\VesselView.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\VesselView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\CineViewStudio.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CineViewStudio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\ECGWidget.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\ECGWidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\FluoroOverlay.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\FluoroOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\CarmView.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CarmView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\CarmController.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CarmController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\src\ui\QuadPanel.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\src\ui\QuadPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\Build\EmboNav_autogen\mocs_compilation_Release.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\Build\EmboNav_autogen\mocs_compilation_Release.cpp">
       <Filter>Source Files\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\Build\EmboNav_autogen\mocs_compilation_MinSizeRel.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\Build\EmboNav_autogen\mocs_compilation_MinSizeRel.cpp">
       <Filter>Source Files\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="C:\SurgeonsLab\EmboNav\Build\EmboNav_autogen\mocs_compilation_RelWithDebInfo.cpp">
+    <ClCompile Include="C:\SurgeonsLab\EmboNav_Git\Build\EmboNav_autogen\mocs_compilation_RelWithDebInfo.cpp">
       <Filter>Source Files\Generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\MainWindow.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\MainWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\VesselView.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\VesselView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\CineViewStudio.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CineViewStudio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\ECGWidget.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\ECGWidget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\FluoroOverlay.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\FluoroOverlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\CarmView.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CarmView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\CarmController.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\CarmController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\SurgeonsLab\EmboNav\src\ui\QuadPanel.h">
+    <ClInclude Include="C:\SurgeonsLab\EmboNav_Git\src\ui\QuadPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\SurgeonsLab\EmboNav\CMakeLists.txt" />
+    <CustomBuild Include="C:\SurgeonsLab\EmboNav_Git\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{42C89974-655B-3B67-82C8-167B2285A533}</UniqueIdentifier>
+      <UniqueIdentifier>{D54740D0-A308-38E7-84DB-2F2C4ABC9782}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{F70768B8-8333-32AB-9D33-6EE9F3FAB5F5}</UniqueIdentifier>
+      <UniqueIdentifier>{29323A26-9B69-3311-AFCA-4425B6BCD28C}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Generated">
-      <UniqueIdentifier>{E3487E3E-B331-3126-AA49-2B3B53929C4D}</UniqueIdentifier>
+      <UniqueIdentifier>{B5534646-CFC7-37B5-A2AF-DD0A3854B0AD}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
-^C:\SURGEONSLAB\EMBONAV\CMAKELISTS.TXT
+^C:\SURGEONSLAB\EMBONAV_GIT\CMAKELISTS.TXT
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/SurgeonsLab/EmboNav -BC:/SurgeonsLab/EmboNav/Build --check-stamp-file C:/SurgeonsLab/EmboNav/Build/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/SurgeonsLab/EmboNav_Git -BC:/SurgeonsLab/EmboNav_Git/Build --check-stamp-file C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

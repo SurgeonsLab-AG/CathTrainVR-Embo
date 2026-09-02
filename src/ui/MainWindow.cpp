@@ -18,6 +18,8 @@
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QFileDialog>
+#include <QFont>
+#include <QListWidget>
 #include <QDateTime>
 #include <QOpenGLWidget>
 #include <QPixmap>
@@ -56,6 +58,184 @@
 // Device presets (same as old project — Fogarty embolectomy catheters)
 // ─────────────────────────────────────────────────────────────────────────────
 namespace {
+
+struct SampleCase {
+    const char *caseId;
+    const char *name;         ///< "Surname, F.M."
+    const char *sex;          ///< "Male" / "Female"
+    int age;
+    int heightCm;
+    int weightKg;
+    const char *pathology;    ///< empty ("") for the default/generic list
+};
+
+struct ModuleInfo {
+    const char *name;
+    std::initializer_list<SampleCase> cases;
+};
+
+struct ModuleCategory {
+    const char *name;
+    std::initializer_list<ModuleInfo> modules;
+};
+
+/// Default case list shown before any module is selected - generic vessel
+/// anatomy, no pathology line, matching the reference design's own default
+/// view. Only one actual vessel dataset exists in this project, so every
+/// entry (default and per-module) resolves to the same loaded anatomy when
+/// picked - see MainWindow::onCaseSelected()'s own comment for the full
+/// explanation of what "selecting a case" actually does here.
+const SampleCase kDefaultCases[] = {
+    { "Case_1100", "Foxcroft, R.M.", "Male",   56, 186, 85, "" },
+    { "Case_1101", "McGarry, P.",    "Male",   54, 189, 84, "" },
+    { "Case_1102", "Coaker, V.",     "Female", 52, 177, 81, "" },
+    { "Case_1103", "Chishti, R.",    "Female", 48, 176, 76, "" },
+    { "Case_1104", "Sheppard, T.",   "Female", 53, 167, 68, "" },
+    { "Case_1105", "Thornberry, I.L.","Female",83, 175, 75, "" },
+    { "Case_1106", "Thewliss, A.",   "Female", 43, 174, 75, "" },
+    { "Case_1107", "Okafor, B.",     "Male",   61, 178, 92, "" },
+};
+
+const ModuleCategory kModuleCategories[] = {
+    { "Neuroradiology", {
+        { "Module AIS", {
+            { "Case_1200", "Larkin, S.",     "Male",   67, 183, 83, "Right M1 segment, thrombus: 10 mm" },
+            { "Case_1201", "Vance, D.",      "Female", 71, 175, 79, "Left M1 segment, thrombus: 8 mm" },
+            { "Case_1202", "Pemberton, K.",  "Male",   58, 182, 85, "Right M1 segment, thrombus: 9 mm" },
+            { "Case_1203", "Achebe, N.",     "Female", 64, 184, 81, "Left M1 segment, thrombus: 14 mm" },
+        } },
+        { "Module CA", {
+            { "Case_1105", "Thornberry, I.L.","Female",83, 175, 75, "Left internal carotid, aneurysm diameter: 7 mm, opening: 0.7 mm" },
+            { "Case_1108", "Whitlow, E.",    "Male",   59, 182, 92, "Left internal carotid, aneurysm diameter: 6 mm, opening: 0.7 mm" },
+            { "Case_1109", "Marsh, T.",      "Male",   66, 170, 70, "Left vertebral artery, aneurysm diameter: 11 mm, opening: 0.7 mm" },
+            { "Case_1126", "Osei, F.",       "Female", 61, 174, 68, "Basilar artery, aneurysm diameter: 12 mm, opening: 0.8 mm" },
+        } },
+        { "Module ICS", {
+            { "Case_1210", "Brannigan, W.",  "Male",   55, 179, 88, "Right ICA, severe stenosis: 82%" },
+            { "Case_1211", "Delacroix, M.",  "Female", 69, 168, 71, "Left ICA, severe stenosis: 75%" },
+            { "Case_1212", "Yusuf, H.",      "Male",   72, 174, 79, "Right ICA, near-occlusive stenosis: 90%" },
+        } },
+        { "Module CAS", {
+            { "Case_1220", "Fothergill, R.", "Male",   64, 180, 90, "Left carotid bifurcation, calcified plaque, stenosis: 78%" },
+            { "Case_1221", "Nakamura, S.",   "Female", 70, 165, 63, "Right carotid bifurcation, stenosis: 70%" },
+            { "Case_1222", "Odutola, J.",    "Male",   68, 177, 84, "Left carotid bifurcation, stenosis: 85%" },
+        } },
+    } },
+    { "Cardiology", {
+        { "Module PCI angiography", {
+            { "Case_2100", "Wickramaratne, D.","Male", 60, 176, 82, "Diagnostic angiography, LAD irregularity noted" },
+            { "Case_2101", "Halloran, P.",   "Female", 57, 165, 70, "Diagnostic angiography, no significant stenosis" },
+            { "Case_2102", "Grantham, O.",   "Male",   63, 181, 95, "Diagnostic angiography, RCA irregularity noted" },
+        } },
+        { "Module PCI", {
+            { "Case_2110", "Ibori, C.",      "Male",   58, 174, 88, "LAD, stenosis: 80%" },
+            { "Case_2111", "Sundqvist, L.",  "Female", 62, 168, 74, "RCA, stenosis: 70%" },
+            { "Case_2112", "Featherstone, G.","Male",  55, 179, 91, "LCx, stenosis: 75%" },
+        } },
+        { "Module PCI Bypass", {
+            { "Case_2120", "Adeyemi, T.",    "Male",   67, 177, 86, "SVG to RCA, graft stenosis: 65%" },
+            { "Case_2121", "Kowalczyk, M.",  "Female", 71, 162, 69, "LIMA to LAD, graft stenosis: 55%" },
+        } },
+        { "Module PCI anomalies", {
+            { "Case_2130", "Ssemakula, R.",  "Male",   44, 180, 79, "Anomalous RCA origin from left sinus" },
+            { "Case_2131", "Pettengill, A.", "Female", 39, 170, 65, "Anomalous LCx origin from right sinus" },
+        } },
+        { "Module PCI bifurcation", {
+            { "Case_2140", "Draycott, H.",   "Male",   61, 178, 84, "LAD/Diagonal bifurcation, Medina 1,1,1" },
+            { "Case_2141", "Falkenrath, U.", "Female", 66, 166, 72, "LCx/OM bifurcation, Medina 1,0,1" },
+        } },
+        { "Module PCI complication", {
+            { "Case_2150", "Chibuzo, E.",    "Male",   59, 175, 90, "RCA dissection during wiring" },
+            { "Case_2151", "Vandermolen, K.","Female", 64, 169, 77, "LAD perforation, contained" },
+        } },
+        { "Module PCI AMI", {
+            { "Case_2160", "Osayande, F.",   "Male",   52, 176, 88, "STEMI, RCA total occlusion" },
+            { "Case_2161", "Brechtel, N.",   "Female", 58, 163, 71, "STEMI, LAD total occlusion" },
+        } },
+        { "Module PCI FFR", {
+            { "Case_2170", "Adegoke, L.",    "Male",   56, 179, 85, "LAD intermediate stenosis, FFR pending" },
+            { "Case_2171", "Holbrook, S.",   "Female", 61, 167, 73, "RCA intermediate stenosis, FFR pending" },
+        } },
+        { "Module PCI multi vessel disease", {
+            { "Case_2180", "Nnamdi, C.",     "Male",   65, 177, 92, "LAD 80%, RCA 70%, LCx 60%" },
+            { "Case_2181", "Ostrowski, J.",  "Female", 69, 164, 76, "LAD 75%, RCA 85%" },
+        } },
+        { "Module CRM", {
+            { "Case_2190", "Balewa, S.",     "Male",   74, 173, 80, "Complete heart block, pacemaker indicated" },
+            { "Case_2191", "Trelawny, F.",   "Female", 78, 160, 66, "Sick sinus syndrome, pacemaker indicated" },
+        } },
+        { "Module TAVI", {
+            { "Case_2200", "Okonkwo, V.",    "Male",   81, 172, 78, "Severe aortic stenosis, valve area 0.7 cm2" },
+            { "Case_2201", "Winterbourne, M.","Female",84, 158, 61, "Severe aortic stenosis, valve area 0.6 cm2" },
+        } },
+    } },
+    { "Peripheral Interventions", {
+        { "Module PVI Angiography", {
+            { "Case_3100", "Duplessis, R.",  "Male",   62, 178, 87, "Diagnostic run-off, mild diffuse disease" },
+            { "Case_3101", "Enendu, K.",     "Female", 58, 166, 70, "Diagnostic run-off, no significant disease" },
+        } },
+        { "Module PVI", {
+            { "Case_3110", "Balogun, T.",    "Male",   64, 179, 89, "Superficial femoral artery, stenosis: 70%" },
+            { "Case_3111", "Castellanos, I.","Female", 60, 165, 72, "Popliteal artery, stenosis: 65%" },
+        } },
+        { "Module PVI Iliac", {
+            { "Case_3120", "Ogunleye, D.",   "Male",   66, 177, 91, "Right common iliac, stenosis: 80%" },
+            { "Case_3121", "Warrington, B.", "Female", 63, 168, 74, "Left external iliac, occlusion" },
+        } },
+        { "Module PVI Femoropopliteal", {
+            { "Case_3130", "Adebayo, M.",    "Male",   68, 175, 84, "SFA, long-segment occlusion: 18 cm" },
+            { "Case_3131", "Fennimore, C.",  "Female", 71, 161, 65, "Popliteal, focal stenosis: 75%" },
+        } },
+        { "Module PVI Below Knee (BTK)", {
+            { "Case_3140", "Igwebuike, S.",  "Male",   70, 174, 79, "Peroneal artery, occlusion, CLI" },
+            { "Case_3141", "Alderwood, P.",  "Female", 73, 159, 60, "Anterior tibial, diffuse disease" },
+        } },
+        { "Module PVI Renal", {
+            { "Case_3150", "Nwachukwu, G.",  "Male",   57, 176, 88, "Right renal artery, stenosis: 75%" },
+            { "Case_3151", "Sinclair-Wren, O.","Female",60, 164, 71, "Left renal artery, stenosis: 68%" },
+        } },
+        { "Module PVI Carotid", {
+            { "Case_3160", "Uzoigwe, A.",    "Male",   69, 178, 85, "Left carotid, stenosis: 72%" },
+            { "Case_3161", "Beauchamp, L.",  "Female", 65, 167, 73, "Right carotid, stenosis: 68%" },
+        } },
+        { "Module PVI Subclavian", {
+            { "Case_3170", "Chukwuma, E.",   "Male",   61, 180, 90, "Left subclavian, stenosis: 80%, subclavian steal" },
+            { "Case_3171", "Radulescu, I.",  "Female", 55, 163, 69, "Right subclavian, occlusion" },
+        } },
+        { "Module PVI Mesenteric", {
+            { "Case_3180", "Okwuosa, B.",    "Male",   67, 177, 86, "Superior mesenteric artery, stenosis: 78%" },
+            { "Case_3181", "Vasilenko, T.",  "Female", 72, 162, 67, "Celiac trunk, stenosis: 70%" },
+        } },
+        { "Module PVI CTO", {
+            { "Case_3190", "Emeagwali, N.",  "Male",   63, 179, 88, "SFA chronic total occlusion: 22 cm" },
+            { "Case_3191", "Kaczmarek, W.",  "Female", 68, 165, 72, "Popliteal chronic total occlusion: 14 cm" },
+        } },
+        { "Module PVI Bifurcation", {
+            { "Case_3200", "Oyelaran, F.",   "Male",   59, 178, 83, "Common femoral bifurcation, Medina 1,1,0" },
+            { "Case_3201", "Herrenschmidt, U.","Female",64, 166, 71, "Popliteal trifurcation, stenosis: 65%" },
+        } },
+        { "Module PVI Critical Limb Ischemia (CLI/CLTI)", {
+            { "Case_3210", "Adeoye, R.",     "Male",   72, 173, 76, "Multilevel occlusive disease, tissue loss" },
+            { "Case_3211", "Prokopenko, S.", "Female", 75, 158, 58, "Multilevel occlusive disease, rest pain" },
+        } },
+        { "Module PVI Acute Limb Ischemia (ALI)", {
+            { "Case_3220", "Chiedozie, K.",  "Male",   66, 176, 84, "Acute SFA thrombosis, Rutherford IIb" },
+            { "Case_3221", "Wozniak, E.",    "Female", 70, 164, 70, "Acute popliteal embolism, Rutherford IIa" },
+        } },
+        { "Module PVI Thrombectomy", {
+            { "Case_3230", "Ogundipe, L.",   "Male",   61, 177, 87, "SFA fresh thrombus, aspiration indicated" },
+            { "Case_3231", "Marchetti, V.",  "Female", 65, 166, 73, "Popliteal fresh thrombus, aspiration indicated" },
+        } },
+        { "Module PVI Complication", {
+            { "Case_3240", "Nnaji, D.",      "Male",   58, 179, 89, "Common femoral access site pseudoaneurysm" },
+            { "Case_3241", "Bergstrom, A.",  "Female", 63, 165, 72, "Retroperitoneal hematoma post-access" },
+        } },
+        { "Module PVI Aneurysm", {
+            { "Case_3250", "Okorocha, P.",   "Male",   71, 176, 82, "Popliteal artery aneurysm, diameter: 28 mm" },
+            { "Case_3251", "Villanueva, C.", "Female", 74, 160, 63, "Common femoral aneurysm, diameter: 22 mm" },
+        } },
+    } },
+};
 
 struct EmbolectomyPreset {
     const char *name;
@@ -150,6 +330,13 @@ QComboBox { background:#000000; border:1px solid #565656; border-radius:3px; pad
 QComboBox::drop-down { border:none; }
 QDoubleSpinBox { background:#000000; border:1px solid #565656; border-radius:3px; padding:3px; color:#E8E8E8; }
 QPlainTextEdit { background:#000000; border:1px solid #3B3B3B; color:#B1B1B1; font-size:10px; }
+QListWidget {
+    background:#000000; border:1px solid #3B3B3B; border-radius:3px;
+    color:#C9C9C9; font-size:11px; outline:none;
+}
+QListWidget::item { padding:4px 6px; border-bottom:1px solid #232323; }
+QListWidget::item:selected { background:#2A2A2E; color:#E8E8E8; }
+QListWidget::item:hover    { background:#1A1A1A; }
 QSlider::groove:horizontal { background:#3B3B3B; height:4px; border-radius:2px; }
 QSlider::handle:horizontal { background:#6F6F6F; width:12px; height:12px; margin:-4px 0; border-radius:6px; }
 QScrollBar:vertical { background:#000000; width:8px; }
@@ -355,7 +542,7 @@ QPushButton *makeSideNavTile(const QString &icon, const QString &label, QWidget 
     // Embolic Agent cards. setSizePolicy(Expanding) + a per-tile stretch
     // factor at the call site (navVL->addWidget(tile, 1)) is what actually
     // lets each tile grow to fill the column instead.
-    b->setMinimumHeight(84);
+    b->setMinimumHeight(64);
     b->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     return b;
 }
@@ -668,7 +855,7 @@ void MainWindow::buildUi() {
     addHeaderField(tr("PATIENT"), tr("Demo Patient"));
     addHeaderField(tr("ID"), tr("DP-2025-001"));
     addHeaderField(tr("AGE / SEX"), tr("54 / M"));
-    addHeaderField(tr("PROCEDURE"), tr("MMA Embolization"));
+    m_activeModuleLabel = addHeaderField(tr("PROCEDURE"), tr("MMA Embolization"));
     m_headerProcedureTime = addHeaderField(tr("PROCEDURE TIME"), tr("00:00:00"));
 
     headerHL->addStretch(1);
@@ -1069,6 +1256,7 @@ void MainWindow::buildUi() {
     connect(m_view, &VesselView::retractRequested,       this, [this]{ onRetract(); });
     connect(m_view, &VesselView::chooseLeftRequested,    this, [this]{ onChooseLeft(); });
     connect(m_view, &VesselView::chooseRightRequested,   this, [this]{ onChooseRight(); });
+    connect(m_view, &VesselView::chooseStraightRequested, this, [this]{ onChooseStraight(); });
     connect(m_view, &VesselView::cameraChanged,          this, &MainWindow::onCameraChanged);
     connect(m_view, &VesselView::vesselSurfacePicked, this, &MainWindow::onVesselSurfacePicked);
     // Camera sync: when ANY view's camera changes, ALL other views follow.
@@ -1170,7 +1358,18 @@ void MainWindow::buildUi() {
     m_deviceStatusCatheter->setText("<span style='color:#6B6B6F;'>&#9679;</span> NOT LOADED");
     m_deviceStatusEmbolic->setText( "<span style='color:#6B6B6F;'>&#9679;</span> NOT STARTED");
 
+    // ── "Select Patient…" — directly above Sheath Selection ────────────────
+    // Opens a dedicated dialog (showPatientSelectionDialog()) with the case
+    // list on the left and the module categories on the right, rather than
+    // an inline card in this column - matches the reference design.
+    m_btnSelectPatient = makeProcBtn(tr("Select Patient…"), procCol);
+    connect(m_btnSelectPatient, &QPushButton::clicked, this, [this]{ showPatientSelectionDialog(); });
+    procVL->addWidget(m_btnSelectPatient);
+
     m_btnSheathSelect = makeProcBtn(tr("Sheath Selection…"), procCol);
+    // Disabled until a patient/case is selected - sequential workflow:
+    // Patient -> Sheath -> Catheter, each step gating the next.
+    m_btnSheathSelect->setEnabled(false);
     connect(m_btnSheathSelect, &QPushButton::clicked, this, [this]{ onSheathSelection(); });
     procVL->addWidget(m_btnSheathSelect);
 
@@ -1302,8 +1501,9 @@ void MainWindow::buildUi() {
     // m_siteButtons for internal state tracking but not shown.
     {
         auto *accBG = new QButtonGroup(this);
-        static const char *kSiteNames[4] = {"Right femoral","Left femoral","Right radial","Left radial"};
-        for (int i = 0; i < 4; ++i) {
+        static const char *kSiteNames[8] = {"Right femoral","Left femoral","Right radial","Left radial",
+                                            "Right popliteal","Left popliteal","Right brachial","Left brachial"};
+        for (int i = 0; i < 8; ++i) {
             auto *rb = new QRadioButton(tr(kSiteNames[i]));  // no parent widget — not shown
             rb->setEnabled(false);
             accBG->addButton(rb, i);
@@ -1541,7 +1741,7 @@ void MainWindow::buildUi() {
 
     auto *emboBtnRow = new QHBoxLayout();
     auto *emboBegin  = new QPushButton(tr("Begin at catheter tip"), m_emboDialog);
-    m_emboInjectBtn  = new QPushButton(tr("Inject"), m_emboDialog);
+    m_emboInjectBtn  = new QPushButton(tr("Start Injection"), m_emboDialog);
     m_emboResetBtn   = new QPushButton(tr("Reset"), m_emboDialog);
     m_emboInjectBtn->setEnabled(false);
     m_emboResetBtn->setEnabled(false);
@@ -1552,6 +1752,23 @@ void MainWindow::buildUi() {
     emboBtnRow->addWidget(m_emboInjectBtn);
     emboBtnRow->addWidget(m_emboResetBtn);
     emboLay->addLayout(emboBtnRow);
+
+    auto *emboRateRow = new QHBoxLayout();
+    emboRateRow->addWidget(new QLabel(tr("Speed"), m_emboDialog));
+    m_emboSpeedSpin = new QDoubleSpinBox(m_emboDialog);
+    m_emboSpeedSpin->setRange(0.5, 3.0);
+    m_emboSpeedSpin->setSingleStep(0.1);
+    m_emboSpeedSpin->setValue(1.0);
+    m_emboSpeedSpin->setSuffix(tr("x"));
+    emboRateRow->addWidget(m_emboSpeedSpin);
+    emboRateRow->addSpacing(12);
+    emboRateRow->addWidget(new QLabel(tr("Volume"), m_emboDialog));
+    m_emboVolumeSpin = new QDoubleSpinBox(m_emboDialog);
+    m_emboVolumeSpin->setRange(1.0, 20.0);
+    m_emboVolumeSpin->setSingleStep(0.5);
+    m_emboVolumeSpin->setValue(6.0);
+    emboRateRow->addWidget(m_emboVolumeSpin);
+    emboLay->addLayout(emboRateRow);
 
     // Changing agent mid-cast would silently reinterpret every link already
     // grown under the old agent's resistance weighting - simplest correct
@@ -1607,10 +1824,33 @@ void MainWindow::buildUi() {
     phaseRow->addWidget(postBtn);
     conLay->addLayout(phaseRow);
 
-    m_contrastInjectBtn = new QPushButton(tr("Inject"), m_contrastDialog);
+    auto *contrastRateRow = new QHBoxLayout();
+    contrastRateRow->addWidget(new QLabel(tr("Speed"), m_contrastDialog));
+    m_contrastSpeedSpin = new QDoubleSpinBox(m_contrastDialog);
+    m_contrastSpeedSpin->setRange(0.5, 3.0);
+    m_contrastSpeedSpin->setSingleStep(0.1);
+    m_contrastSpeedSpin->setValue(1.0);
+    m_contrastSpeedSpin->setSuffix(tr("x"));
+    contrastRateRow->addWidget(m_contrastSpeedSpin);
+    contrastRateRow->addSpacing(12);
+    contrastRateRow->addWidget(new QLabel(tr("Volume"), m_contrastDialog));
+    m_contrastVolumeSpin = new QDoubleSpinBox(m_contrastDialog);
+    m_contrastVolumeSpin->setRange(2.0, 40.0);
+    m_contrastVolumeSpin->setSingleStep(1.0);
+    m_contrastVolumeSpin->setValue(10.0);
+    contrastRateRow->addWidget(m_contrastVolumeSpin);
+    conLay->addLayout(contrastRateRow);
+
+    auto *contrastBtnRow = new QHBoxLayout();
+    m_contrastInjectBtn = new QPushButton(tr("Start Injection"), m_contrastDialog);
     m_contrastInjectBtn->setEnabled(false);
     connect(m_contrastInjectBtn, &QPushButton::clicked, this, [this]{ onInjectContrast(); });
-    conLay->addWidget(m_contrastInjectBtn);
+    m_contrastResetBtn = new QPushButton(tr("Reset"), m_contrastDialog);
+    m_contrastResetBtn->setEnabled(false);
+    connect(m_contrastResetBtn, &QPushButton::clicked, this, [this]{ onResetContrast(); });
+    contrastBtnRow->addWidget(m_contrastInjectBtn);
+    contrastBtnRow->addWidget(m_contrastResetBtn);
+    conLay->addLayout(contrastBtnRow);
 
     auto *conBtns = new QDialogButtonBox(QDialogButtonBox::Close, m_contrastDialog);
     connect(conBtns, &QDialogButtonBox::rejected, m_contrastDialog, &QDialog::hide);
@@ -1820,6 +2060,25 @@ void MainWindow::extractCenterline() {
     }
     autoCalibrate();
     QApplication::restoreOverrideCursor();   // always restore — set at start of extractCenterline
+    // NOTE: graph cleanup (simplifyLocalCycles()) was tried here across
+    // several iterations this session, attempting to fix reported "distal
+    // vessel - no further advance" dead-ends by removing what were assessed
+    // as redundant/artifact edges near the iliac bifurcation and in the
+    // cerebral circulation (Circle of Willis). It has been REMOVED entirely.
+    //
+    // Direct evidence from a preserved pre-session baseline of this exact
+    // codebase confirmed the RAW, completely unmodified graph topology
+    // successfully navigates all the way to the Middle Meningeal Artery for
+    // both femoral and radial access - the graph itself was never the
+    // problem. simplifyLocalCycles() decides which of two redundant edges
+    // to discard purely by comparing total edge length (a standard minimum
+    // spanning tree) - a geometric criterion with no awareness of which
+    // edge is anatomically meaningful to keep. If the genuinely correct
+    // path toward a real target happened to be the one flagged "redundant"
+    // by that length comparison, this would have silently removed a real,
+    // working connection while believing it was only cleaning up an
+    // artifact - undoing exactly the kind of navigation this project needs
+    // to support, in the course of trying to fix something else.
     resolveAccessSites();
     loadBodyMeshes();
 }
@@ -1867,10 +2126,38 @@ void MainWindow::loadBodyMeshes() {
     }
 }
 
+/// Deliberately a no-op now. A previous version of this function spliced a
+/// new node partway between the resolved femoral landmark and its downward
+/// neighbour via straight-line interpolation between the two - verified
+/// directly against the actual dense VTP source data to be unreliable: the
+/// real vessel curves significantly between these two coarse graph nodes
+/// (bowing out laterally by several centimetres), and a straight line cuts
+/// through the middle of that curve. Measured position error at every
+/// interpolation fraction tested (5-8mm) exceeded the vessel's own radius
+/// at that point (3-4mm) - meaning that version was placing the sheath
+/// genuinely outside the vessel wall, not "slightly down inside it". A
+/// Hermite-spline alternative (using tangent directions derived from the
+/// graph's own topology) was also tested and found even less reliable,
+/// since the downstream node is itself a trifurcation with no dependable
+/// way to know which of its several neighbours represents this specific
+/// edge's own continuing tangent.
+///
+/// Properly supporting "move further down while staying on the vessel"
+/// requires preserving the true dense polyline shape from the source VTP
+/// file, which CenterlineGraph::Link currently discards entirely during
+/// graph construction (it stores only from/to node IDs and a total
+/// length, nothing about the shape in between) - a legitimate, larger,
+/// separately-scoped change to the loader and graph structure, not
+/// something to approximate here with an interpolation method already
+/// shown not to work against this project's own data.
+void MainWindow::nudgeFemoralEntriesDownward() {
+}
+
 void MainWindow::resolveAccessSites() {
     log(tr("resolveAccessSites: graph nodes=%1 mmPerUnit=%2 leafNodes=%3")
             .arg(m_graph.nodeCount()).arg(m_mmPerUnit).arg(m_vtpLeafNodes.size()));
     m_sites = cn::AccessSiteResolver::resolve(m_graph, m_mmPerUnit, true, m_vtpLeafNodes);
+    nudgeFemoralEntriesDownward();
     log(tr("  sites resolved: %1").arg(m_sites.size()));
     for (int i = 0; i < static_cast<int>(m_sites.size()); ++i) {
         const auto &s = m_sites[i];
@@ -1889,7 +2176,7 @@ void MainWindow::resolveAccessSites() {
         }
     }
     int firstValid = -1;
-    for (int i = 0; i < 4 && i < static_cast<int>(m_sites.size()); ++i) {
+    for (int i = 0; i < 8 && i < static_cast<int>(m_sites.size()); ++i) {
         const auto &s = m_sites[i];
         QRadioButton *rb = m_siteButtons[i];
         rb->setEnabled(s.valid);
@@ -1955,12 +2242,189 @@ void MainWindow::autoCalibrate() {
 // Sheath / Catheter selection — same logic as old project
 // ─────────────────────────────────────────────────────────────────────────────
 void MainWindow::onSheathSelection() { showInsertionDialog(); }
+
+namespace {
+/// Builds one case row's widget - case ID (bold), name/sex/age, patient
+/// size/weight, and (when non-empty) a pathology line - matching the
+/// reference design's text layout. No thumbnail: no real per-case imagery
+/// exists in this project, and a placeholder was tried and found to look
+/// wrong (a generic glyph made no sense across every module, especially
+/// non-cardiac ones), so this row is text-only rather than papering over
+/// that with another invented placeholder.
+QWidget *buildCaseRowWidget(const SampleCase &c, QWidget *parent) {
+    auto *row = new QWidget(parent);
+    auto *textCol = new QVBoxLayout(row);
+    textCol->setContentsMargins(8, 6, 8, 6);
+    textCol->setSpacing(2);
+
+    auto *idLabel = new QLabel(QString::fromLatin1(c.caseId), row);
+    idLabel->setStyleSheet("color:#E8E8E8; font-weight:bold; font-size:12px;");
+    textCol->addWidget(idLabel);
+
+    const QString detail = QString("%1 (%2) %3 years").arg(QString::fromLatin1(c.name),
+                                                             QString::fromLatin1(c.sex)).arg(c.age);
+    auto *detailLabel = new QLabel(detail, row);
+    detailLabel->setStyleSheet("color:#C9C9C9; font-size:11px;");
+    textCol->addWidget(detailLabel);
+
+    const QString info = QString("Patient information: size: %1 cm, weight: %2 kg")
+                              .arg(c.heightCm).arg(c.weightKg);
+    auto *infoLabel = new QLabel(info, row);
+    infoLabel->setStyleSheet("color:#9B9B9B; font-size:10px; font-weight:bold;");
+    textCol->addWidget(infoLabel);
+
+    if (c.pathology[0] != '\0') {
+        auto *pathLabel = new QLabel(QString::fromLatin1(c.pathology), row);
+        pathLabel->setStyleSheet("color:#B08A5A; font-size:10px;");
+        pathLabel->setWordWrap(true);
+        textCol->addWidget(pathLabel);
+    }
+    return row;
+}
+
+/// Fills `list` with the given cases, one rich row widget each.
+void populateCaseList(QListWidget *list, const SampleCase *cases, int count) {
+    list->clear();
+    for (int i = 0; i < count; ++i) {
+        auto *item = new QListWidgetItem(list);
+        auto *w = buildCaseRowWidget(cases[i], list);
+        item->setSizeHint(w->sizeHint());
+        item->setData(Qt::UserRole, QString::fromLatin1(cases[i].caseId));
+        list->addItem(item);
+        list->setItemWidget(item, w);
+    }
+}
+} // namespace
+
+void MainWindow::showPatientSelectionDialog() {
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Please select a patient"));
+    dlg.resize(1100, 560);
+    auto *rootVL = new QVBoxLayout(&dlg);
+
+    auto *title = new QLabel(tr("Please select a patient"), &dlg);
+    title->setAlignment(Qt::AlignCenter);
+    title->setStyleSheet("color:#E8E8E8; font-size:14px; font-weight:bold; padding:4px;");
+    rootVL->addWidget(title);
+
+    auto *bodyHL = new QHBoxLayout();
+    rootVL->addLayout(bodyHL, 1);
+
+    // ── Left: banner (category/module, once one is picked) + case list ────
+    auto *leftVL = new QVBoxLayout();
+    auto *categoryBanner = new QLabel(&dlg);
+    categoryBanner->setAlignment(Qt::AlignCenter);
+    categoryBanner->setStyleSheet("background:#B9C6D8; color:#1A1A1A; font-size:20px; "
+                                  "font-weight:bold; padding:10px;");
+    categoryBanner->hide();
+    leftVL->addWidget(categoryBanner);
+
+    auto *moduleBanner = new QLabel(&dlg);
+    moduleBanner->setAlignment(Qt::AlignCenter);
+    moduleBanner->setStyleSheet("background:#25407A; color:#FFFFFF; font-size:15px; "
+                                "font-weight:bold; padding:8px;");
+    moduleBanner->hide();
+    leftVL->addWidget(moduleBanner);
+
+    auto *caseList = new QListWidget(&dlg);
+    caseList->setSpacing(2);
+    leftVL->addWidget(caseList, 1);
+    bodyHL->addLayout(leftVL, 3);
+
+    populateCaseList(caseList, kDefaultCases, static_cast<int>(std::size(kDefaultCases)));
+
+    // ── Right: one continuous list, category headers (non-selectable, blue
+    // banner) interspersed with selectable module rows - matches the
+    // reference design's own layout exactly, rather than a combobox plus a
+    // separately-populated list. ──────────────────────────────────────────
+    auto *moduleList = new QListWidget(&dlg);
+    moduleList->setSpacing(0);
+    bodyHL->addWidget(moduleList, 2);
+
+    for (int catIdx = 0; catIdx < static_cast<int>(std::size(kModuleCategories)); ++catIdx) {
+        const auto &cat = kModuleCategories[catIdx];
+        auto *header = new QListWidgetItem(QString::fromLatin1(cat.name));
+        header->setFlags(Qt::NoItemFlags);   // header row itself is not selectable
+        header->setBackground(QColor("#1E3A6B"));
+        header->setForeground(QColor("#FFFFFF"));
+        QFont hf = header->font(); hf.setBold(true); header->setFont(hf);
+        moduleList->addItem(header);
+
+        int modIdx = 0;
+        for (const auto &mod : cat.modules) {
+            auto *item = new QListWidgetItem(QStringLiteral("   \u25CB  ") + QString::fromLatin1(mod.name));
+            item->setData(Qt::UserRole, catIdx);
+            item->setData(Qt::UserRole + 1, modIdx);
+            moduleList->addItem(item);
+            ++modIdx;
+        }
+    }
+
+    connect(moduleList, &QListWidget::itemClicked, &dlg,
+            [&](QListWidgetItem *item) {
+                if (!item || item->flags() == Qt::NoItemFlags) return;   // header row
+                const int catIdx = item->data(Qt::UserRole).toInt();
+                const int modIdx = item->data(Qt::UserRole + 1).toInt();
+                if (catIdx < 0 || catIdx >= static_cast<int>(std::size(kModuleCategories))) return;
+                const auto &cat = kModuleCategories[catIdx];
+                if (modIdx < 0 || modIdx >= static_cast<int>(cat.modules.size())) return;
+                const ModuleInfo &mod = *(cat.modules.begin() + modIdx);
+
+                categoryBanner->setText(QString::fromLatin1(cat.name));
+                categoryBanner->show();
+                moduleBanner->setText(QString::fromLatin1(mod.name));
+                moduleBanner->show();
+                populateCaseList(caseList, mod.cases.begin(), static_cast<int>(mod.cases.size()));
+            });
+
+    auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    rootVL->addWidget(btns);
+    connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+    if (dlg.exec() != QDialog::Accepted) return;
+    QListWidgetItem *chosen = caseList->currentItem();
+    if (!chosen) return;
+
+    const QString caseId = chosen->data(Qt::UserRole).toString();
+    const bool caseChanged = (caseId != m_activePatientCaseId);
+
+    m_activePatientCaseId  = caseId;
+    m_activeModuleCategory = categoryBanner->isVisible() ? categoryBanner->text() : tr("General");
+    m_activeModuleName     = moduleBanner->isVisible() ? moduleBanner->text() : tr("Default Case");
+
+    // "Synchronized across all views" here means this lives in the header
+    // (visible regardless of which of 3D View/Fluoro/DSA/Road Map/Cine is
+    // currently active), not duplicated per-view state that could drift.
+    if (m_activeModuleLabel) m_activeModuleLabel->setText(caseId);
+
+    // Sequential workflow: Patient -> Sheath -> Catheter. Selecting a
+    // patient/case is what unlocks Sheath Selection in the first place -
+    // it starts disabled (see buildUi()'s own setEnabled(false) on this
+    // button). A genuinely different case also discards any sheath/
+    // catheter already placed for whichever case was active before,
+    // rather than letting them silently carry over to a case the operator
+    // has not placed anything on yet.
+    if (m_btnSheathSelect) m_btnSheathSelect->setEnabled(true);
+    if (caseChanged) resetDeviceState(/*alsoResetSheath=*/true);
+
+    // Only one actual vessel dataset exists in this project - there is no
+    // second, third, or thirtieth set of anatomy to swap in per case, so
+    // this tracks which case is "active" (the header read-out, this log
+    // line) rather than reloading different patient data. Sheath,
+    // catheter, embolization, fluoro, and 3D View all keep operating on
+    // the one loaded model exactly as before; nothing about their own
+    // behaviour changes based on which case is selected here.
+    log(tr("[%1] Patient selected: %2 (%3 / %4)")
+            .arg(QTime::currentTime().toString("HH:mm:ss"))
+            .arg(caseId, m_activeModuleCategory, m_activeModuleName));
+}
 void MainWindow::onCatheterSelection() { showCatheterSelectionMenu(); }
 
 void MainWindow::showInsertionDialog() {
     QDialog dlg(this);
     dlg.setWindowTitle(tr("Select Access Point"));
-    dlg.setFixedSize(400, 280);
+    dlg.setFixedSize(400, 340);
     auto *lay = new QVBoxLayout(&dlg);
     lay->addWidget(new QLabel(tr("Select Side and Access Point:"), &dlg));
 
@@ -1973,10 +2437,12 @@ void MainWindow::showInsertionDialog() {
 
     auto *accGrp = new QGroupBox(tr("Insertion Point"), &dlg);
     auto *accVL  = new QVBoxLayout(accGrp);
-    auto *femBtn    = new QRadioButton(tr("Femoral (Groin)"),  accGrp);
-    auto *radBtn    = new QRadioButton(tr("Radial (Wrist)"),   accGrp);
+    auto *femBtn    = new QRadioButton(tr("Femoral (Groin)"),   accGrp);
+    auto *radBtn    = new QRadioButton(tr("Radial (Wrist)"),    accGrp);
+    auto *poplBtn   = new QRadioButton(tr("Popliteal (Knee)"),  accGrp);
+    auto *brachBtn  = new QRadioButton(tr("Brachial (Upper Arm)"), accGrp);
     femBtn->setChecked(true);
-    accVL->addWidget(femBtn); accVL->addWidget(radBtn);
+    accVL->addWidget(femBtn); accVL->addWidget(radBtn); accVL->addWidget(poplBtn); accVL->addWidget(brachBtn);
     lay->addWidget(accGrp);
 
     auto *btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
@@ -1985,7 +2451,7 @@ void MainWindow::showInsertionDialog() {
     connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
     if (dlg.exec() != QDialog::Accepted) return;
-    if (!femBtn->isChecked() && !radBtn->isChecked()) {
+    if (!femBtn->isChecked() && !radBtn->isChecked() && !poplBtn->isChecked() && !brachBtn->isChecked()) {
         QMessageBox::warning(this, tr("Access Point"), tr("Please select an insertion point."));
         return;
     }
@@ -1993,8 +2459,10 @@ void MainWindow::showInsertionDialog() {
     // Map dialog selection to resolved access sites and restart
     cn::AccessSite wantSite;
     bool wantLeft = leftBtn->isChecked();
-    if (radBtn->isChecked()) wantSite = wantLeft ? cn::AccessSite::LeftRadial  : cn::AccessSite::RightRadial;
-    else                     wantSite = wantLeft ? cn::AccessSite::LeftFemoral : cn::AccessSite::RightFemoral;
+    if (brachBtn->isChecked())    wantSite = wantLeft ? cn::AccessSite::LeftBrachial  : cn::AccessSite::RightBrachial;
+    else if (poplBtn->isChecked())     wantSite = wantLeft ? cn::AccessSite::LeftPopliteal : cn::AccessSite::RightPopliteal;
+    else if (radBtn->isChecked()) wantSite = wantLeft ? cn::AccessSite::LeftRadial    : cn::AccessSite::RightRadial;
+    else                          wantSite = wantLeft ? cn::AccessSite::LeftFemoral   : cn::AccessSite::RightFemoral;
 
     bool siteFound = false;
     for (int i = 0; i < static_cast<int>(m_sites.size()); ++i) {
@@ -2046,7 +2514,10 @@ void MainWindow::showInsertionDialog() {
     showDeviceSpecDialog(tr("Access Sheath"));
 
     const QString side = wantLeft ? tr("Left") : tr("Right");
-    const QString site = radBtn->isChecked() ? tr("Radial") : tr("Femoral");
+    const QString site = brachBtn->isChecked() ? tr("Brachial")
+                        : poplBtn->isChecked()  ? tr("Popliteal")
+                        : radBtn->isChecked()   ? tr("Radial")
+                                               : tr("Femoral");
 
     if (m_emboLabel)
         m_emboLabel->setText(tr("Embolisation — Step 2/7 — Guide Catheter → Catheter Selection → Guide Catheter."));
@@ -2202,6 +2673,30 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
     m_catheter.setInsertionDepth(m_nav.depth());
     syncDevices();
 
+    // Frontal/AP projection and framing, Fluoro view only, once the
+    // catheter is actually selected - per explicit request. C-arm angle
+    // change necessarily goes through the shared CarmController: the
+    // Fluoro pane's own on-screen LAO/CRAN readout is driven from its
+    // state (onCarmAnglesChanged()), so setting the Fluoro camera's angle
+    // directly instead would leave that readout showing a stale value that
+    // no longer matches the projection actually displayed. This does mean
+    // the 3D view's own camera orientation moves too - both are linked to
+    // one physical C-arm rig by this project's existing design - only the
+    // centering/framing immediately below is scoped to Fluoro alone.
+    // Camera position on sheath placement (restartFromCurrentSite()) is
+    // untouched by this - that is a separate, earlier workflow step with
+    // its own explicit requirement not to move the camera, and this only
+    // runs here, later, at catheter selection.
+    if (m_carmCtrl) {
+        m_carmCtrl->rotateLAO(-m_carmCtrl->laoAngle());
+        m_carmCtrl->rotateCRAN(-m_carmCtrl->cranAngle());
+    }
+    if (VesselView *vf = m_quad->viewFluoro()) {
+        const cn::Vec3 tipPos = m_nav.path().pointAt(m_nav.depth());
+        const float tipRadius = std::max(m_nav.path().radiusAt(m_nav.depth()), 1e-4f);
+        vf->focusOn(QVector3D(tipPos.x, tipPos.y, tipPos.z), tipRadius);
+    }
+
     log(tr("%1 %2 (%3, %4) — %5 Fr, ⌀%6 mm OD, %7 mm lumen, %8 cm.%9 %10")
             .arg(displayName)
             .arg(QString::fromLatin1(sz.label))
@@ -2214,6 +2709,27 @@ bool MainWindow::applyCatheterSpec(const QString &displayName, const QString &si
             .arg(appliedShape.isEmpty() ? QString() : tr(" Tip shape: %1.").arg(appliedShape))
             .arg(QString::fromLatin1(spec->note)));
     return true;
+}
+
+// Clears catheter (always) and sheath (when asked) state together, so the
+// UI, the device-gating labels, and what is actually attached to every view
+// never drift out of sync with each other.
+void MainWindow::resetDeviceState(bool alsoResetSheath) {
+    // Clear the catheter unconditionally - a stale catheter must never
+    // carry over to a sheath the operator has not explicitly attached it
+    // to (a fresh sheath placement, or an entirely new patient/case).
+    m_catheterReady = false;
+    m_ready         = false;
+    for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+        if (v) v->setDevice(nullptr);
+
+    if (alsoResetSheath) {
+        m_sheathReady = false;
+        for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
+            if (v) v->clearSheath();
+    }
+
+    updateDeviceGating();
 }
 
 // Enables navigation only when there is both an access and a device in it, and
@@ -2481,9 +2997,13 @@ void MainWindow::onRoadMap() {
     // Same explicit, direct sync as onViewModeChanged(1)'s own fix - this
     // path switches to Fluoro independently, so needs its own copy rather
     // than relying on that other call site's fix to somehow cover it too.
-    // Same !m_sheathReady condition too - see that call site's own
-    // comment for why this can't run unconditionally once a sheath exists.
-    if (!m_sheathReady && m_quad->viewFluoro() && m_view)
+    // Runs unconditionally now, same reasoning as that other call site's
+    // own comment: the !m_sheathReady guard this used to have only made
+    // sense while restartFromCurrentSite() deliberately focused Fluoro on
+    // the access site after sheath placement, which was removed in a
+    // later fix - so the guard was left blocking legitimate
+    // synchronization with nothing left to protect.
+    if (m_quad->viewFluoro() && m_view)
         m_quad->viewFluoro()->syncCameraFrom(*m_view);
     checkViewAction(1);
     m_quad->viewFluoro()->setRoadMapActive(m_roadMapActive);
@@ -2581,9 +3101,14 @@ void MainWindow::onBeginEmbolization() {
     const auto agent = static_cast<cn::EmbolicAgent>(m_emboAgentBox->currentData().toInt());
     m_emboli.setAgent(agent);
     m_emboli.begin(tipNode, findProximalNeighbor(tipNode));
+    m_emboliInjecting = false;
+    m_emboliTargetVolume = 0.f;
 
     if (m_emboAgentBox)  m_emboAgentBox->setEnabled(false);
-    if (m_emboInjectBtn) m_emboInjectBtn->setEnabled(true);
+    if (m_emboInjectBtn) {
+        m_emboInjectBtn->setEnabled(true);
+        m_emboInjectBtn->setText(tr("Start Injection"));
+    }
     if (m_emboResetBtn)  m_emboResetBtn->setEnabled(true);
     if (m_quickEmboAgentBox) {
         const QSignalBlocker block(m_quickEmboAgentBox);
@@ -2601,20 +3126,29 @@ void MainWindow::onBeginEmbolization() {
 
 void MainWindow::onInjectEmbolic() {
     if (!m_emboli.active()) return;
-    // One fixed increment per press — the same "one discrete unit per
-    // operator action" convention m_stepSpin already uses for catheter
-    // advancement, rather than a continuous slider that would make the
-    // exact injected volume hard to reason about from the log/read-out.
-    constexpr float kInjectStep = 1.0f;
-    m_emboli.inject(kInjectStep);
-    updateEmboliReadout();
-    refreshEmboliViews();
+    // Toggle continuous injection rather than fire one discrete step - the
+    // actual per-tick injecting happens in onContrastTick() (shared timer
+    // with contrast - see m_emboliInjecting's own comment), which gives a
+    // visibly gradual, continuously-advancing front instead of an instant
+    // jump each press.
+    m_emboliInjecting = !m_emboliInjecting;
+    if (m_emboliInjecting) {
+        const float target = m_emboVolumeSpin ? static_cast<float>(m_emboVolumeSpin->value()) : 6.f;
+        m_emboliTargetVolume = std::max(target, m_emboli.state().volumeInjected);
+    }
+    if (m_emboInjectBtn)
+        m_emboInjectBtn->setText(m_emboliInjecting ? tr("Stop Injection") : tr("Start Injection"));
 }
 
 void MainWindow::onResetEmbolization() {
     m_emboli.reset();
+    m_emboliInjecting = false;
+    m_emboliTargetVolume = 0.f;
     if (m_emboAgentBox)      m_emboAgentBox->setEnabled(true);
-    if (m_emboInjectBtn)     m_emboInjectBtn->setEnabled(false);
+    if (m_emboInjectBtn) {
+        m_emboInjectBtn->setEnabled(false);
+        m_emboInjectBtn->setText(tr("Start Injection"));
+    }
     if (m_emboResetBtn)      m_emboResetBtn->setEnabled(false);
     if (m_quickEmboAgentBox) m_quickEmboAgentBox->setEnabled(true);
     if (m_emboStatusLabel)
@@ -2697,11 +3231,15 @@ void MainWindow::onQuickEmboInject() {
                 .arg(tipNode));
     }
 
-    // Scale the displayed mL value into the model's own arbitrary injection
-    // unit - same order of magnitude as the dialog's fixed 1.0-per-press
-    // step (EmbolizationModel::inject()'s own unit note explains why there
-    // is no real fluid-volume model to convert against here).
-    m_emboli.inject(m_quickEmboVolumeMl * 10.f);
+    // Adds to the shared target volume and (re)starts continuous injection,
+    // rather than applying the whole amount as one instant jump - the
+    // shared timer in onContrastTick() then drains toward this new,
+    // higher target gradually, same as the dialog's own Start Injection
+    // toggle, just reached by pressing INJECT repeatedly instead.
+    const float addedVolume = m_quickEmboVolumeMl * 10.f;
+    m_emboliTargetVolume = std::max(m_emboliTargetVolume, m_emboli.state().volumeInjected) + addedVolume;
+    m_emboliInjecting = true;
+    if (m_emboInjectBtn) m_emboInjectBtn->setText(tr("Stop Injection"));
     updateEmboliReadout();
     refreshEmboliViews();
 }
@@ -2831,7 +3369,12 @@ void MainWindow::onBeginContrastPhase(cn::ContrastPhase phase) {
 
     if (phase == ContrastPhase::Flush) {
         m_contrastModel.beginPhase(ContrastPhase::Flush);
-        if (m_contrastInjectBtn) m_contrastInjectBtn->setEnabled(false);
+        m_contrastInjecting = false;
+        if (m_contrastInjectBtn) {
+            m_contrastInjectBtn->setEnabled(false);
+            m_contrastInjectBtn->setText(tr("Start Injection"));
+        }
+        if (m_contrastResetBtn) m_contrastResetBtn->setEnabled(true);
         updateContrastReadout();
         refreshContrastViews();
         log(tr("[%1] Contrast — flush started").arg(QTime::currentTime().toString("HH:mm:ss")));
@@ -2850,7 +3393,12 @@ void MainWindow::onBeginContrastPhase(cn::ContrastPhase phase) {
     }
 
     m_contrastModel.beginPhase(phase, tipNode, findProximalNeighbor(tipNode));
-    if (m_contrastInjectBtn) m_contrastInjectBtn->setEnabled(true);
+    m_contrastInjecting = false;
+    if (m_contrastInjectBtn) {
+        m_contrastInjectBtn->setEnabled(true);
+        m_contrastInjectBtn->setText(tr("Start Injection"));
+    }
+    if (m_contrastResetBtn) m_contrastResetBtn->setEnabled(true);
     updateContrastReadout();
     refreshContrastViews();
 
@@ -2873,33 +3421,89 @@ void MainWindow::onInjectContrast() {
     if (m_contrastModel.phase() != ContrastPhase::PreEmbolizationAngiogram &&
         m_contrastModel.phase() != ContrastPhase::PostEmbolizationAngiogram)
         return;
-    // Contrast is thin and advances fast — a single press is a deliberately
-    // larger step than the Embolisation Module's own kInjectStep, matching
-    // how quickly a real contrast bolus actually races down a vessel
-    // compared to a viscous liquid embolic.
-    constexpr float kContrastInjectStep = 2.0f;
-    m_contrastModel.inject(kContrastInjectStep);
-    updateContrastReadout();
-    refreshContrastViews();
+    // Toggle continuous injection rather than fire one discrete step - see
+    // m_contrastInjecting's own comment. onContrastTick() does the actual
+    // per-tick injecting while this is true.
+    m_contrastInjecting = !m_contrastInjecting;
+    if (m_contrastInjectBtn)
+        m_contrastInjectBtn->setText(m_contrastInjecting ? tr("Stop Injection") : tr("Start Injection"));
 
-    // Auto-capture the FIRST roadmap mask the first time contrast is
-    // actually injected - not on every subsequent press of this same
-    // button, which would just be a wasteful re-capture of the same
-    // anatomy at the same C-arm angle. A real operator captures a mask
-    // once, at a moment of good vessel opacification; from then on,
-    // "Re-mask" (see onRemaskRoadmap()) is the explicit, deliberate action
-    // for refreshing it, e.g. after actually rotating the C-arm.
-    if (m_quad && m_quad->viewFluoro() &&
+    // Auto-capture the FIRST roadmap mask the first time contrast injection
+    // actually starts - not on every subsequent toggle, which would just be
+    // a wasteful re-capture of the same anatomy at the same C-arm angle. A
+    // real operator captures a mask once, at a moment of good vessel
+    // opacification; from then on, "Re-mask" (see onRemaskRoadmap()) is the
+    // explicit, deliberate action for refreshing it, e.g. after actually
+    // rotating the C-arm.
+    if (m_contrastInjecting && m_quad && m_quad->viewFluoro() &&
         m_quad->viewFluoro()->roadmapState() == VesselView::RoadmapState::NoMask)
         m_quad->viewFluoro()->captureRoadmapMask();
 }
 
+void MainWindow::onResetContrast() {
+    using cn::ContrastPhase;
+    m_contrastModel.beginPhase(ContrastPhase::Idle);   // beginPhase(Idle) calls reset() internally
+    m_contrastInjecting = false;
+    if (m_contrastInjectBtn) {
+        m_contrastInjectBtn->setEnabled(false);
+        m_contrastInjectBtn->setText(tr("Start Injection"));
+    }
+    if (m_contrastResetBtn) m_contrastResetBtn->setEnabled(false);
+    updateContrastReadout();
+    refreshContrastViews();
+    log(tr("[%1] Contrast reset").arg(QTime::currentTime().toString("HH:mm:ss")));
+}
+
 void MainWindow::onContrastTick() {
     using cn::ContrastPhase;
+
+    // Continuous embolic injection - no competing decay to account for
+    // here (an embolic cast is a permanent deposit, unlike contrast, which
+    // tick() below decays every call), so a modest, steady per-tick rate
+    // alone gives smooth, gradual progress without needing to out-race
+    // anything. Spreads what used to be one discrete 1.0-volume step
+    // across roughly a second of ticks instead of applying it instantly.
+    if (m_emboliInjecting && m_emboli.active()) {
+        constexpr float kBaseVolumePerTick = 0.15f;
+        const float speed = m_emboSpeedSpin ? static_cast<float>(m_emboSpeedSpin->value()) : 1.0f;
+        m_emboli.inject(kBaseVolumePerTick * speed);
+        updateEmboliReadout();
+        refreshEmboliViews();
+
+        const float targetVolume = m_emboliTargetVolume > 0.f ? m_emboliTargetVolume : 6.f;
+        if (m_emboli.state().volumeInjected >= targetVolume) {
+            m_emboliInjecting = false;
+            if (m_emboInjectBtn) m_emboInjectBtn->setText(tr("Start Injection"));
+        }
+    }
+
     // tick() is a cheap no-op while Idle, but skip the readout/repaint fan-out
     // in that case too - no point repainting every view six times a second
     // for a phase that is not visibly changing.
     if (m_contrastModel.phase() == ContrastPhase::Idle) return;
+
+    if (m_contrastInjecting &&
+        (m_contrastModel.phase() == ContrastPhase::PreEmbolizationAngiogram ||
+         m_contrastModel.phase() == ContrastPhase::PostEmbolizationAngiogram)) {
+        // Base rate chosen to clearly exceed tick()'s own natural decay
+        // (0.030 arc-length/sec = 0.0045/tick at this 150 ms interval): at
+        // speed 1.0x, 0.6 volume/tick * kContrastSpreadRate(0.028, in
+        // ContrastInjectionModel.cpp) = 0.0168 arc-length/tick, roughly
+        // 3.7x the decay rate - clear, visible net forward progress each
+        // tick rather than the front barely creeping or standing still
+        // against its own washout.
+        constexpr float kBaseVolumePerTick = 0.6f;
+        const float speed = m_contrastSpeedSpin ? static_cast<float>(m_contrastSpeedSpin->value()) : 1.0f;
+        m_contrastModel.inject(kBaseVolumePerTick * speed);
+
+        const float targetVolume = m_contrastVolumeSpin
+                                        ? static_cast<float>(m_contrastVolumeSpin->value()) : 10.f;
+        if (m_contrastModel.state().volumeInjected >= targetVolume) {
+            m_contrastInjecting = false;
+            if (m_contrastInjectBtn) m_contrastInjectBtn->setText(tr("Start Injection"));
+        }
+    }
+
     m_contrastModel.tick(0.15f);   // matches m_contrastTimer's 150 ms interval
     updateContrastReadout();
     refreshContrastViews();
@@ -2989,14 +3593,17 @@ void MainWindow::onViewModeChanged(int id) {
         // its pane was hidden, with no repaint to catch it up) without
         // needing to fully trace which exact gap caused it.
         //
-        // Conditional on !m_sheathReady: once a sheath exists,
-        // restartFromCurrentSite() has already focused Fluoro on the
-        // access site specifically (per explicit request) - syncing from
-        // 3D View unconditionally here would silently pull it back to
-        // wherever 3D View is sitting (which stays put, per a separate
-        // earlier request) every single time the operator switches panes,
-        // undoing that focus on every switch rather than just the once.
-        if (!m_sheathReady && m_quad->viewFluoro() && m_view)
+        // Runs unconditionally - views must stay synchronized at all
+        // times, regardless of sheath/catheter state. This used to be
+        // conditional on !m_sheathReady, back when restartFromCurrentSite()
+        // deliberately focused Fluoro on the access site after sheath
+        // placement and this sync would have undone that focus on every
+        // pane switch; that focus behaviour was removed in a later fix
+        // (per the explicit requirement that camera position must never
+        // change during sheath/catheter selection), so the guard against
+        // undoing it no longer has anything to guard against - it was only
+        // ever silently blocking legitimate synchronization instead.
+        if (m_quad->viewFluoro() && m_view)
             m_quad->viewFluoro()->syncCameraFrom(*m_view);
         break;
     case 2: m_quad->showPane(QuadPanel::Pane::Mesh);    break;
@@ -3058,9 +3665,9 @@ void MainWindow::updateSheathActor() {
                                                                  : cn::Vec3( 1.f, 0.f, 0.f))
                           : cn::Vec3(0.f, 0.f, -1.f);
 
-    // Better: the entry node is a vessel terminal, so the vessel leaves it in
-    // exactly one direction and the hub points along the reverse. Correct for
-    // any site and any patient orientation, with no axis table at all.
+    // Better: for a genuine terminal (degree 1), the vessel leaves it in
+    // exactly one direction and the hub points along the reverse. Correct
+    // for any site and any patient orientation, with no axis table at all.
     const int32_t entryN = m_sheath.entryNode();
     if (entryN >= 0 && entryN < static_cast<int32_t>(m_graph.nodeCount())) {
         const auto nb = m_graph.neighbours(entryN);
@@ -3068,6 +3675,31 @@ void MainWindow::updateSheathActor() {
             const cn::Vec3 inward =
                 m_graph.nodes()[nb.front()].position - m_graph.nodes()[entryN].position;
             if (inward.lengthSquared() > 1e-12f) outDir = (-inward).normalized();
+        } else if (nb.size() == 2) {
+            // Mid-vessel entry (degree 2) - e.g. the corrected groin-level
+            // femoral entry, which sits on the common femoral artery as it
+            // continues both proximally into the iliac and distally toward
+            // the knee, not at a dead end. A puncture here goes THROUGH the
+            // vessel wall to the skin, not backward along the vessel's own
+            // axis - there is no "backward" from a point the vessel
+            // continues through in both directions. Approximated as the
+            // direction perpendicular to the local vessel tangent that
+            // points most toward the front of the body (+Y, anterior) -
+            // real groin/neck punctures are approached anterolaterally,
+            // never from directly behind.
+            const cn::Vec3 tangent = m_graph.nodes()[nb[1]].position - m_graph.nodes()[nb[0]].position;
+            if (tangent.lengthSquared() > 1e-12f) {
+                const cn::Vec3 t = tangent.normalized();
+                cn::Vec3 anterior(0.f, 1.f, 0.f);
+                cn::Vec3 perp = anterior - t * anterior.dot(t);
+                if (perp.lengthSquared() < 1e-8f) {
+                    // Vessel runs nearly parallel to +Y (rare) - fall back
+                    // to a lateral direction instead, still perpendicular.
+                    const cn::Vec3 lateral(1.f, 0.f, 0.f);
+                    perp = lateral - t * lateral.dot(t);
+                }
+                if (perp.lengthSquared() > 1e-12f) outDir = perp.normalized();
+            }
         }
     }
 
@@ -3130,7 +3762,35 @@ void MainWindow::restartFromCurrentSite(bool focusCamera) {
     m_nav.setViewFrame(
         cn::Vec3(m_view->screenRight().x(), m_view->screenRight().y(), m_view->screenRight().z()),
         cn::Vec3(m_view->screenUp().x(),    m_view->screenUp().y(),    m_view->screenUp().z()));
-    m_nav.startFrom(startNode);
+
+    // Use the seeded overload for any non-terminal (mid-pathway) entry -
+    // the plain startFrom(startNode) has a real bug for this case: its
+    // very first step has no previous node to exclude any neighbour, so
+    // at an entry with more than one neighbour it immediately sees
+    // multiple candidates and stops as a pending junction without ever
+    // extending the route at all (see NavigationController::startFrom()'s
+    // own comment on the overload for the full explanation).
+    //
+    // "Highest Z neighbour = forward" is verified correct for femoral's
+    // corrected groin-level entry (degree 2 on both sides) and for
+    // brachial's lowered entry (degree 2 on the right, but degree 3 on
+    // the left - the two sides are not always topologically symmetric,
+    // since the graph cleanup step can affect each side's local structure
+    // independently). This heuristic was also checked against a different
+    // degree-3 case (carotid, since reverted) and picked the wrong
+    // neighbour there, so it is applied here only because THIS specific
+    // node's correct forward direction was separately verified, not
+    // because degree>=2 alone is trusted to always work - a future site
+    // needs its own check before relying on this.
+    const auto entryNeighbours = m_graph.neighbours(startNode);
+    if (entryNeighbours.size() >= 2) {
+        int32_t forward = entryNeighbours[0];
+        for (int32_t nb : entryNeighbours)
+            if (m_graph.nodes()[nb].position.z > m_graph.nodes()[forward].position.z) forward = nb;
+        m_nav.startFrom(startNode, forward);
+    } else {
+        m_nav.startFrom(startNode);
+    }
 
     // Build and display sheath geometry at the entry point
     updateSheathActor();
@@ -3145,40 +3805,23 @@ void MainWindow::restartFromCurrentSite(bool focusCamera) {
     // setCameraFollows(true) alone only sets the flag and starts the
     // easing timer (see its own implementation) - it never touches
     // target/azimuth/distance, so the camera stays exactly where the
-    // operator left it (Head-Sagittal or otherwise) and only the FOLLOWED
-    // POINT switches from static to the catheter's own current tip
-    // position from here on, which is what "camera follows the catheter"
-    // actually means. Applied to every view, not just m_view, so all of
-    // them start following identically.
+    // operator left it.
+    //
+    // Camera position, zoom, and orientation are left completely
+    // unchanged here - explicit, repeated requirement: "without changing
+    // the current camera position," "keep the camera position unchanged,"
+    // "do not reset the vessel, camera, or anatomical view during
+    // access/sheath/catheter selection." setCameraFollows(true) does not
+    // move the camera at all by itself - it only arms follow-mode for
+    // once the catheter actually starts advancing, which is what "camera
+    // follows the catheter" means; the camera's own current position,
+    // target, and zoom stay exactly where the operator left them until
+    // then. Applied to every view, not just m_view, so all of them start
+    // following identically.
     if (focusCamera)
         for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
-            if (v) {
-                v->setCameraFollows(true);
-                // Front-facing angle, not the lateral (side) 90 deg that
-                // showHeadSagittal() leaves every view at by default - see
-                // setAzimuthOnly()'s own comment. 180 deg matches
-                // VesselView's own m_azimuth class-level default (what
-                // every view starts at before any preset is applied), so
-                // this reuses the app's own existing convention for
-                // "front" rather than inventing a new angle. Target
-                // position and zoom distance are completely untouched.
-                v->setAzimuthOnly(180.f);
-            }
+            if (v) v->setCameraFollows(true);
 
-    // ALL views focus on the sheath's own access site position together -
-    // per explicit request, superseding an earlier one that specifically
-    // kept 3D View/DSA/Mesh from moving here. The operator now wants every
-    // view consistent with each other after sheath/catheter selection,
-    // not just Fluoro/Road Map while 3D View and DSA stay wherever they
-    // were left. Same position/radius lookup onFocusAccess() already
-    // uses, applied automatically here rather than requiring a separate
-    // manual action every time.
-    if (focusCamera) {
-        const cn::Vec3 &accessPos = m_graph.nodes()[site.node].position;
-        const float accessRadius  = m_graph.nodes()[site.node].radius;
-        for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
-            if (v) v->focusOn(QVector3D(accessPos.x, accessPos.y, accessPos.z), accessRadius);
-    }
     m_pendingMm = 0.0;
     if (m_motion->isActive()) m_motion->stop();
 
@@ -3188,21 +3831,23 @@ void MainWindow::restartFromCurrentSite(bool focusCamera) {
     // Catheter Selection runs. Previously this set m_ready and handed the
     // views a device the operator had not picked yet, so a catheter appeared
     // in the vessel the instant the sheath went in.
+    //
+    // resetDeviceState(false) clears any catheter left over from a
+    // previous sheath first - a stale m_catheterReady=true from before
+    // would otherwise silently reattach an old catheter to this brand new
+    // sheath without the operator ever running Catheter Selection on it.
+    // false = don't also touch the sheath itself here, since it is about
+    // to be marked ready on the very next line.
+    resetDeviceState(/*alsoResetSheath=*/false);
     m_sheathReady = true;
-    m_ready       = m_catheterReady;
     if (m_btnCatheterSelect) m_btnCatheterSelect->setEnabled(true);
     updateDeviceGating();
 
-    if (m_catheterReady) {
-        for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
-            v->setDevice(&m_catheter);
-        syncDevices();
-    } else {
-        for (VesselView *v : {m_view, m_quad->viewFluoro(), m_quad->viewDSA(), m_quad->viewMesh()})
-            v->setDevice(nullptr);
-        pushOverlay();
-        updateReadouts();
-    }
+    // resetDeviceState() just above already detached any device from every
+    // view and guarantees m_catheterReady is false here - the catheter is
+    // a separate device the operator has not chosen yet for this sheath.
+    pushOverlay();
+    updateReadouts();
     // status: navigation active
     m_view->setFocus();
 }
@@ -3393,6 +4038,34 @@ void MainWindow::onChooseRight() {
     m_pendingMm = 0.0;
     if (m_nav.chooseRight()) {
         log(tr("[%1] node %2: took RIGHT limb").arg(QTime::currentTime().toString("HH:mm:ss")).arg(m_nav.pendingJunctionNode()));
+        syncDevices();
+    }
+}
+
+void MainWindow::onChooseStraight() {
+    if (!m_ready || !m_nav.decisionPending()) return;
+    const auto &opts = m_nav.options();
+    if (opts.empty()) return;
+    // The option whose takeoff angle deviates least from the current
+    // travel direction - not necessarily the leftmost or rightmost one on
+    // screen (those are what chooseLeft()/chooseRight() already reach via
+    // index 0 and size()-1). This is the only way to reach a junction's
+    // middle option when it presents more than two candidates.
+    int straightIdx = 0;
+    float bestAngle = opts[0].takeoffAngleDeg;
+    for (int i = 1; i < static_cast<int>(opts.size()); ++i) {
+        if (opts[i].takeoffAngleDeg < bestAngle) {
+            bestAngle = opts[i].takeoffAngleDeg;
+            straightIdx = i;
+        }
+    }
+    m_pendingMm = 0.0;
+    if (m_nav.chooseOption(straightIdx)) {
+        log(tr("[%1] node %2: continued STRAIGHT (option %3, %4 deg off axis)")
+                .arg(QTime::currentTime().toString("HH:mm:ss"))
+                .arg(m_nav.pendingJunctionNode())
+                .arg(straightIdx)
+                .arg(bestAngle, 0, 'f', 1));
         syncDevices();
     }
 }

@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\SurgeonsLab\EmboNav\Build\x64\Release\ZERO_CHECK</FullPath>
+      <FullPath>C:\SurgeonsLab\EmboNav_Git\Build\x64\Release\ZERO_CHECK</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

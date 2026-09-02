@@ -1,4 +1,4 @@
-C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_QuadPanel.cpp: C:/SurgeonsLab/EmboNav/src/ui/QuadPanel.h \
+C:/SurgeonsLab/EmboNav_Git/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_QuadPanel.cpp: C:/SurgeonsLab/EmboNav_Git/src/ui/QuadPanel.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QElapsedTimer \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QList \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
@@ -216,13 +216,13 @@ C:/SurgeonsLab/EmboNav/Build/EmboNav_autogen/include_Release/YPKJ5OE7LN/moc_Quad
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsexports.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qtwidgetsglobal.h \
   C:/Software/Qt/6.8.3/msvc2022_64/include/QtWidgets/qwidget.h \
-  C:/SurgeonsLab/EmboNav/src/core/AccessSites.h \
-  C:/SurgeonsLab/EmboNav/src/core/CardiacCycle.h \
-  C:/SurgeonsLab/EmboNav/src/core/CatheterModel.h \
-  C:/SurgeonsLab/EmboNav/src/core/CenterlineGraph.h \
-  C:/SurgeonsLab/EmboNav/src/core/ContrastInjectionModel.h \
-  C:/SurgeonsLab/EmboNav/src/core/EmbolizationModel.h \
-  C:/SurgeonsLab/EmboNav/src/core/SheathManager.h \
-  C:/SurgeonsLab/EmboNav/src/core/StlMesh.h \
-  C:/SurgeonsLab/EmboNav/src/core/Vec3.h \
-  C:/SurgeonsLab/EmboNav/src/ui/VesselView.h
+  C:/SurgeonsLab/EmboNav_Git/src/core/AccessSites.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/CardiacCycle.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/CatheterModel.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/CenterlineGraph.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/ContrastInjectionModel.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/EmbolizationModel.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/SheathManager.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/StlMesh.h \
+  C:/SurgeonsLab/EmboNav_Git/src/core/Vec3.h \
+  C:/SurgeonsLab/EmboNav_Git/src/ui/VesselView.h

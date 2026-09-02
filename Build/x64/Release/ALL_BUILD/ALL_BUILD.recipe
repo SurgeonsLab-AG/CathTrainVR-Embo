@@ -2,16 +2,16 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\SurgeonsLab\EmboNav\Build\x64\Release\ZERO_CHECK</FullPath>
+      <FullPath>C:\SurgeonsLab\EmboNav_Git\Build\x64\Release\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\SurgeonsLab\EmboNav\Build\Release\EmboNav.exe</FullPath>
+      <FullPath>C:\SurgeonsLab\EmboNav_Git\Build\Release\EmboNav.exe</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\SurgeonsLab\EmboNav\Build\Release\embonav_cli.exe</FullPath>
+      <FullPath>C:\SurgeonsLab\EmboNav_Git\Build\Release\embonav_cli.exe</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\SurgeonsLab\EmboNav\Build\x64\Release\ALL_BUILD</FullPath>
+      <FullPath>C:\SurgeonsLab\EmboNav_Git\Build\x64\Release\ALL_BUILD</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
