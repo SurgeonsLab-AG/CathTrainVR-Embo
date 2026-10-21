@@ -1,0 +1,23 @@
+
+# Build output
+Build/
+build/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Qt generated files
+*_autogen/
+moc_*.cpp
+qrc_*.cpp
+
+# Visual Studio generated files
+*.obj
+*.exe.recipe
+*.tlog/
+*.lastbuildstate
+
+# Runtime logs
+trace_log.txt

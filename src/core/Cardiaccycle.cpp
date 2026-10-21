@@ -82,13 +82,26 @@ float CardiacCycle::ecg(float p) const {
     v += agauss(p, 0.222f, 0.007f, 0.014f, -0.28f * m_beatAmp);
 
     // ST segment isoelectric, then...
-
-    // T wave — broad and distinctly asymmetric, slow rise and quicker fall.
-    // This asymmetry is the strongest single cue that a T wave is real.
-    v += agauss(p, 0.400f, 0.075f, 0.045f, 0.32f * m_beatAmp);
+    //
+    // T wave — narrowed from the original sigmaLeft=0.075: at that width the
+    // T wave's own rising edge started at phase ~0.175, which is BEFORE the
+    // QRS complex (S's own tail ends ~0.264) has even finished - meaning
+    // there was never an actual flat ST-segment pause at all, S bled
+    // straight into T's rise. A real monitor shows a clear, brief flat
+    // segment between the sharp QRS spike and the T hump; without it, a
+    // trace reads as one continuous busy shape rather than distinct,
+    // separated beats, which is exactly the "doesn't look real" gap this
+    // narrower sigma restores. sigmaLeft is still kept larger than
+    // sigmaRight (rises slower than it falls, the real asymmetry a T wave
+    // has) - just a tighter version of that same asymmetry, not an
+    // inverted one.
+    v += agauss(p, 0.400f, 0.030f, 0.022f, 0.32f * m_beatAmp);
 
     // U wave — barely visible on a real monitor, which is the point.
-    v += agauss(p, 0.500f, 0.030f, 0.030f, 0.045f);
+    // Nudged slightly later/narrower to match T's own tightened width above,
+    // so it still follows T closely (as it does physiologically) without
+    // reopening the gap T's own narrowing just created.
+    v += agauss(p, 0.520f, 0.022f, 0.022f, 0.045f);
 
     // Baseline wander on the respiratory cycle.
     v += m_params.baselineWander *

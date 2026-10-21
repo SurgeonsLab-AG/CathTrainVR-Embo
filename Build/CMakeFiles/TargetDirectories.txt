@@ -1,5 +1,0 @@
-C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_core.dir
-C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/embonav_cli.dir
-C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/EmboNav.dir
-C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/ALL_BUILD.dir
-C:/SurgeonsLab/EmboNav_Git/Build/CMakeFiles/ZERO_CHECK.dir

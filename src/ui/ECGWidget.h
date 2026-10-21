@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QVector>
 #include <QPainter>
+#include <QElapsedTimer>
 
 #include "core/CardiacCycle.h"
 
@@ -59,6 +60,20 @@ private:
     QVector<double> m_pressureBuffer;   ///< cn::CardiacCycle::arterialPressure(), 0..1
     QVector<double> m_plethBuffer;      ///< cn::CardiacCycle::pleth(), 0..1
     int m_writePos = 0;
+    /// Measures REAL elapsed time between onTick() calls - see that
+    /// function's own comment for why a fixed "one sample per callback"
+    /// assumption made the trace's effective sweep speed depend on system
+    /// load (correct when idle/minimized, visibly compressed under heavy
+    /// GL rendering load elsewhere in the app, since this widget's own
+    /// 16ms timer can fire late while the shared cardiac phase - advanced
+    /// separately, correctly, in real time by MainWindow's own delta-
+    /// time-compensated heart timer - keeps moving regardless).
+    QElapsedTimer m_sweepClock;
+    /// Cardiac phase at the END of the previous onTick() call - see that
+    /// function's own comment on why catch-up sub-steps interpolate FROM
+    /// here rather than holding one flat sampled value across all of them.
+    /// -1 means "no previous sample yet" (first call since construction).
+    float m_lastPhase = -1.f;
 
     /// Slow independent phase driving SpO2's small natural wobble (real
     /// pulse-oximeter readings drift a percent or two breath to breath, from

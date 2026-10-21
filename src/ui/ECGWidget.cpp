@@ -17,6 +17,7 @@ ECGWidget::ECGWidget(QWidget *parent) : QWidget(parent) {
 
     connect(&m_timer, &QTimer::timeout, this, &ECGWidget::onTick);
     m_timer.start(16);   // ~60 fps
+    m_sweepClock.start();
 
     rebuildBuffer();
 }
@@ -60,13 +61,57 @@ void ECGWidget::onTick() {
     // the clock IS the synchronization.
     const cn::CardiacCycle *cyc = m_cycle ? m_cycle : &m_ownCycle;
 
+    // Real elapsed time since the LAST tick, not an assumed-fixed 16ms per
+    // callback. Under heavy GL rendering load elsewhere in the app (busy
+    // 3D/Fluoro paintGL competing for the same single-threaded event loop),
+    // this widget's own 16ms QTimer can fire late or irregularly. The shared
+    // cardiac phase keeps advancing correctly in real time regardless (see
+    // MainWindow's own onCardiacTick(), which measures real elapsed time via
+    // its own QElapsedTimer) - so a late callback here still sees a phase
+    // that jumped forward by the FULL real elapsed amount, not a nominal
+    // 16ms worth. Writing exactly one buffer sample per callback in that
+    // case packed more phase progression into the same one pixel of scroll,
+    // which is what made the trace look correctly spaced when the app was
+    // minimized (nothing competing for the event loop, callbacks land on
+    // time) and visibly compressed when actively on screen (callbacks
+    // delayed, each one still only advancing a single pixel).
+    const qint64 elapsedMs = m_sweepClock.restart();
+    const double dtSeconds = elapsedMs / 1000.0;
+
     if (!m_cycle) {
         // Standalone fallback. The event speed-up only applies here; when a
-        // shared clock is in use, its owner decides the rate.
-        m_ownCycle.advance(static_cast<float>(0.016 * (m_inEvent ? 1.45 : 1.0)));
+        // shared clock is in use, its owner decides the rate. Now driven by
+        // the same real elapsed time as the step count below, for the same
+        // reason - a fixed 0.016 assumption here would have the identical
+        // load-dependent drift this whole fix is for.
+        m_ownCycle.advance(static_cast<float>(dtSeconds * (m_inEvent ? 1.45 : 1.0)));
     }
 
     if (m_ecgBuffer.size() != width()) rebuildBuffer();
+
+    // Real-time-per-pixel of buffer advancement - deliberately SLOWER than
+    // the timer's own 16ms callback interval, not equal to it. At 16ms/px,
+    // roughly 8-9 beats fit across a typical widget width, which reads as
+    // busy/cramped and does not leave any single PQRST complex enough
+    // horizontal room to be individually legible - per explicit request for
+    // a more spacious trace. At 6ms/px, the SAME real elapsed time between
+    // callbacks advances the buffer by proportionally MORE pixels (roughly
+    // 2.7x), so the same beat now spans about 2.7x the screen width and
+    // correspondingly fewer beats fit across the same fixed widget width -
+    // trading "see many beats at once" for "see fewer beats, each one
+    // clearly spread out and readable", which is the actual goal here.
+    // This deliberately no longer matches the timer's own real 16ms
+    // interval - the two are independent by design (this only controls how
+    // many PIXELS one interval's worth of real time advances by, not how
+    // often the callback itself fires).
+    constexpr double kMsPerPixel = 7.0;
+
+    // How many buffer pixels this callback should actually advance by, at
+    // the kMsPerPixel sweep rate above. Clamped so a genuine multi-second
+    // stall (the app actually suspended, not just one slow frame) does not
+    // try to instantly flood hundreds of repeated catch-up samples.
+    int steps = qMax(1, qRound(elapsedMs / kMsPerPixel));
+    steps = qMin(steps, 80);   // ~0.5s worth of catch-up ceiling at this faster px/ms rate
 
     // Real heart rate is not metronomic — cn::CardiacCycle::instantaneousBpm()
     // already models respiratory sinus arrhythmia (rate rising on inspiration,
@@ -76,11 +121,42 @@ void ECGWidget::onTick() {
     // implies is what makes beats visibly compress and stretch on every trace
     // as the rate varies, exactly the way a real monitor's sweep does.
     const float p = cyc->phase();
-    m_ecgBuffer[m_writePos]      = cyc->ecg(p);
-    m_pressureBuffer[m_writePos] = cyc->arterialPressure(p);
-    m_plethBuffer[m_writePos]    = cyc->pleth(p);
 
-    m_writePos = (m_writePos + 1) % m_ecgBuffer.size();
+    // Interpolate PHASE across the catch-up window and re-evaluate the
+    // waveform at EACH sub-step, rather than sampling once at the current
+    // phase and holding that same value across every catch-up slot. A held
+    // value produced a visible flat-then-jump staircase whenever `steps` >
+    // 1 (heavier per-frame load elsewhere in the app - e.g. actively
+    // navigating the catheter, which recomputes device geometry and wall-
+    // contact physics across multiple views every frame - makes this
+    // widget's own timer fire later/less often, which is exactly when
+    // steps grows). Worse than merely boxy: a hold could flatten or
+    // entirely skip the narrow QRS spike if a catch-up window happened to
+    // land on top of it. Re-deriving each sub-step's own phase and calling
+    // ecg()/arterialPressure()/pleth() at THAT phase traces the true curve
+    // through the gap instead, correctly reconstructing a spike that
+    // occurred during a delayed interval rather than smoothing over or
+    // repeating around it.
+    float phaseStart = m_lastPhase;
+    if (phaseStart < 0.f) phaseStart = p;   // first call since construction - nothing to interpolate from yet
+    // Unwrap so interpolation always moves FORWARD in time, even across the
+    // 1.0->0.0 wrap a real advancing phase goes through every beat - the
+    // same "add 1 if wrapped" convention CardiacCycle::agauss() already
+    // uses for its own phase-distance wrapping.
+    float phaseEndUnwrapped = p;
+    if (phaseEndUnwrapped < phaseStart) phaseEndUnwrapped += 1.f;
+
+    for (int i = 0; i < steps; ++i) {
+        const float t = static_cast<float>(i + 1) / static_cast<float>(steps);
+        float subPhase = phaseStart + (phaseEndUnwrapped - phaseStart) * t;
+        if (subPhase >= 1.f) subPhase -= 1.f;   // wrap back into cn::CardiacCycle::ecg()'s own 0..1 domain
+
+        m_ecgBuffer[m_writePos]      = cyc->ecg(subPhase);
+        m_pressureBuffer[m_writePos] = cyc->arterialPressure(subPhase);
+        m_plethBuffer[m_writePos]    = cyc->pleth(subPhase);
+        m_writePos = (m_writePos + 1) % m_ecgBuffer.size();
+    }
+    m_lastPhase = p;
     m_spo2Phase += 0.016f;
     update();
 }

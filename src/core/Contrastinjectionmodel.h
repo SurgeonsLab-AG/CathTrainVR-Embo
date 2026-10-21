@@ -1,6 +1,7 @@
 #pragma once
 #include "CenterlineGraph.h"
 #include "EmbolizationModel.h"
+#include "CoilEmbolizationModel.h"
 #include <vector>
 #include <cstdint>
 
@@ -25,13 +26,17 @@ enum class ContrastPhase { Idle, PreEmbolizationAngiogram, Flush, PostEmbolizati
 ///      faster, the same way saline flushed through the catheter actually
 ///      clears it faster than blood flow alone would.
 ///
-///   2. OCCLUSION-AWARE. Given a pointer to the shared EmbolizationModel,
-///      the flood fill treats any link that model reports as substantially
-///      cast as impassable — contrast literally cannot flow past it. This is
-///      what makes a post-embolization angiogram mechanistically show
-///      reduced/absent flow through the target vessel: it is a genuine
-///      consequence of the same graph the embolic cast grew on, not a
-///      scripted before/after image swap.
+///   2. OCCLUSION-AWARE. Given pointers to the shared EmbolizationModel and
+///      CoilEmbolizationModel, the flood fill treats any link EITHER model
+///      reports as substantially cast/packed as impassable — contrast
+///      literally cannot flow past it, regardless of which of the two
+///      devices did the occluding. This is what makes a post-embolization
+///      angiogram mechanistically show reduced/absent flow through the
+///      target vessel whether the case was embolized with a liquid agent,
+///      a coil nest, or both together (proximal protection coil + distal
+///      liquid agent is a real, common MMA technique) — it is a genuine
+///      consequence of the same graph both casts grew on, not a scripted
+///      before/after image swap.
 class ContrastInjectionModel {
 public:
     struct ContrastLink {
@@ -53,6 +58,11 @@ public:
     /// embolized yet", exactly the situation during a pre-embolization
     /// angiogram, and the flood fill then behaves as pure unobstructed flow.
     void setEmbolization(const EmbolizationModel *e) { m_emboli = e; }
+    /// Optional, independent of setEmbolization() — a case can be coiled,
+    /// liquid-embolized, or both, and either alone is enough to block a
+    /// link. Null means "no coils deployed yet", the same meaningful-empty
+    /// convention setEmbolization() already uses.
+    void setCoils(const CoilEmbolizationModel *c) { m_coils = c; }
 
     /// Starts (or re-starts) a phase.
     ///   PreEmbolizationAngiogram / PostEmbolizationAngiogram — `node` is the
@@ -98,8 +108,9 @@ private:
     void rebuildLinks();
     bool linkOccluded(int32_t a, int32_t b) const;
 
-    const CenterlineGraph   *m_graph  = nullptr;
-    const EmbolizationModel *m_emboli = nullptr;
+    const CenterlineGraph       *m_graph  = nullptr;
+    const EmbolizationModel     *m_emboli = nullptr;
+    const CoilEmbolizationModel *m_coils  = nullptr;
     State m_state;
     std::vector<float> m_weightedDist;
     /// See beginPhase()'s own comment - the proximal neighbor node the

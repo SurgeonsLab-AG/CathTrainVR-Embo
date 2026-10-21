@@ -16,10 +16,12 @@ constexpr float kReferenceRadius  = 0.0015f;   // 1.5 mm at mmPerUnit = 1000
 constexpr float kMaxResistance    = 8.0f;
 constexpr float kContrastViscosity = 0.12f;    // thin liquid - barely prefers the wide channel
 
-// A link at or above this cast fraction is treated as impassable to
-// contrast - not "very slow", genuinely blocked, which is what a real
-// coil/liquid-embolic occlusion does to a vessel's own flow.
-constexpr float kOcclusionThreshold = 0.6f;
+// The 0.6 occlusion threshold this used to define locally now lives in
+// EmbolizationModel::linkOccluded() itself (see this file's own
+// linkOccluded(), which just asks that method) - the same "the owning
+// model owns its own occlusion definition" pattern
+// CoilEmbolizationModel::linkOccluded() already established for its own
+// 1.0 threshold.
 
 // How fast the fill front recedes, in model units (arc length) per second.
 // Flush is roughly 5x faster than natural blood-flow washout — a real
@@ -37,11 +39,22 @@ float resistance(float radius, float viscosity) {
 } // namespace
 
 bool ContrastInjectionModel::linkOccluded(int32_t a, int32_t b) const {
-    if (!m_emboli) return false;   // nothing embolized yet - e.g. pre-embolization angiogram
-    for (const auto &cl : m_emboli->state().links) {
-        if (cl.fillFraction < kOcclusionThreshold) continue;
-        if ((cl.from == a && cl.to == b) || (cl.from == b && cl.to == a)) return true;
-    }
+    // Both delegate to the owning model's OWN linkOccluded() now, rather
+    // than this function iterating state().links directly - with multi-
+    // target support, state() only ever returns the currently ACTIVE
+    // target, and reading it directly here would miss occlusive material
+    // sitting in a different target that simply is not selected in the UI
+    // right now. Each model's own linkOccluded() already checks every
+    // target it holds, not just the active one.
+    if (m_emboli && m_emboli->linkOccluded(a, b)) return true;
+    // Coils use their own fillFraction >= 1.0 "fully packed" rule rather
+    // than the liquid model's softer 0.6 - a coil nest that is 60%
+    // packed by length is nowhere near occluded the way a viscous liquid
+    // cast at 60% fill visually reads as "getting there". The coil model
+    // owns that definition; this just asks it rather than duplicating the
+    // threshold here. Independent of m_emboli - a case can be coiled,
+    // liquid-embolized, or both, and either alone blocks the link.
+    if (m_coils && m_coils->linkOccluded(a, b)) return true;
     return false;
 }
 

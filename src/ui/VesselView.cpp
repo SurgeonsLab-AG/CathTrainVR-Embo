@@ -1,4 +1,5 @@
 #include "VesselView.h"
+#include "TraceLog.h"
 
 #include <QDebug>
 #include <QOpenGLShaderProgram>
@@ -107,6 +108,7 @@ uniform vec4  uColor;
 uniform vec3  uCameraPos;
 uniform float uHeartCentreZ;   // world Z of the heart/aortic-root centre — anatomical anchor for mode 1's regional dampening
 uniform float uLiveTime;       // mode 2: continuously increasing, for genuinely time-varying (flickering) grain — see paintGL for how this is derived
+uniform float uCardiacPressure; // mode 2: cn::CardiacCycle::pressureNow() at the live phase (~0.34-1.0), for contrast flow genuinely synced to the SAME heartbeat driving the ECG/vessel-wall pulsation elsewhere on screen — see paintGL for how this is derived
 uniform vec3  uLightDir;
 uniform vec3  uSheen;
 uniform float uSpecular;
@@ -340,27 +342,43 @@ void main() {
             // the embolic cast, which is a genuinely permanent solid deposit
             // that should never appear to move once it has set.
             //
-            // A low-frequency, high-amplitude directional flow band, not
-            // random noise: a sine wave along Z (vessels broadly run along
-            // the body's long axis), phase-shifted by uLiveTime so the
-            // bands visibly travel through the vessel over real time. This
-            // replaces an earlier, much weaker attempt (high-frequency hash
-            // noise at +/-12%) that turned out invisible in practice for
-            // two compounding reasons: high-frequency random noise tends to
+            // Two components combined now, not one arbitrary clock:
+            //
+            //   1. A spatial travelling-wave texture along Z (vessels
+            //      broadly run along the body's long axis) - this is what
+            //      gives the "a wave is passing through" visual character,
+            //      unchanged in spirit from the original attempt.
+            //
+            //   2. uCardiacPressure - the SAME cn::CardiacCycle pressure
+            //      value already driving the ECG trace and the vessel
+            //      wall's own pulsation elsewhere on screen (see
+            //      setCardiacCycle()/paintGL). This replaces an earlier
+            //      version that drove the whole flow band off uLiveTime
+            //      alone - a made-up, continuously-increasing clock with
+            //      no relationship to the patient's actual heart rate. A
+            //      contrast column pulsing on its own arbitrary rhythm
+            //      right next to a heart trace and a vessel wall pulsing on
+            //      a DIFFERENT rhythm is exactly the kind of mismatch that
+            //      reads as "not real" even after colour/grain are already
+            //      well-tuned: real arterial contrast is pushed forward by
+            //      each systolic pulse, not by an independent internal
+            //      clock. Now the whole column genuinely brightens together
+            //      on systole and dims on diastole, in sync with the same
+            //      heartbeat the rest of the console already shows.
+            //
+            // A low-frequency sine, not high-frequency noise, for the
+            // spatial component: high-frequency random noise tends to
             // average toward near-zero net variation once this fragment's
             // contribution is summed additively with every other
             // overlapping triangle in the accumulation pass, and whatever
             // survives that gets compressed further by the composite
             // pass's own smoothstep(0.05, 0.6, acc.a) downstream. A
             // low-frequency sine wave keeps its shape under additive
-            // summation instead of cancelling out, and a much larger
-            // amplitude (0.35x-1.4x, not +/-12%) is what actually reaches
-            // the far side of that compression as a real, visible
-            // difference rather than nothing.
+            // summation instead of cancelling out.
             if (uForeignIsFluid > 0.5) {
-                float flowPhase = vWorld.z * 0.06 - uLiveTime * 3.0;
-                float flowBand = sin(flowPhase) * 0.5 + 0.5;   // 0..1
-                fv *= mix(0.35, 1.4, flowBand);
+                float travelPhase = vWorld.z * 0.06;
+                float flowBand = clamp(uCardiacPressure + 0.30 * sin(travelPhase), 0.0, 1.0);
+                fv *= mix(0.2, 1.7, flowBand);
             }
 
             fragColor = vec4(0.0, 0.0, 0.0, fv);
@@ -638,8 +656,21 @@ void main() {
         // no tissue behind it at all (perfectly possible - a vessel does
         // not always have muscle directly behind it in projection) would
         // otherwise incorrectly take the background exit and never render.
+        //
+        // Background now carries the SAME live dot grain the anatomy gets
+        // below (same hash, same amplitude), per an explicit "grain across
+        // the ENTIRE image" request - a real detector's quantum mottle
+        // shows on empty/air regions too, not just where tissue attenuates
+        // the beam. An earlier round removed grain here entirely after a
+        // DIFFERENT approach (gating a shared grain term by combinedShape)
+        // leaked unevenly onto background; this reuses that same earlier
+        // fix's own reasoning (containment by control flow, not by a
+        // multiply trusted to reach exactly zero) but now WITH grain
+        // applied inside this branch, not by skipping it - simple and
+        // exact, since background has no other math to interact with.
         if (combinedShape < 0.001 && foreignShape < 0.001) {
-            fragColor = vec4(uBackgroundColor, 1.0);
+            float bgGrain = hash13(vec3(gl_FragCoord.xy, uLiveTime * 11.0)) - 0.5;
+            fragColor = vec4(clamp(uBackgroundColor * (1.0 + bgGrain * 0.12), 0.0, 1.0), 1.0);
             return;
         }
 
@@ -700,6 +731,27 @@ void main() {
         vec3 kContrastTarget = mix(kContrastDark, kContrastPlainFluoro, uContrastBrightMode);
         rgb = mix(rgb, kContrastTarget, clamp(foreignShape * uForeignOpacity, 0.0, 1.0));
 
+        // Coil override - forced to genuine (0,0,0) black, independent of
+        // uContrastBrightMode and kContrastTarget above. Requested
+        // directly: a real coil mass is solid platinum wire, the single
+        // most radiopaque thing this console deposits, and it should read
+        // as unambiguous black regardless of whatever brightness mode the
+        // operator has contrast set to - not a dark OR medium grey the way
+        // contrast/embolic material's own shared target intentionally
+        // allows (see that target's own comment: contrast and embolic
+        // genuinely cannot be told apart once summed into this one
+        // channel, hence why THEY share a brightness-mode-dependent
+        // target). Coil solves that same limitation differently: it is
+        // deliberately pushed to a much higher density (uForeignDensityScale
+        // ~40, see the coil draw call) than contrast (max ~3.2) or liquid
+        // embolic (max ~2.88) ever reach, so a high acc.a value can be
+        // treated as "this pixel is coil-dominated" and forced to true
+        // black, with a wide smoothstep margin (8.0-14.0) safely above
+        // either material's real maximum so this never misfires on a
+        // dense contrast bolus or a thick embolic cast.
+        float coilOverride = smoothstep(8.0, 14.0, acc.a);
+        rgb = mix(rgb, vec3(0.0, 0.0, 0.0), coilOverride);
+
         // The screen-space detector grain that used to sit here is removed
         // entirely. Two prior rounds tried to fix it in place — replacing
         // the hash function (which had a real, well-documented large-
@@ -711,11 +763,33 @@ void main() {
         // per-pixel randomization applied at all, background pixels equal
         // exactly uBackgroundColor, full stop, regardless of whatever
         // subtle issue might still remain in a gating calculation. The
-        // per-fragment tissue grain (mode 1, hash13(vWorld * 41.0)) is
+        // per-fragment tissue grain (mode 1, hash13(vWorld * 12.0)) is
         // unrelated to this and untouched — that's what still gives bone
         // and muscle their texture; it never reaches empty background at
         // all, since mode 1 only runs where a mesh fragment is actually
         // rasterized.
+
+        // Small, fine, TIME-VARYING dot grain across the whole visible
+        // image — the classic X-ray detector "quantum mottle" shimmer,
+        // requested directly and distinct from both the per-fragment
+        // tissue grain above (baked onto world position, stable frame to
+        // frame — never shimmers) and the muscle-only live grain further
+        // up in mode 1 (deliberately coarse and subtle, +/-3%, gated to
+        // muscle alone). This one is genuinely per-pixel (gl_FragCoord.xy
+        // with NO downscale, unlike that muscle term's *0.5) so it reads
+        // as fine individual dots rather than soft blotches, and it is
+        // SAFE from the exact background-leak failure the paragraph above
+        // describes for a different reason than either of that attempt's
+        // two fixes: it sits AFTER the early-return a few lines up (`if
+        // (combinedShape < 0.001 && foreignShape < 0.001) { ...; return; }
+        // `), so a background pixel has already exited the shader entirely
+        // before this line can ever execute — containment by control flow,
+        // not by a multiply that has to be trusted to reach exactly zero.
+        // Amplitude set to this round's exact final "Noise = 0.12" value.
+        // Still genuinely per-pixel and live/time-varying.
+        float dotGrain = hash13(vec3(gl_FragCoord.xy, uLiveTime * 11.0)) - 0.5;
+        rgb *= 1.0 + dotGrain * 0.12;
+
         // Subtle detector falloff — a real image intensifier's output
         // brightness genuinely falls off gently toward the edge of its
         // round field of view; this is a soft radial darkening, not a hard
@@ -841,6 +915,13 @@ VesselView::VesselView(QWidget *parent) : QOpenGLWidget(parent) {
         if (!busy) m_camEase.stop();
         update();
     });
+
+    // Body-focus pan - real-elapsed-time-driven (same QElapsedTimer-based
+    // reasoning m_camEase's own comment above already establishes for
+    // camera easing generally), only running WHILE actually panning - see
+    // setBodyFocusFraction().
+    m_bodyFocusClock.start();
+    connect(&m_bodyFocusTimer, &QTimer::timeout, this, &VesselView::onBodyFocusTick);
 }
 
 VesselView::~VesselView() {
@@ -903,6 +984,17 @@ void VesselView::refreshEmbolization() {
     update();
 }
 
+void VesselView::setCoils(const cn::CoilEmbolizationModel *coils) {
+    m_coils = coils;
+    m_coilsDirty = true;
+    update();
+}
+
+void VesselView::refreshCoils() {
+    m_coilsDirty = true;
+    update();
+}
+
 void VesselView::setContrastInjection(const cn::ContrastInjectionModel *contrast) {
     m_contrast = contrast;
     m_contrastDirty = true;
@@ -926,6 +1018,11 @@ void VesselView::setCameraTrack(const cn::CenterlinePath *path, float arc) {
 }
 
 void VesselView::setCameraFollows(bool v) {
+    traceLog(QStringLiteral("[VV %1] setCameraFollows(%2)  device=%3  followTarget=(%4,%5,%6) followDistance=%7")
+                 .arg(quintptr(this), 0, 16).arg(v)
+                 .arg(quintptr(m_device), 0, 16)
+                 .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z())
+                 .arg(m_followDistance));
     m_cameraFollows = v;
     if (v) startCameraEase();
     update();
@@ -936,6 +1033,10 @@ void VesselView::startCameraEase() {
 }
 
 void VesselView::setMode(Mode m) {
+    traceLog(QStringLiteral("[VV %1] setMode(%2)  cameraFollows=%3 device=%4  followTarget BEFORE (%5,%6,%7)")
+                 .arg(quintptr(this), 0, 16).arg(int(m)).arg(m_cameraFollows)
+                 .arg(quintptr(m_device), 0, 16)
+                 .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z()));
     m_mode = m;
     // Entering follow mode from elsewhere: snap once rather than sweeping the
     // camera across the model.
@@ -943,6 +1044,9 @@ void VesselView::setMode(Mode m) {
         updateFollowFrame();
         m_followTarget = m_followTargetGoal;
         m_followDistance = m_followDistanceGoal;
+        traceLog(QStringLiteral("[VV %1] setMode  SNAPPED followTarget to (%2,%3,%4)")
+                     .arg(quintptr(this), 0, 16)
+                     .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z()));
     }
     emit cameraChanged();
     update();
@@ -1021,7 +1125,24 @@ void VesselView::focusRibCage() {
     // kAnatomyFrameMargin... meant to be close") is the established
     // precedent this follows for a margin tighter than the whole-vessel
     // default.
-    static constexpr float kRibCageFrameMargin = 1.10f;
+    //
+    // Lowered from 1.10 to 0.85 (was briefly palette-dependent - Arterial
+    // only - for a narrower request; now applies uniformly to every palette
+    // per explicit follow-up: "the same increased default zoom... across
+    // all views"). This is EVERY named view's actual default/reset framing -
+    // 3D View, Mesh and DSA are all QuadPanel's m_view3d (same instance,
+    // different display state only); Fluoro and Road Map are both
+    // m_viewFluoro (Road Map is a capture-mode toggle on that same camera,
+    // not a separate view) - so one unconditional value here reaches all
+    // five. A 1.10 margin puts the rib-cage assumption at ~90% of the frame
+    // height; 0.85 raises that to a much larger, clearly closer ~116%
+    // equivalent framing, i.e. genuinely fills/exceeds the vertical frame
+    // rather than a small nudge - without a hard clip risk the way
+    // showWholeVessel()'s own comment warns about, since that warning is
+    // about the WHOLE, much larger vessel tree crossing the frame at large
+    // LAO angles, not this already-cropped rib-cage-sized region. Azimuth/
+    // elevation/target are untouched below - only this distance changes.
+    const float kRibCageFrameMargin = 0.85f;
     const float halfV = 0.20f;   // ~400 mm vertical extent (sternum to lower ribs)
     const float halfH = 0.17f;   // ~340 mm horizontal extent (rib cage width)
     const float aspect = height() > 0 ? float(width()) / float(height()) : 1.f;
@@ -1041,7 +1162,7 @@ void VesselView::focusRibCage() {
     // setCamera() itself deliberately never emits (syncCameraFrom() relies on
     // that to avoid a ping-pong loop between linked views) - every OTHER
     // direct camera-framing function (showWholeVessel, showFluoroDefault,
-    // showHeadSagittal...) emits explicitly right after, and this one had
+    // showHeadFrontal...) emits explicitly right after, and this one had
     // been missing it: calling focusRibCage() directly (rather than via
     // resetCamera(), which does emit) silently never reached the other
     // linked view at all.
@@ -1049,6 +1170,11 @@ void VesselView::focusRibCage() {
 }
 
 void VesselView::setCamera(float az, float el, float dist, const QVector3D &tgt) {
+    traceLog(QStringLiteral("[VV %1] setCamera  target (%2,%3,%4)->(%5,%6,%7)  az %8->%9 el %10->%11 dist %12->%13  (follow forced OFF)")
+                 .arg(quintptr(this), 0, 16)
+                 .arg(m_target.x()).arg(m_target.y()).arg(m_target.z())
+                 .arg(tgt.x()).arg(tgt.y()).arg(tgt.z())
+                 .arg(m_azimuth).arg(az).arg(m_elevation).arg(el).arg(m_distance).arg(dist));
     m_cameraFollows = false;
     m_azimuth   = az;
     m_elevation = el;
@@ -1070,6 +1196,9 @@ void VesselView::syncCameraFrom(const VesselView &other) {
     const bool otherFollowing = other.m_cameraFollows && other.m_device;
     const QVector3D otherTarget   = otherFollowing ? other.m_followTarget   : other.m_target;
     const float      otherDistance = otherFollowing ? other.m_followDistance : other.m_distance;
+    traceLog(QStringLiteral("[VV %1] syncCameraFrom(other=%2)  otherFollowing=%3  otherTarget (%4,%5,%6)")
+                 .arg(quintptr(this), 0, 16).arg(quintptr(&other), 0, 16).arg(otherFollowing)
+                 .arg(otherTarget.x()).arg(otherTarget.y()).arg(otherTarget.z()));
 
     // Distance is scaled by the ratio of each view's own FOV, not copied
     // verbatim. 3D and Fluoro deliberately use different FOVs (40°/30° -
@@ -1101,56 +1230,144 @@ void VesselView::syncCameraFrom(const VesselView &other) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// showHeadSagittal — close lateral view of the head and cerebral vessels.
+// showHeadFrontal — close frontal (AP) view of the head and cerebral vessels.
 //
-// Azimuth 90 puts the eye on +X looking back along -X: a sagittal projection,
-// with the screen's horizontal axis running anterior-posterior (Y) and its
-// vertical axis running cranio-caudal (Z). The other framings all sit at
-// azimuth 180, which is AP and superimposes the left and right circulations.
+// Changed from a sagittal (azimuth=90) framing to azimuth=180 (AP), matching
+// every OTHER framing function in this file, per explicit request that the
+// console's default view read as a standard frontal projection rather than a
+// head-turned side view. See this function's own header comment for the
+// genuine trade-off that reverses: azimuth=180 superimposes the left and
+// right cerebral circulations, which the earlier sagittal choice existed
+// specifically to avoid.
 //
 // The crop threshold is measured rather than guessed: above 0.82 of the Z span
 // the tree narrows from +/-288 mm to +/-103 mm in X and still holds two thirds
 // of the mesh's vertices, so that is where the cerebral region begins.
 //
-// Framing uses Y for the horizontal half-extent, not X — looking along X, the
-// model's X thickness is depth, and sizing the camera off it would push the
-// view much too far back.
+// Framing uses X for the horizontal half-extent now, not Y — at azimuth=180
+// the camera looks along Y (the same convention every other AP framing in
+// this file already uses, e.g. focusRibCage()), so X is the screen-horizontal
+// axis here, not depth the way it was under the previous sagittal azimuth.
 // ─────────────────────────────────────────────────────────────────────────────
-void VesselView::showHeadSagittal() {
+void VesselView::showHeadFrontal() {
     if (!m_mesh) { showWholeVessel(); return; }
 
     const cn::Box3 b = m_mesh->bounds();
     const float zTop  = b.hi.z;
     const float zCrop = b.lo.z + (b.hi.z - b.lo.z) * kHeadCropFraction;
 
-    // Measure the head region's own Y extent rather than using the whole
-    // model's: the cerebral tree is not centred on the trunk's midline.
-    float yLo =  std::numeric_limits<float>::max();
-    float yHi = -std::numeric_limits<float>::max();
+    // Measure the head region's own X extent rather than the whole model's:
+    // the cerebral tree is not centred on the trunk's midline.
+    float xLo =  std::numeric_limits<float>::max();
+    float xHi = -std::numeric_limits<float>::max();
     for (const cn::Vec3 &v : m_mesh->vertices()) {
         if (v.z < zCrop) continue;
-        yLo = std::min(yLo, v.y);
-        yHi = std::max(yHi, v.y);
+        xLo = std::min(xLo, v.x);
+        xHi = std::max(xHi, v.x);
     }
-    if (yLo > yHi) { yLo = b.lo.y; yHi = b.hi.y; }
+    if (xLo > xHi) { xLo = b.lo.x; xHi = b.hi.x; }
 
     const float halfZ = (zTop - zCrop) * 0.5f;
-    const float halfY = (yHi - yLo) * 0.5f;
+    const float halfX = (xHi - xLo) * 0.5f;
 
     m_cameraFollows = false;
-    m_target = QVector3D(toQt(b.center()).x(),
-                         (yLo + yHi) * 0.5f,
+    m_target = QVector3D((xLo + xHi) * 0.5f,
+                         toQt(b.center()).y(),
                          (zCrop + zTop) * 0.5f);
-    m_azimuth   = 90.f;    // eye on +X, looking along -X: patient's left lateral
+    m_azimuth   = 180.f;   // AP - matches every other framing function's own convention
     m_elevation = 0.f;
 
     const float aspect  = height() > 0 ? float(width()) / float(height()) : 1.f;
     const float tanHalf = std::tan(qDegreesToRadians(fovDegrees() * 0.5f));
     m_distance = kHeadFrameMargin *
                  std::max(halfZ / tanHalf,
-                          halfY / (tanHalf * std::max(aspect, 0.2f)));
+                          halfX / (tanHalf * std::max(aspect, 0.2f)));
 
     emit cameraChanged();
+    update();
+}
+
+void VesselView::setBodyFocusFraction(float f) {
+    traceLog(QStringLiteral("[VV %1] setBodyFocusFraction(%2)  target.z=%3  timerActive=%4")
+                 .arg(quintptr(this), 0, 16).arg(f).arg(m_target.z()).arg(m_bodyFocusTimer.isActive()));
+    m_bodyFocusTargetFraction = std::clamp(f, 0.f, 1.f);
+    if (!m_bodyFocusTimer.isActive()) {
+        m_bodyFocusClock.restart();   // don't count whatever time passed since the LAST pan as part of THIS one
+        m_bodyFocusTimer.start(16);   // ~60fps while actually panning
+    }
+}
+
+void VesselView::onBodyFocusTick() {
+    if (!m_mesh) { m_bodyFocusTimer.stop(); return; }
+    const cn::Box3 b = m_mesh->bounds();
+    const float zSpan = b.hi.z - b.lo.z;
+    if (zSpan < 1e-6f) { m_bodyFocusTimer.stop(); return; }
+
+    // The REAL bug this replaces: a separately-tracked m_bodyFocusFraction
+    // member started at 0.0 and was ONLY ever updated inside this
+    // function - but the startup default view (focusRibCage()) sets the
+    // camera's real target.z through its own completely separate framing
+    // logic, never touching this variable at all. So the first real call
+    // to setBodyFocusFraction() (e.g. a femoral sheath) computed its delta
+    // assuming the camera started at the HEAD (fraction 0), when the
+    // camera was actually sitting wherever focusRibCage() had framed it -
+    // some real fraction in the MIDDLE of the body. That mismatch produced
+    // a wildly wrong pan distance, confirmed from an actual recording:
+    // the view went blank mid-pan (panned clean off the mesh) and landed
+    // on the head instead of the groin for a femoral access.
+    //
+    // Fixed by deriving the CURRENT effective fraction FRESH from the
+    // camera's own actual target.z every tick, rather than trusting a
+    // tracked variable that can drift out of sync with reality whenever
+    // the camera got to its current position some other way (a different
+    // framing function, or a manual operator pan) - this can never be
+    // wrong, because it is read directly from where the camera genuinely
+    // is, not from an assumption about how it got there.
+    const float currentFraction = std::clamp((b.hi.z - m_target.z()) / zSpan, 0.f, 1.f);
+
+    const qint64 elapsedMs = m_bodyFocusClock.restart();
+    const float step = m_bodyFocusSpeedFracPerSec * (static_cast<float>(elapsedMs) / 1000.f);
+    const float remaining = m_bodyFocusTargetFraction - currentFraction;
+
+    float actualStep;
+    bool arrived = false;
+    if (std::abs(remaining) <= step) {
+        actualStep = remaining;
+        arrived = true;
+        m_bodyFocusTimer.stop();   // arrived - stop asking for repaints until the next pan
+    } else {
+        actualStep = (remaining > 0.f ? step : -step);
+    }
+
+    // Applied as an INCREMENTAL delta on m_target's own Z, not a re-centre
+    // to an absolute computed position - this is what lets the operator's
+    // existing zoom/rotation/pan survive the animation untouched; only the
+    // point the camera is AIMED at slides along Z, exactly the same way
+    // panning a real live image while it repositions does not also reset
+    // your own zoom level.
+    //
+    // Sign re-derived from first principles, not guessed again: fraction =
+    // (b.hi.z - target.z) / zSpan, so target.z = b.hi.z - fraction*zSpan.
+    // Moving fraction forward by actualStep therefore REQUIRES target.z to
+    // move by -actualStep*zSpan - a minus sign, confirming the ORIGINAL
+    // formula (before an earlier, mistaken "fix" flipped it to plus) was
+    // actually correct all along; the real bug was always the stale
+    // starting-fraction assumption above, not this sign.
+    m_target.setZ(m_target.z() - actualStep * zSpan);
+
+    // Deliberately NOT emitting cameraChanged() on every tick - the same
+    // class of bug setCarmAngles() already documents avoiding. MainWindow
+    // wires cameraChanged -> syncCameraFrom() on every OTHER view, and every
+    // linked view already runs its OWN independent m_bodyFocusTimer toward
+    // the SAME fraction (set directly by the caller, one call per view) -
+    // so broadcasting mid-pan just means each view's timer overwrites the
+    // others' m_target/m_azimuth/m_distance via setCamera() every 16 ms,
+    // fighting itself instead of letting the views converge in parallel on
+    // their own. One emit when the pan actually finishes is enough to catch
+    // anything that still legitimately depends on cameraChanged (the nav
+    // view-frame refresh in MainWindow::onCameraChanged(), for instance)
+    // without the mid-flight thrashing.
+    if (arrived) emit cameraChanged();
     update();
 }
 
@@ -1195,6 +1412,10 @@ void VesselView::showFluoroDefault() {
 }
 
 void VesselView::focusOn(const QVector3D &position, float lumenRadius) {
+    traceLog(QStringLiteral("[VV %1] focusOn  target (%2,%3,%4) -> (%5,%6,%7)")
+                 .arg(quintptr(this), 0, 16)
+                 .arg(m_target.x()).arg(m_target.y()).arg(m_target.z())
+                 .arg(position.x()).arg(position.y()).arg(position.z()));
     // Opening on the whole tree after a puncture is chosen is useless: the
     // access vessel is a couple of millimetres across in a model a metre long.
     m_cameraFollows = true;   // from here on the camera rides the device
@@ -1209,7 +1430,46 @@ void VesselView::focusOn(const QVector3D &position, float lumenRadius) {
     update();
 }
 
+void VesselView::beginFollowWithoutJump() {
+    // Only a currently VISIBLE view has an "existing camera" worth protecting
+    // from a jump - m_target here is whatever this view's static camera was
+    // last left at, which for a view that is not on screen right now (e.g.
+    // the Fluoro pane, while the operator is still looking at 3D View during
+    // sheath/catheter selection) is a stale, arbitrary value with no real
+    // relationship to the device that was just attached. Seeding from it
+    // anyway used to set m_followTargetSeeded and thereby defeat showEvent()'s
+    // own correct fix (recompute from the device and snap, with no visible
+    // catch-up - see its own comment) the moment that pane was switched to
+    // right afterward: the hidden view's camera then had to visibly EASE from
+    // that stale seed onto the device's real tip once navigation actually
+    // began, reading as the C-arm/Vessel View briefly moving the wrong way on
+    // the very first Advance before correcting itself. A hidden view has
+    // nothing on screen to protect, so leaving it unseeded here lets its next
+    // showEvent() snap it straight to the correct position instead.
+    if (!isVisible()) return;
+
+    traceLog(QStringLiteral("[VV %1] beginFollowWithoutJump  followTarget (%2,%3,%4)->(%5,%6,%7)  followDistance %8->%9")
+                 .arg(quintptr(this), 0, 16)
+                 .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z())
+                 .arg(m_target.x()).arg(m_target.y()).arg(m_target.z())
+                 .arg(m_followDistance).arg(m_distance));
+    m_followTarget = m_followTargetGoal = m_target;
+    m_followDistance = m_followDistanceGoal = m_distance;
+
+    // Guards the very next showEvent() against re-deriving (and snapping to)
+    // the device's tip, which would otherwise undo the seed above the moment
+    // this view is next shown (e.g. the pane switch right after catheter
+    // selection). Self-clears on the next event-loop turn via singleShot(0)
+    // so it never lingers to suppress a LATER, genuine showEvent() resync
+    // (switching back to this view after real navigation has moved the
+    // device) - it only protects the synchronous burst of activity this
+    // call is part of.
+    m_followTargetSeeded = true;
+    QTimer::singleShot(0, this, [this] { m_followTargetSeeded = false; });
+}
+
 void VesselView::resetCamera() {
+    traceLog(QStringLiteral("[VV %1] resetCamera() called").arg(quintptr(this), 0, 16));
     m_followZoom = 1.f;
     m_endoFov    = 72.f;
     // The C-arm angles are deliberately NOT cleared here. They mirror the rig,
@@ -1235,7 +1495,12 @@ void VesselView::updateFollowFrame() {
     // Only the *target* follows the device. Orientation stays on the overview's
     // orbit angles, so the operator keeps the vantage they set up and the scene
     // never rotates itself out from under them.
-    m_followTargetGoal = toQt(st.tipPosition);
+    const QVector3D newGoal = toQt(st.tipPosition);
+    traceLog(QStringLiteral("[VV %1] updateFollowFrame  followTargetGoal (%2,%3,%4) -> (%5,%6,%7)")
+                 .arg(quintptr(this), 0, 16)
+                 .arg(m_followTargetGoal.x()).arg(m_followTargetGoal.y()).arg(m_followTargetGoal.z())
+                 .arg(newGoal.x()).arg(newGoal.y()).arg(newGoal.z()));
+    m_followTargetGoal = newGoal;
 
     // Auto-zoom to the vessel, not to the model: framing on the local lumen is
     // what keeps a 2 mm distal branch and a 20 mm trunk both legible.
@@ -1299,9 +1564,30 @@ void VesselView::showEvent(QShowEvent *e) {
     // visible again already shows the correct camera, with no visible
     // catch-up at all.
     if (m_mode == Mode::Reference && m_cameraFollows && m_device) {
-        updateFollowFrame();
-        m_followTarget   = m_followTargetGoal;
-        m_followDistance = m_followDistanceGoal;
+        if (m_followTargetSeeded) {
+            // beginFollowWithoutJump() set the follow target for this exact
+            // activation moments ago (e.g. right before this pane was made
+            // current after catheter selection) - re-deriving it here from
+            // the device's tip would immediately undo that seed and produce
+            // the visible snap this guard exists to prevent. Consume the
+            // guard and leave the seeded target alone; normal per-frame
+            // tracking (updateFollowFrame() via syncCameraToDevice()) takes
+            // over from here as the device actually moves.
+            m_followTargetSeeded = false;
+            traceLog(QStringLiteral("[VV %1] showEvent  seeded guard consumed - target left at (%2,%3,%4)")
+                         .arg(quintptr(this), 0, 16)
+                         .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z()));
+        } else {
+            traceLog(QStringLiteral("[VV %1] showEvent  Reference+follow+device -> SNAPPING followTarget to goal.  followTarget BEFORE (%2,%3,%4)")
+                         .arg(quintptr(this), 0, 16)
+                         .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z()));
+            updateFollowFrame();
+            m_followTarget   = m_followTargetGoal;
+            m_followDistance = m_followDistanceGoal;
+            traceLog(QStringLiteral("[VV %1] showEvent  followTarget AFTER (%2,%3,%4)")
+                         .arg(quintptr(this), 0, 16)
+                         .arg(m_followTarget.x()).arg(m_followTarget.y()).arg(m_followTarget.z()));
+        }
     } else if (m_mode == Mode::Endoluminal) {
         updateEndoluminalFrame();
     }
@@ -1316,10 +1602,18 @@ QVector3D VesselView::cameraPosition() const {
     // C-arm angles are added here rather than baked into m_azimuth/m_elevation,
     // so the rig orientation is identical in every view and the operator's own
     // orbit is left untouched underneath it.
-    // LAO > 0 swings the detector left, which reads as the camera rotating
-    // right, hence + on azimuth.
-    const float az = qDegreesToRadians(m_azimuth + m_carmLAO);
-    const float el = qDegreesToRadians(std::clamp(m_elevation + m_carmCRAN, -89.f, 89.f));
+    // Azimuth (Vessel Screen's horizontal orbit) takes m_carmCRAN, and
+    // elevation (its vertical tilt) takes m_carmLAO - this axis pairing (W/S,
+    // which drive LAO/RAO, land on the vertical/elevation term) matches what
+    // is visible in the app and is unchanged here.
+    // The elevation term is negated relative to the earlier version of this
+    // formula (which used +m_carmLAO): W/S was rotating the Vessel Screen
+    // vertically opposite to the physical C-arm's own motion. Since W and S
+    // only ever push m_carmLAO in opposite directions, negating this one term
+    // flips the Vessel Screen's vertical response to match the rig for both
+    // keys without touching azimuth/A/D at all.
+    const float az = qDegreesToRadians(m_azimuth + m_carmCRAN);
+    const float el = qDegreesToRadians(std::clamp(m_elevation - m_carmLAO, -89.f, 89.f));
     const bool following = m_cameraFollows && m_device;
     const QVector3D at = following ? m_followTarget : m_target;
     const float d = following ? m_followDistance : m_distance;
@@ -1529,6 +1823,40 @@ void VesselView::uploadWallBatch(Batch &b, const std::vector<float> &interleaved
     b.elementCount = static_cast<int>(indices.size());
 }
 
+void VesselView::computeHeartCentre() {
+    // Extracted from rebuildMeshBatch() (which still calls this, preserving
+    // its exact existing behaviour) - this specific piece only ever needed
+    // m_graph, never m_mesh or any GL state, so it can run standalone,
+    // synchronously, with no GL context required. That matters because
+    // rebuildMeshBatch() itself only ever runs lazily, off m_meshDirty,
+    // typically from inside the first real paintGL() - meaning a caller
+    // that calls a camera-framing function like focusRibCage() BEFORE this
+    // widget has ever actually painted would read m_heartCentre still at
+    // its uninitialized (0,0,0) default, framing on whatever that
+    // coordinate happens to be in this model's own space (confirmed from
+    // an actual recording: the camera ended up focused near the foot end)
+    // rather than the genuine heart position. See ensureHeartCentreReady()
+    // for the public entry point a caller uses to force this to happen
+    // early, on purpose, before framing.
+    if (!m_graph || m_graph->nodeCount() < 1) return;
+    const auto &nodes = m_graph->nodes();
+
+    // Aortic root proxy: the widest node in the tree. On this model that is
+    // the 15 mm aorta, which is where the pump is.
+    int32_t root = 0;
+    for (size_t n = 1; n < nodes.size(); ++n)
+        if (nodes[n].radius > nodes[root].radius) root = static_cast<int32_t>(n);
+
+    cn::Vec3 heart = nodes[static_cast<size_t>(root)].position;
+    if (!m_heart.autoLocate)
+        heart = cn::Vec3(m_heart.centre.x(), m_heart.centre.y(), m_heart.centre.z());
+    m_heartCentre = QVector3D(heart.x, heart.y, heart.z);
+}
+
+void VesselView::ensureHeartCentreReady() {
+    computeHeartCentre();
+}
+
 void VesselView::rebuildMeshBatch() {
     m_meshDirty = false;
     if (!m_mesh) { m_meshBatch.elementCount = 0; return; }
@@ -1581,7 +1909,12 @@ void VesselView::rebuildMeshBatch() {
         // applied to the whole tree. Auto-location takes the widest node in the
         // graph: on this model that is the 15 mm aortic root, which is exactly
         // where the pump is. Set autoLocate false to pin it by hand.
-        cn::Vec3 heart = nodes[root].position;
+        //
+        // computeHeartCentre() above does this SAME lookup again, standalone -
+        // kept as a duplicate rather than calling it from here, since this
+        // block also needs `root`/`heart` themselves for the spatial-weight
+        // computation just below, not only the final m_heartCentre value.
+        cn::Vec3 heart = nodes[static_cast<size_t>(root)].position;
         if (!m_heart.autoLocate)
             heart = cn::Vec3(m_heart.centre.x(), m_heart.centre.y(), m_heart.centre.z());
         m_heartCentre = QVector3D(heart.x, heart.y, heart.z);
@@ -2023,7 +2356,113 @@ void VesselView::rebuildSheathBatches() {
 // DeviceBatches. Factored out so the parked host devices of a coaxial stack —
 // the guide a microcatheter was introduced through — render the same way as the
 // active device without duplicating the meshing.
-void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth) {
+void VesselView::buildSpringTipMesh(const cn::CatheterModel *dev, int firstNode, int lastNode,
+                                    std::vector<float> &out, std::vector<uint32_t> &idx) const {
+    out.clear();
+    idx.clear();
+    if (!dev) return;
+    const auto &nodes = dev->state().nodes;
+    if (firstNode < 0 || lastNode < 0 ||
+        static_cast<size_t>(firstNode) >= nodes.size() || static_cast<size_t>(lastNode) >= nodes.size() ||
+        firstNode == lastNode)
+        return;
+
+    // --- 1. Resample the coarse kinematic chain into many fine steps ------
+    // The tip-flex zone is only a handful of nodes (kTipEnd is 3) - nowhere
+    // near enough resolution to trace a smooth helix. Build a fine
+    // polyline first, at uniform arc-length spacing, the same "resample
+    // before doing anything geometric with it" approach CenterlinePath::
+    // resampled() already uses elsewhere in this codebase.
+    std::vector<cn::Vec3> coarse;
+    for (int k = firstNode; ; k += (lastNode > firstNode ? 1 : -1)) {
+        coarse.push_back(nodes[static_cast<size_t>(k)]);
+        if (k == lastNode) break;
+    }
+    float totalLen = 0.f;
+    for (size_t k = 0; k + 1 < coarse.size(); ++k) totalLen += cn::distance(coarse[k], coarse[k + 1]);
+    if (totalLen < 1e-6f) return;
+
+    constexpr int kFineSteps = 72;   // resolution of the helix's own centreline
+    std::vector<cn::Vec3> fine;
+    fine.reserve(static_cast<size_t>(kFineSteps) + 1);
+    {
+        size_t seg = 0;
+        float segStart = 0.f, segLen = cn::distance(coarse[0], coarse[1]);
+        for (int s = 0; s <= kFineSteps; ++s) {
+            const float target = totalLen * static_cast<float>(s) / static_cast<float>(kFineSteps);
+            while (seg + 2 < coarse.size() && target > segStart + segLen) {
+                segStart += segLen;
+                ++seg;
+                segLen = cn::distance(coarse[seg], coarse[seg + 1]);
+            }
+            const float t = segLen > 1e-8f ? std::clamp((target - segStart) / segLen, 0.f, 1.f) : 0.f;
+            fine.push_back(cn::lerp(coarse[seg], coarse[seg + 1], t));
+        }
+    }
+
+    // --- 2. Wind a helix around this fine centreline -----------------------
+    // springRadius is the coil's own outer envelope - deliberately close to
+    // the device's real outer radius, so the wound tip occupies roughly the
+    // same silhouette a plain tube would have, rather than reading as
+    // either a much fatter or much thinner shape than the rest of the wire.
+    // wireRadius (the cross-section of the wound wire itself) is
+    // noticeably thinner - a real spring coil is wound from fine wire, it
+    // does not read as a solid rod. kTurns is a fixed, reasonable winding
+    // density for a tip zone this length - not a claim of an exact real
+    // pitch, the same "reasoned, not measured" spirit every other device
+    // constant in this codebase already uses.
+    const float deviceRadius = dev->params().deviceRadius;
+    const float springRadius = std::max(deviceRadius * 1.15f, 1e-5f);
+    const float wireRadius   = std::max(deviceRadius * 0.42f, 1e-5f);
+    constexpr float kTurns = 9.0f;
+    constexpr int kWireSides = 6;
+
+    std::vector<cn::Vec3> helix;
+    helix.reserve(fine.size());
+    for (size_t s = 0; s < fine.size(); ++s) {
+        const cn::Vec3 tangent = (s + 1 < fine.size()) ? (fine[s + 1] - fine[s]).normalized()
+                                                       : (fine[s] - fine[s - 1]).normalized();
+        const cn::Vec3 axis1 = cn::anyPerpendicular(tangent);
+        const cn::Vec3 axis2 = tangent.cross(axis1);
+        const float theta = 6.2832f * kTurns * static_cast<float>(s) / static_cast<float>(fine.size() - 1);
+        helix.push_back(fine[s] + (axis1 * std::cos(theta) + axis2 * std::sin(theta)) * springRadius);
+    }
+
+    // --- 3. Extrude a thin wire tube along the helix -----------------------
+    // Same ring-and-quad construction buildCoilsInto()'s own tangled loops
+    // already use, just walking a regular helical path instead of a
+    // wandering one - see that function's own comment for the technique.
+    for (size_t s = 0; s + 1 < helix.size(); ++s) {
+        const cn::Vec3 &p0 = helix[s];
+        const cn::Vec3 &p1 = helix[s + 1];
+        const cn::Vec3 segAxis = p1 - p0;
+        const float len = segAxis.length();
+        const cn::Vec3 dir = len > 1e-8f ? segAxis / len : cn::Vec3(0.f, 0.f, 1.f);
+        const cn::Vec3 refv = cn::anyPerpendicular(dir);
+        const uint32_t base = static_cast<uint32_t>(out.size() / 6);
+
+        for (int ring = 0; ring < 2; ++ring) {
+            const cn::Vec3 &c = (ring == 0) ? p0 : p1;
+            for (int w = 0; w < kWireSides; ++w) {
+                const float ang = (6.2832f * static_cast<float>(w)) / static_cast<float>(kWireSides);
+                const cn::Vec3 rim = cn::rotateAbout(refv, dir, ang);
+                const cn::Vec3 pos = c + rim * wireRadius;
+                const cn::Vec3 nrm = rim.normalized();
+                out.insert(out.end(), {pos.x, pos.y, pos.z, nrm.x, nrm.y, nrm.z});
+            }
+        }
+        for (int w = 0; w < kWireSides; ++w) {
+            const uint32_t a0 = base + static_cast<uint32_t>(w);
+            const uint32_t a1 = base + static_cast<uint32_t>((w + 1) % kWireSides);
+            const uint32_t b0 = a0 + static_cast<uint32_t>(kWireSides);
+            const uint32_t b1 = a1 + static_cast<uint32_t>(kWireSides);
+            idx.insert(idx.end(), {a0, b0, a1,  a1, b0, b1});
+        }
+    }
+}
+
+void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, bool isGuidewire,
+                                 float hideBehindDepth) {
     if (!dev) {
         b.tip.elementCount = b.band.elementCount = 0;
         b.shaft.elementCount = b.balloon.elementCount = 0;
@@ -2031,7 +2470,18 @@ void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b,
     }
     std::vector<float> v;
     std::vector<uint32_t> i;
-    dev->buildTubeMesh(16, v, i, 0, kTipEnd);
+    // A guidewire's tip is a wound spring coil, not a smooth tapered tube -
+    // see buildSpringTipMesh()'s own comment. Every other device (guide/
+    // diagnostic catheters, microcatheters, sheaths) keeps the plain tube
+    // unchanged - this only ever replaces the FIRST span (0..kTipEnd); the
+    // marker band just behind it (kTipEnd..kBandEnd) stays the existing
+    // plain bright tube either way, the same radiopaque ring a real wire
+    // often has just proximal to its own spring tip.
+    if (isGuidewire) {
+        buildSpringTipMesh(dev, 0, kTipEnd, v, i);
+    } else {
+        dev->buildTubeMesh(16, v, i, 0, kTipEnd);
+    }
     uploadBatch(b.tip, v, i);
     dev->buildTubeMesh(16, v, i, kTipEnd, kBandEnd);
     uploadBatch(b.band, v, i);
@@ -2066,12 +2516,10 @@ void VesselView::buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b,
     uploadBatch(b.shaft, v, i);
 }
 
-void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
-                                     const std::vector<CastSpan> &spans, Batch &out,
-                                     float irregularity) {
-    std::vector<float> verts;
-    std::vector<uint32_t> idx;
-    if (!graph || spans.empty()) { uploadBatch(out, verts, idx); return; }
+void VesselView::appendTubesFromSpans(const cn::CenterlineGraph *graph,
+                                      const std::vector<CastSpan> &spans, float irregularity,
+                                      std::vector<float> &verts, std::vector<uint32_t> &idx) const {
+    if (!graph || spans.empty()) return;
 
     const cn::CenterlineGraph &g = *graph;
     constexpr int kSides = 10;
@@ -2166,11 +2614,26 @@ void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
             idx.insert(idx.end(), {b0, b1, centreIdx});
         }
     }
+}
+
+void VesselView::buildTubesFromSpans(const cn::CenterlineGraph *graph,
+                                     const std::vector<CastSpan> &spans, Batch &out,
+                                     float irregularity) {
+    // Thin wrapper over appendTubesFromSpans() now - every OTHER call site
+    // (contrast buckets, etc.) still gets exactly this same single-call,
+    // single-upload behaviour unchanged. buildEmboliInto() calls
+    // appendTubesFromSpans() directly instead, so it can accumulate
+    // several targets' spans (each with its own irregularity) into ONE
+    // combined batch before uploading once - see that function's own
+    // comment for why.
+    std::vector<float> verts;
+    std::vector<uint32_t> idx;
+    appendTubesFromSpans(graph, spans, irregularity, verts, idx);
     uploadBatch(out, verts, idx);
 }
 
 void VesselView::buildEmboliInto(const cn::EmbolizationModel *emb, Batch &outSet, Batch &outGrowing) {
-    if (!emb || !emb->graph() || !emb->active()) {
+    if (!emb || !emb->graph() || emb->targetCount() == 0) {
         std::vector<float> v; std::vector<uint32_t> i;
         uploadBatch(outSet, v, i);
         uploadBatch(outGrowing, v, i);
@@ -2181,26 +2644,223 @@ void VesselView::buildEmboliInto(const cn::EmbolizationModel *emb, Batch &outSet
     // set renders as set immediately, rather than spending one extra tick
     // looking like it's still actively growing.
     constexpr float kEmboliSetThreshold = 0.98f;
-    std::vector<CastSpan> setSpans, growingSpans;
-    setSpans.reserve(emb->state().links.size());
-    for (const auto &link : emb->state().links) {
-        CastSpan span{link.from, link.to, link.fillFraction};
-        if (link.fillFraction >= kEmboliSetThreshold) setSpans.push_back(span);
-        else                                          growingSpans.push_back(span);
+
+    // Every target this model holds contributes its OWN cast into the SAME
+    // two combined batches - a real MMA case can have two independent
+    // targets (e.g. anterior + posterior division) embolized in the same
+    // procedure, and both need to render simultaneously, not just whichever
+    // one happens to be "active" in the UI right now. Each target's own
+    // irregularity (agent-dependent - see below) is baked into its own
+    // spans' geometry via appendTubesFromSpans() before the NEXT target's
+    // spans are appended, so two targets using different agents each still
+    // read with their own agent's correct cast texture even though they
+    // end up in one shared batch.
+    std::vector<float> setVerts, growingVerts;
+    std::vector<uint32_t> setIdx, growingIdx;
+    for (int ti = 0; ti < emb->targetCount(); ++ti) {
+        const auto &state = emb->stateAt(ti);
+        if (!state.active) continue;
+
+        std::vector<CastSpan> setSpans, growingSpans;
+        setSpans.reserve(state.links.size());
+        for (const auto &link : state.links) {
+            CastSpan span{link.from, link.to, link.fillFraction};
+            if (link.fillFraction >= kEmboliSetThreshold) setSpans.push_back(span);
+            else                                          growingSpans.push_back(span);
+        }
+
+        // Irregularity scaled by (1 - viscosity), the same real distinction
+        // uForeignGrainAmount's own comment already establishes: a viscous,
+        // cohesive agent (Onyx/SQUID) forms a smooth, dense, uniform cast; a
+        // thin, fast-polymerizing one (Glue) forms a visibly irregular,
+        // patchy deposit. Read per-TARGET (agentAt(ti), not the single
+        // active-target agent()) so each target's own cast reflects
+        // whichever agent it was actually injected with.
+        const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(emb->agentAt(ti));
+        const float irregularity = std::clamp(0.35f * (1.f - spec.viscosity), 0.03f, 0.35f);
+        appendTubesFromSpans(emb->graph(), setSpans, irregularity, setVerts, setIdx);
+        appendTubesFromSpans(emb->graph(), growingSpans, irregularity, growingVerts, growingIdx);
     }
-    // Irregularity scaled by (1 - viscosity), the same real distinction
-    // uForeignGrainAmount's own comment already establishes: a viscous,
-    // cohesive agent (Onyx/SQUID) forms a smooth, dense, uniform cast; a
-    // thin, fast-polymerizing one (Glue) forms a visibly irregular, patchy
-    // deposit. Applied to the actual mesh geometry here (a lumpy
-    // cross-section, not a perfect cylinder), on top of the shader's own
-    // grain texture, so a deposited cast reads as accumulated material
-    // rather than a machine-smooth tube regardless of viewing angle or
-    // zoom level.
-    const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(emb->agent());
-    const float irregularity = std::clamp(0.35f * (1.f - spec.viscosity), 0.03f, 0.35f);
-    buildTubesFromSpans(emb->graph(), setSpans, outSet, irregularity);
-    buildTubesFromSpans(emb->graph(), growingSpans, outGrowing, irregularity);
+    uploadBatch(outSet, setVerts, setIdx);
+    uploadBatch(outGrowing, growingVerts, growingIdx);
+}
+
+void VesselView::appendCoilBallInto(const cn::CoilEmbolizationModel::State &state,
+                                    const std::vector<cn::CoilEmbolizationModel::CoiledLink> &stagingLinks,
+                                    bool hasPending, const cn::Vec3 &pendingPos,
+                                    const cn::CenterlineGraph &g,
+                                    std::vector<float> &verts, std::vector<uint32_t> &idx) const {
+    if (state.coils.empty() && !hasPending) return;
+
+    // A coil mass sits AT the deployment site as a single tangled ball - it
+    // does not extend along the vessel the way a liquid cast's flood-fill
+    // front does (see buildEmboliInto()/appendTubesFromSpans for that
+    // shape). Anchored to the MOST RECENT coil's own releasePosition - the
+    // microcatheter tip's exact CONTINUOUS world position at the moment it
+    // was pushed (see DeployedCoil::releasePosition's own comment) - rather
+    // than the nearest graph node, or a fillFraction-weighted centroid
+    // across every touched link. A coil currently STAGED but not yet
+    // detached (hasPending) still needs to render - the entire point of a
+    // review checkpoint is having something real to look at before
+    // deciding to Detach or Retract - so its own pendingPos takes priority
+    // over the last COMMITTED coil's position whenever one exists.
+    const cn::Vec3 centre = hasPending ? pendingPos : state.coils.back().releasePosition;
+
+    // Local vessel calibre comes from every touched link, committed AND
+    // staged together - a coil can genuinely touch narrower or wider
+    // vessel than the exact release point, and the ball's SIZE should
+    // reflect the calibre it actually packed into (or is currently sitting
+    // in, if still staged) even though its POSITION is pinned exactly to
+    // the tip (above).
+    float weightSum = 0.f, avgVesselRadius = 0.f;
+    auto accumulateRadius = [&](const std::vector<cn::CoilEmbolizationModel::CoiledLink> &links) {
+        for (const auto &link : links) {
+            if (link.from < 0 || link.to < 0) continue;
+            if (static_cast<size_t>(link.from) >= g.nodeCount() ||
+                static_cast<size_t>(link.to)   >= g.nodeCount())
+                continue;
+            const auto &na = g.nodes()[static_cast<size_t>(link.from)];
+            const auto &nb = g.nodes()[static_cast<size_t>(link.to)];
+            const float w = std::max(link.fillFraction, 0.05f);
+            avgVesselRadius += 0.5f * (na.radius + nb.radius) * w;
+            weightSum += w;
+        }
+    };
+    accumulateRadius(state.links);
+    accumulateRadius(stagingLinks);
+    avgVesselRadius = weightSum > 0.f ? std::max(avgVesselRadius / weightSum, 5e-4f) : 5e-4f;
+
+    // A real coil mass reads visibly bigger than the native lumen, but it
+    // is a COMPACT scaffold packed into one anatomical pocket - it does not
+    // keep ballooning outward as more coils are added the way an unbounded
+    // "bigger nest = bigger sphere" formula would suggest.
+    const size_t coilCount = state.coils.size() + (hasPending ? 1 : 0);
+    const float ballRadius = std::clamp(avgVesselRadius * 1.5f +
+                                        avgVesselRadius * 0.015f * static_cast<float>(coilCount),
+                                        avgVesselRadius * 1.25f, avgVesselRadius * 2.2f);
+
+    constexpr int kWireSides   = 6;    // thin wire - far fewer sides than a lumen tube needs
+    constexpr int kLoopSamples = 140;  // points around one coil's own closed path
+    const float wireRadius = std::max(avgVesselRadius * 0.055f, 2e-5f);
+
+    // Same deterministic (not time-based) hash spirit appendTubesFromSpans
+    // already uses for its own irregularity: the SAME deployment history
+    // always produces the SAME tangle - no flicker on rebuild, and every
+    // view renders the identical shape from the one shared model, the same
+    // guarantee the rest of this console already relies on.
+    auto hash01 = [](float x) -> float {
+        float h = std::sin(x * 12.9898f) * 43758.5453f;
+        return h - std::floor(h);
+    };
+
+    for (size_t ci = 0; ci < coilCount; ++ci) {
+        // Per-coil seed, deterministic from index alone.
+        const float seed = static_cast<float>(ci) * 7.918f + 1.7f;
+        const float turnsTheta = 3.2f + 2.1f * hash01(seed + 0.11f);
+        const float turnsPhiA  = 1.6f + 1.3f * hash01(seed + 0.37f);
+        const float turnsPhiB  = 2.4f + 1.7f * hash01(seed + 0.59f);
+        const float phaseA = hash01(seed + 0.81f) * 6.2832f;
+        const float phaseB = hash01(seed + 1.03f) * 6.2832f;
+        const float phaseC = hash01(seed + 1.29f) * 6.2832f;
+        const float phaseR = hash01(seed + 1.55f) * 6.2832f;
+
+        // Per-coil random orientation - so different coils' loops cross
+        // each other at different angles instead of nesting as parallel
+        // shells, which is what actually reads as a WOVEN tangle (the
+        // reference image) rather than an onion of concentric rings.
+        const cn::Vec3 axis1 = cn::Vec3(hash01(seed + 2.1f) - 0.5f,
+                                        hash01(seed + 2.4f) - 0.5f,
+                                        hash01(seed + 2.7f) - 0.5f).normalized();
+        const float spin1 = hash01(seed + 3.0f) * 6.2832f;
+
+        // One coil's own closed wandering path on (roughly) a sphere.
+        std::vector<cn::Vec3> path;
+        path.reserve(kLoopSamples);
+        for (int s = 0; s < kLoopSamples; ++s) {
+            const float t = static_cast<float>(s) / static_cast<float>(kLoopSamples);
+            const float theta = 6.2832f * turnsTheta * t + phaseA;
+            const float phi = 0.5f * float(M_PI) +
+                              0.42f * float(M_PI) * std::sin(6.2832f * turnsPhiA * t + phaseB) +
+                              0.16f * float(M_PI) * std::sin(6.2832f * turnsPhiB * t + phaseC);
+            const float rr = ballRadius * (0.72f + 0.26f * std::sin(6.2832f * 3.3f * t + phaseR));
+
+            cn::Vec3 p(rr * std::sin(phi) * std::cos(theta),
+                      rr * std::sin(phi) * std::sin(theta),
+                      rr * std::cos(phi));
+            p = cn::rotateAbout(p, axis1, spin1);
+            path.push_back(centre + p);
+        }
+
+        // Extrude a thin tube along this CLOSED path (wraps last point back
+        // to the first - a real coil is one continuous length of wire).
+        for (int s = 0; s < kLoopSamples; ++s) {
+            const cn::Vec3 &p0 = path[static_cast<size_t>(s)];
+            const cn::Vec3 &p1 = path[static_cast<size_t>((s + 1) % kLoopSamples)];
+            const cn::Vec3 axisVec = p1 - p0;
+            const float len = axisVec.length();
+            const cn::Vec3 dir = len > 1e-8f ? axisVec / len : cn::Vec3(0.f, 0.f, 1.f);
+            const cn::Vec3 refv = cn::anyPerpendicular(dir);
+            const uint32_t base = static_cast<uint32_t>(verts.size() / 6);
+
+            for (int ring = 0; ring < 2; ++ring) {
+                const cn::Vec3 &c = (ring == 0) ? p0 : p1;
+                for (int w = 0; w < kWireSides; ++w) {
+                    const float ang = (2.0f * float(M_PI) * float(w)) / float(kWireSides);
+                    const cn::Vec3 rim = cn::rotateAbout(refv, dir, ang);
+                    const cn::Vec3 pos = c + rim * wireRadius;
+                    const cn::Vec3 nrm = rim.normalized();
+                    verts.insert(verts.end(), {pos.x, pos.y, pos.z, nrm.x, nrm.y, nrm.z});
+                }
+            }
+            for (int w = 0; w < kWireSides; ++w) {
+                const uint32_t a0 = base + static_cast<uint32_t>(w);
+                const uint32_t a1 = base + static_cast<uint32_t>((w + 1) % kWireSides);
+                const uint32_t b0 = a0 + static_cast<uint32_t>(kWireSides);
+                const uint32_t b1 = a1 + static_cast<uint32_t>(kWireSides);
+                idx.insert(idx.end(), {a0, b0, a1,  a1, b0, b1});
+            }
+        }
+    }
+}
+
+void VesselView::buildCoilsInto(const cn::CoilEmbolizationModel *coils, Batch &out) {
+    std::vector<float> verts;
+    std::vector<uint32_t> idx;
+    if (!coils || !coils->graph() || coils->targetCount() == 0) {
+        uploadBatch(out, verts, idx);
+        return;
+    }
+
+    const cn::CenterlineGraph &g = *coils->graph();
+
+    // Every target this model holds contributes its OWN coil ball into the
+    // SAME combined batch - a real MMA case can have two independent
+    // coiling sites (e.g. anterior + posterior division) in the same
+    // procedure, and both need to render simultaneously, not just whichever
+    // one happens to be "active" in the UI right now.
+    //
+    // Staging (an undetached, still-reviewable coil) is only ever rendered
+    // for the ACTIVE target - a real operator can only be actively pushing
+    // a coil into whichever site is currently selected, so a non-active
+    // target's own committed history renders unconditionally, but its
+    // staging area (if any was somehow left pending from an earlier,
+    // abandoned switch) does not - a deliberately simple, well-scoped
+    // choice rather than plumbing every pending-coil accessor through a
+    // per-index variant for what is otherwise an edge case (switching
+    // targets mid-review without resolving the one you were working on).
+    for (int ti = 0; ti < coils->targetCount(); ++ti) {
+        const auto &state = coils->stateAt(ti);
+        const bool isActive = (ti == coils->activeTarget());
+        const bool hasPending = isActive && coils->hasPendingCoil();
+        static const std::vector<cn::CoilEmbolizationModel::CoiledLink> kNoStaging;
+        appendCoilBallInto(state,
+                          isActive ? coils->stagingLinks() : kNoStaging,
+                          hasPending,
+                          isActive ? coils->pendingReleasePosition() : cn::Vec3{},
+                          g, verts, idx);
+    }
+
+    uploadBatch(out, verts, idx);
 }
 
 void VesselView::buildContrastInto(const cn::ContrastInjectionModel *contrast,
@@ -2239,15 +2899,18 @@ void VesselView::rebuildDeviceBatches() {
     // setDevice(nullptr) means "no device in the patient" — e.g. a sheath is in
     // but no catheter has been selected yet. Zero the spans so the previous
     // device stops being drawn instead of lingering as a stale mesh.
-    buildDeviceInto(m_device, *m_deviceBatches, m_deviceHiddenBehindDepth);
+    buildDeviceInto(m_device, *m_deviceBatches, m_deviceIsGuidewire, m_deviceHiddenBehindDepth);
     if (!m_device) return;
     rebuildBalloonBatch();
 
     // Parked host devices of the coaxial stack, from outermost inwards.
+    // Always isGuidewire=false - see buildDeviceInto()'s own comment for why
+    // a parked host is essentially never a guidewire in this console's
+    // coaxial model.
     m_hostBatches.resize(m_hostDevices.size());
     for (size_t k = 0; k < m_hostDevices.size(); ++k) {
         if (!m_hostBatches[k]) m_hostBatches[k] = std::make_unique<DeviceBatches>();
-        buildDeviceInto(m_hostDevices[k], *m_hostBatches[k]);
+        buildDeviceInto(m_hostDevices[k], *m_hostBatches[k], false);
     }
 }
 
@@ -2270,6 +2933,7 @@ void VesselView::paintGL() {
     if (m_centerlineDirty) rebuildCenterlineBatch();
     if (m_deviceDirty) rebuildDeviceBatches();
     if (m_emboliDirty) { buildEmboliInto(m_emboli, m_emboliBatchSet, m_emboliBatchGrowing); m_emboliDirty = false; }
+    if (m_coilsDirty) { buildCoilsInto(m_coils, m_coilBatch); m_coilsDirty = false; }
     if (m_contrastDirty) { buildContrastInto(m_contrast, m_contrastBatches); m_contrastDirty = false; }
     if (m_sheathDirty) rebuildSheathBatches();
     if (m_bodyMeshDirty) {
@@ -2337,6 +3001,16 @@ void VesselView::paintGL() {
     // even if the pulsation displacement itself is toggled off.
     m_program->setUniformValue("uLiveTime",
                                m_cycle ? (static_cast<float>(m_cycle->beatCount()) + m_cycle->phase()) : 0.0f);
+    // Real arterial pressure at the live phase (~0.34 diastolic to ~1.0
+    // systolic peak - see CardiacCycle.cpp's own kDiastolic/kPulse), used
+    // to drive the contrast flow band's brightness in the shared shader
+    // (search "uCardiacPressure" above) so a contrast column visibly
+    // surges on systole and dims on diastole in sync with the SAME
+    // heartbeat already driving the ECG trace and vessel wall pulsation,
+    // rather than an unrelated clock of its own. Fallback of 0.6 (a
+    // plausible mid-cycle value) only matters if this VesselView somehow
+    // has no shared cycle attached at all - every real session has one.
+    m_program->setUniformValue("uCardiacPressure", m_cycle ? m_cycle->pressureNow() : 0.6f);
     m_program->setUniformValue("uLightDir", QVector3D(-0.35f, -0.72f, -0.6f).normalized());
     m_program->setUniformValue("uHeadlight", endo ? 1 : 0);
     m_program->setUniformValue("uFalloff",   endo ? m_modelScale * 0.4f : 0.0f);
@@ -2417,12 +3091,20 @@ void VesselView::paintGL() {
             // already does, with no additional synchronisation code needed.
             GLint vp[4];
             glGetIntegerv(GL_VIEWPORT, vp);
-            // Was 2/3 resolution (before that, half): anatomy was still
-            // reading as too soft to make out clearly. Full resolution here
-            // — the softness this projection needs now comes only from the
-            // widget-level blur (QuadPanel.cpp), not from this buffer too.
-            const int fboW = std::max(vp[2], 64);
-            const int fboH = std::max(vp[3], 64);
+            // Was full resolution for a while (before that 2/3, before that
+            // half) - anatomy was reading as too soft to make out clearly
+            // back then. Reversed again now, per an explicit request for
+            // LOW quality: real continuous fluoroscopy genuinely IS soft
+            // and noisy compared to a clean diagnostic image, and rendering
+            // the accumulation buffer itself at a lower resolution (then
+            // linearly upsampled by ensureXrayFbo's own GL_LINEAR filter,
+            // see that function's comment) is what makes that softness a
+            // property of the actual image data rather than only the
+            // grain/vignette effects layered on top of an otherwise crisp
+            // full-res render. m_fluoroQualityScale (setFluoroQuality()) is
+            // the tunable knob - default 0.35 is deliberately low.
+            const int fboW = std::max(static_cast<int>(vp[2] * m_fluoroQualityScale), 64);
+            const int fboH = std::max(static_cast<int>(vp[3] * m_fluoroQualityScale), 64);
             ensureXrayFbo(fboW, fboH);
 
             if (m_xrayFbo) {
@@ -2518,21 +3200,64 @@ void VesselView::paintGL() {
                     // genuinely contributes less optical depth than an
                     // established column, which is what gives "gradual
                     // dilution" as a real Beer-Lambert consequence instead
-                    // of an alpha-blended fade. Low, near-baseline grain: a
-                    // real contrast bolus is a well-mixed liquid, not a
-                    // textured solid deposit the way an embolic cast is.
-                    m_program->setUniformValue("uForeignGrainAmount", 0.30f);
+                    // of an alpha-blended fade.
+                    //
+                    // Darker overall (0.9-2.5 -> 1.3-3.2) and visibly
+                    // mottled now (grain 0.30 -> 0.85 -> 1.15, see below),
+                    // replacing an earlier "well-mixed liquid, near-
+                    // baseline grain" choice that read as flat/plain rather
+                    // than a real contrast column: real fluoroscopic
+                    // contrast is not a uniform tint, it visibly streams and
+                    // mixes with unopacified blood as it travels, showing
+                    // genuine light/dark turbulent variation rather than
+                    // one flat shade. The per-fragment grain term
+                    // (agentGrain, shared with every other agent above) is
+                    // what actually produces that light/dark patchiness at
+                    // sub-batch scale; the per-bucket density above is only
+                    // the coarse proximal-to-distal gradient.
+                    //
+                    // Pushed again, 0.85 -> 1.15: the Fluoro pass renders
+                    // into a deliberately low-resolution accumulation
+                    // buffer now (m_fluoroQualityScale, default 0.35), which
+                    // averages fine per-fragment variation together as it
+                    // rasterizes into a coarser texel grid - the same
+                    // dilution that was flattening the coil back toward
+                    // grey (see the coil draw call's own comment). Lowering
+                    // the shared grain hash's base FREQUENCY (12.0, was
+                    // 41.0 - see that hash's own declaration above) already
+                    // helps by making each patch physically bigger and more
+                    // likely to survive that averaging; this extra
+                    // amplitude margin is what keeps the surviving
+                    // patchiness clearly visible rather than merely present.
+                    m_program->setUniformValue("uForeignGrainAmount", 1.15f);
                     m_program->setUniformValue("uForeignIsFluid", 1.0f);
                     for (int b = 0; b < kContrastBuckets; ++b) {
                         if (m_contrastBatches[b].elementCount == 0) continue;
                         const float t = (static_cast<float>(b) + 0.5f) / static_cast<float>(kContrastBuckets);
-                        m_program->setUniformValue("uForeignDensityScale", 0.9f + 1.6f * t);
+                        // Widened, 1.3-3.2 -> 0.7-4.2: with only 5 buckets
+                        // before, a narrower range still read as a mostly-
+                        // uniform column with faint shading at the edges -
+                        // acceptable when banding was the dominant visual
+                        // artefact, but now that the gradient is genuinely
+                        // smooth (24 buckets), the fade itself needs to be
+                        // unmistakable rather than subtle: a real bolus
+                        // reads clearly denser near the injection site and
+                        // clearly fainter at its dilute leading edge, not a
+                        // uniform tint with mild variation.
+                        m_program->setUniformValue("uForeignDensityScale", 0.7f + 3.5f * t);
                         QOpenGLVertexArrayObject::Binder bnd(&m_contrastBatches[b].vao);
                         glDrawElements(GL_TRIANGLES, m_contrastBatches[b].elementCount, GL_UNSIGNED_INT, nullptr);
                     }
                 }
 
-                if (m_emboli && m_emboli->active() &&
+                // anyActive() (checks every target this model holds), not
+                // active() (only the currently selected one) - a prior
+                // version used active() here and would have wrongly skipped
+                // this whole block whenever the ACTIVE target was empty/
+                // reset while a DIFFERENT, non-active target still held
+                // real embolic material - the same bug class the coil
+                // batch's own elementCount fix above just corrected.
+                if (m_emboli && m_emboli->anyActive() &&
                     (m_emboliBatchSet.elementCount > 0 || m_emboliBatchGrowing.elementCount > 0)) {
                     // uForeignIsFluid explicitly off here - a set embolic
                     // cast is a genuinely permanent solid deposit and must
@@ -2581,6 +3306,72 @@ void VesselView::paintGL() {
                         QOpenGLVertexArrayObject::Binder bnd(&m_emboliBatchGrowing.vao);
                         glDrawElements(GL_TRIANGLES, m_emboliBatchGrowing.elementCount, GL_UNSIGNED_INT, nullptr);
                     }
+                }
+
+                if (m_coils && m_coilBatch.elementCount > 0) {
+                    // m_coilBatch.elementCount alone is the correct, complete
+                    // check now that buildCoilsInto() draws EVERY target's
+                    // own coil ball into this one shared batch - it directly
+                    // reflects what was actually built, regardless of which
+                    // target contributed it. A prior version ALSO required
+                    // !m_coils->state().links.empty(), which only ever read
+                    // the currently ACTIVE target and would have wrongly
+                    // skipped this whole block whenever a different,
+                    // non-active target was the one with real coils in it.
+                    // Same "foreign radiopaque material inside the vessel"
+                    // shader path the embolic cast and contrast column both
+                    // already use - a coil is exactly that too, just a
+                    // solid metal one rather than a liquid or a cast.
+                    m_program->setUniformValue("uForeignIsFluid", 0.0f);
+                    // Platinum is uniformly highly radiopaque regardless of
+                    // which catalogue size was used (CoilSpec::radiopacity
+                    // sits 0.92-0.95 across the whole family - see
+                    // CoilEmbolizationModel.cpp), and it is SOLID metal
+                    // wire rather than a liquid agent's dilute tantalum/
+                    // iodine suspension - a packed coil nest genuinely
+                    // attenuates more and reads darker/blacker on real
+                    // fluoro than even Onyx's own densest cast.
+                    //
+                    // Pushed further than the first pass (1.35x -> 2.2x):
+                    // the wire itself is thin (see buildCoilsInto()'s own
+                    // wireRadius, deliberately fine strands rather than a
+                    // fat tube), so any single loop on its own - away from
+                    // where several loops happen to overlap - covers only
+                    // a small fraction of a screen pixel each accumulation
+                    // pass. The density needs to be high enough that even
+                    // ONE layer of wire alone already saturates to solid
+                    // black, not just the densest overlapping core of the
+                    // tangle - a real coil mass reads uniformly black
+                    // wherever wire is present, not "black in the middle,
+                    // grey toward the edges".
+                    //
+                    // Flat 40.0 now, replacing the earlier radiopacity-
+                    // derived formula (which topped out around 7.7): pushing
+                    // uForeignDensityScale alone turned out to have a hard
+                    // ceiling regardless of magnitude, because the composite
+                    // pass's shared contrast/embolic target colour
+                    // (kContrastTarget, mode 2) is itself only ever a dark
+                    // OR medium GREY by design, never true black - no amount
+                    // of extra density before that mix changes what colour
+                    // it mixes TOWARD. Genuine black now comes from a
+                    // SEPARATE, coil-specific override in the composite
+                    // shader (the "Coil override" block, mode 2) that
+                    // detects "this pixel's accumulated density is far
+                    // beyond anything contrast (max ~3.2) or liquid embolic
+                    // (max ~2.88) ever produce" and forces literal (0,0,0)
+                    // there instead. 40.0 is comfortably, deliberately far
+                    // above that override's 8.0-14.0 threshold band even
+                    // at the low end of per-fragment grain variance, so a
+                    // single wire layer alone still reliably triggers it.
+                    const float coilDensity = 40.0f;
+                    m_program->setUniformValue("uForeignDensityScale", coilDensity);
+                    // Wound wire packed into a vessel is the lumpiest thing
+                    // this console deposits - see buildCoilsInto()'s own
+                    // wireRadius/ballRadius comments for the mesh-level
+                    // version of the same distinction.
+                    m_program->setUniformValue("uForeignGrainAmount", 1.1f);
+                    QOpenGLVertexArrayObject::Binder bnd(&m_coilBatch.vao);
+                    glDrawElements(GL_TRIANGLES, m_coilBatch.elementCount, GL_UNSIGNED_INT, nullptr);
                 }
 
                 m_program->setUniformValue("uXrayIsVessel", 0);
@@ -2644,7 +3435,7 @@ void VesselView::paintGL() {
                 // this same accumulated channel with contrast and the two
                 // cannot be coloured independently once summed - see
                 // kContrastTarget's own comment in the composite pass.
-                const bool emboliActive = m_emboli && m_emboli->active();
+                const bool emboliActive = m_emboli && m_emboli->anyActive();
                 m_program->setUniformValue("uContrastBrightMode",
                                            (!m_roadMapActive && !emboliActive) ? 1.0f : 0.0f);
                 // Identity: the quad's vertices are already in clip space
@@ -2699,7 +3490,17 @@ void VesselView::paintGL() {
 
                     Material wm = wallMaterial();   // ambient/specular/shininess/sheen only
                     wm.colour = QVector4D(m_xrayTuning.vesselColor, m_xrayTuning.vesselOpacity);
-                    bool wallShaded = true;
+                    // Flat/unlit by default here too, same reasoning as the
+                    // device draws above: the vessel overlay in Fluoro is a
+                    // faint attenuation tint on top of the DRR composite,
+                    // not a lit 3D surface — Phong shading on it (a
+                    // directional gradient plus the Fresnel rim glow) is
+                    // exactly the residual "cinematic 3D" look the plain
+                    // Fluoro pane was showing even at the wall's own low
+                    // 0.05-0.10 opacity. Road Map already forced this to
+                    // false for its own reasons below; now plain Fluoro
+                    // matches it by default instead of only on that path.
+                    bool wallShaded = false;
                     if (m_roadMapActive) {
                         // Grayscale only, distinguished by intensity, not
                         // hue - this used to be a saturated red
@@ -2829,16 +3630,37 @@ void VesselView::paintGL() {
                 }
                 // Wireframe mode (Mesh View): draw as lines, full opacity
                 if (m_wireframe) {
-                    // Wireframe: same colour+opacity as 3D view but rendered as mesh lines
+                    // Mesh View gets its own darker, deeper red - per explicit
+                    // follow-up request ("less bright, dark red"), the same
+                    // 0.92/0.24/0.33 crimson the 3D view uses read as too
+                    // light/bright once it was legible enough to see the
+                    // wireframe lines clearly against it. Darkening the base
+                    // RGB itself (not just line brightness) is what actually
+                    // shifts the hue toward a deep/dark red rather than a
+                    // lighter tint of the same crimson - reducing ambient
+                    // alone (the previous fix) only pulled the WASHED-OUT
+                    // pink back toward the base colour, it could not make
+                    // that base colour itself read as "dark red".
+                    Material meshFill = wm;
+                    meshFill.colour = QVector4D(wm.colour.x() * 0.62f, wm.colour.y() * 0.55f,
+                                                wm.colour.z() * 0.55f, wm.colour.w());
                     // Draw filled surface first (gives depth), then wireframe lines on top
                     glPolygonOffset(1.f, 1.f);
                     glEnable(GL_POLYGON_OFFSET_FILL);
-                    drawBatch(m_meshBatch, GL_TRIANGLES, wm, wallShaded2, /*pulsatile=*/true);   // filled, same transparency
+                    drawBatch(m_meshBatch, GL_TRIANGLES, meshFill, wallShaded2, /*pulsatile=*/true);
                     glDisable(GL_POLYGON_OFFSET_FILL);
-                    // Wireframe lines: same colour, slightly more opaque so edges read clearly
-                    Material wire = wm;
-                    wire.colour.setW(std::min(wm.colour.w() + 0.15f, 1.0f));
-                    wire.ambient = 0.8f;  wire.specular = 0.f;
+                    // Wireframe lines: same darkened colour, slightly more opaque so
+                    // edges read clearly. ambient here has already been through two
+                    // passes - 0.8 originally (nearly 4x the base material's own
+                    // tuned 0.22, overexposing the crimson into a washed-out pink,
+                    // since lines are drawn unshaded below and ambient is their ONLY
+                    // brightness term), then 0.45 (fixed the pink, but "less bright"
+                    // was still asked for). 0.30 keeps the lines just barely
+                    // brighter than the now-darkened shaded surface underneath, so
+                    // the mesh edges stay legible without themselves reading bright.
+                    Material wire = meshFill;
+                    wire.colour.setW(std::min(meshFill.colour.w() + 0.15f, 1.0f));
+                    wire.ambient = 0.30f;  wire.specular = 0.f;
                     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                     glLineWidth(1.2f);
                     drawBatch(m_meshBatch, GL_TRIANGLES, wire, false, /*pulsatile=*/true);
@@ -2886,12 +3708,28 @@ void VesselView::paintGL() {
                     // remains unambiguously identifiable against the
                     // now-thinner-looking shaft.
                     shaft.colour = QVector4D(0.16f, 0.16f, 0.16f, 0.80f);
+                } else if (m_deviceIsGuidewire) {
+                    // Pure black, fully opaque - per explicit request
+                    // ("Make the catheter in fluoroview as black colour"),
+                    // applied uniformly to tip/band/shaft rather than the
+                    // previous distinct bright-platinum-tip/mid-gray-band/
+                    // near-black-shaft tones: a real guidewire and its
+                    // catheter read as one continuous solid black line on
+                    // classic diagnostic fluoroscopy, distinguished from
+                    // each other and from bone/tissue by shape and
+                    // position, not by shade. Microcatheter (above) is
+                    // untouched - its own thinner/fainter look was a
+                    // separate explicit request.
+                    tip.colour   = QVector4D(0.f, 0.f, 0.f, 1.f);
+                    band.colour  = QVector4D(0.f, 0.f, 0.f, 1.f);
+                    shaft.colour = QVector4D(0.f, 0.f, 0.f, 1.f);
                 } else {
-                    tip.colour   = QVector4D(0.42f, 0.42f, 0.42f, 1.f);
-                    band.colour  = QVector4D(0.50f, 0.50f, 0.50f, 1.f);
-                    // Same reasoning as the microcatheter branch above -
-                    // slightly translucent shaft only, tip/band untouched.
-                    shaft.colour = QVector4D(0.30f, 0.30f, 0.30f, 0.80f);
+                    // Same pure-black/opaque treatment as the guidewire
+                    // branch above, same reason - this is the standard/
+                    // guide catheter.
+                    tip.colour   = QVector4D(0.f, 0.f, 0.f, 1.f);
+                    band.colour  = QVector4D(0.f, 0.f, 0.f, 1.f);
+                    shaft.colour = QVector4D(0.f, 0.f, 0.f, 1.f);
                 }
                 if (m_roadMapActive) {
                     // Bright/white, unlit, per explicit request - the tip
@@ -2900,10 +3738,16 @@ void VesselView::paintGL() {
                     // under roadmap fluoroscopy. Overrides the general
                     // Fluoro tip colour above rather than replacing it,
                     // since that appearance is still correct for non-
-                    // roadmap Fluoro use.
+                    // roadmap Fluoro use. Left untouched - the pure-black
+                    // catheter colour above is specifically for classic/
+                    // plain Fluoro, not Road Map's own separate, established
+                    // look.
                     tip.colour = QVector4D(1.f, 1.f, 1.f, 1.f);
                 }
-                host.colour  = QVector4D(0.45f, 0.45f, 0.45f, 0.65f);
+                // Pure black/opaque, same as the guidewire/catheter branches
+                // above and for the same reason - the guide sheath is part
+                // of the same continuous radiopaque device.
+                host.colour  = QVector4D(0.f, 0.f, 0.f, 1.f);
             } else {
                 shaft.colour = QVector4D(m_deviceColor, 1.f);
                 shaft.sheen = QVector3D(std::min(m_deviceColor.x() + 0.44f, 1.f),
@@ -2911,6 +3755,21 @@ void VesselView::paintGL() {
                                         std::min(m_deviceColor.z() + 0.06f, 1.f));
                 shaft.specular = 0.50f;
                 shaft.shininess = 48.f;
+
+                // A real guidewire's shaft is bare metal (nitinol or
+                // stainless), not a polymer body dyed to a catalogue
+                // colour the way a catheter's own shaft genuinely is -
+                // overrides the device-colour tint above with a fixed
+                // greyish metallic tone instead, per explicit request.
+                // Distinct from the marker-band/tip override below (that
+                // one is brighter/more reflective, matching platinum
+                // specifically) - the shaft is a duller, darker steel-grey.
+                if (m_deviceIsGuidewire) {
+                    shaft.colour = QVector4D(0.58f, 0.59f, 0.60f, 1.f);
+                    shaft.sheen = QVector3D(0.70f, 0.71f, 0.72f);
+                    shaft.specular = 0.65f;
+                    shaft.shininess = 60.f;
+                }
 
                 // Lightened tint of the shaft colour, not a fixed value -
                 // this reproduces the exact look every device had before
@@ -2927,6 +3786,22 @@ void VesselView::paintGL() {
                 tip.sheen = QVector3D(1.f, 1.f, 1.f);
                 tip.specular = 0.55f;
                 tip.shininess = 40.f;
+
+                // A guidewire's tip is now genuinely wound-coil GEOMETRY
+                // (buildSpringTipMesh()), and a real spring coil is
+                // platinum - it does not take on the wire body's own
+                // colour the way a lightened-tint tip otherwise would.
+                // Overrides the tint above with a fixed metallic silver,
+                // the same "fixed regardless of device colour" reasoning
+                // the marker band just below already uses for the same
+                // real-world reason (a metallic radiopaque part is not
+                // dyed to match the shaft).
+                if (m_deviceIsGuidewire) {
+                    tip.colour = QVector4D(0.80f, 0.80f, 0.82f, 1.f);
+                    tip.sheen = QVector3D(0.95f, 0.95f, 0.97f);
+                    tip.specular = 0.85f;
+                    tip.shininess = 72.f;
+                }
 
                 // Marker bands stay a fixed near-white/neutral tone
                 // regardless of device colour - a real radiopaque marker
@@ -2947,14 +3822,30 @@ void VesselView::paintGL() {
                 host.shininess = 32.f;
                 host.ambient   = 0.20f;
             }
+            // Fluoro draws every device flat/unlit — a real X-ray shows a
+            // catheter as a uniform-density radiopaque silhouette, not a
+            // round, specular-highlighted 3D tube. `shaded=true` runs the
+            // full two-light Phong model (see kFragmentShader's uShaded==1
+            // branch): a directional diffuse gradient across the shaft PLUS
+            // a Fresnel rim term (`uSheen * fres * 0.09`) that glows at the
+            // silhouette edge regardless of uSpecular — that gradient/glow
+            // is exactly the "lit CGI tube" look a real fluoro frame never
+            // has, and it was still being applied even though the colours
+            // chosen above were already flat gray. `shaded=false` skips all
+            // of that and returns uColor verbatim (kFragmentShader: `if
+            // (uShaded == 0) { fragColor = uColor; return; }`), which is
+            // the correct model for a projection image. The 3D/Mesh/DSA
+            // views are untouched — they still shade normally, since this
+            // flag is true whenever fluoro is false.
+            const bool deviceShaded = !fluoro;
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
             for (auto &hb : m_hostBatches) {
                 if (!hb) continue;
-                drawBatch(hb->shaft, GL_TRIANGLES, host, true);
-                drawBatch(hb->band,  GL_TRIANGLES, host, true);
-                drawBatch(hb->tip,   GL_TRIANGLES, host, true);
+                drawBatch(hb->shaft, GL_TRIANGLES, host, deviceShaded);
+                drawBatch(hb->band,  GL_TRIANGLES, host, deviceShaded);
+                drawBatch(hb->tip,   GL_TRIANGLES, host, deviceShaded);
             }
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
@@ -2962,11 +3853,11 @@ void VesselView::paintGL() {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(GL_FALSE);
-            drawBatch(m_deviceBatches->shaft, GL_TRIANGLES, shaft, true);
+            drawBatch(m_deviceBatches->shaft, GL_TRIANGLES, shaft, deviceShaded);
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
-            drawBatch(m_deviceBatches->band,  GL_TRIANGLES, band,  true);
-            drawBatch(m_deviceBatches->tip,   GL_TRIANGLES, tip,   true);
+            drawBatch(m_deviceBatches->band,  GL_TRIANGLES, band,  deviceShaded);
+            drawBatch(m_deviceBatches->tip,   GL_TRIANGLES, tip,   deviceShaded);
 
             Material balloon;
             const float ap = static_cast<float>(m_overlay.ballooonAppositionPct / 100.0);
@@ -2979,7 +3870,7 @@ void VesselView::paintGL() {
                 balloon.shininess = 90.f;
             }
             glDepthMask(GL_FALSE);
-            drawBatch(m_deviceBatches->balloon, GL_TRIANGLES, balloon, true);
+            drawBatch(m_deviceBatches->balloon, GL_TRIANGLES, balloon, deviceShaded);
             glDepthMask(GL_TRUE);
         }
 
@@ -2994,7 +3885,7 @@ void VesselView::paintGL() {
         // the old colored overlay -
         // so this block no longer runs there at all. The 3D view's own
         // appearance (colour, sheen, specular) is completely unchanged.
-        if (!fluoro && m_emboli && m_emboli->active() &&
+        if (!fluoro && m_emboli && m_emboli->anyActive() &&
             (m_emboliBatchSet.elementCount > 0 || m_emboliBatchGrowing.elementCount > 0)) {
             const cn::EmbolicAgentSpec &spec = cn::embolicAgentSpec(m_emboli->agent());
             Material cast;
@@ -3009,6 +3900,45 @@ void VesselView::paintGL() {
             // unchanged by this request, scoped to Fluoroscopy View only.
             drawBatch(m_emboliBatchSet, GL_TRIANGLES, cast, true);
             drawBatch(m_emboliBatchGrowing, GL_TRIANGLES, cast, true);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        }
+
+        // Coils — same non-fluoro/3D-only scoping as the embolic cast just
+        // above, for the identical reason (Fluoro renders it through the
+        // DRR/X-ray radiopacity channel a few lines up, not as a coloured
+        // overlay). One shared material for the whole nest rather than
+        // reading per-coil CoilSpec::colour: a nest is one visual mass
+        // built from however many individual coils were placed, not a
+        // per-coil-tinted patchwork, the same "one appearance for the
+        // whole deposit" choice buildEmboliInto() already makes for a
+        // mixed-fill cast.
+        // Same colour scheme as the liquid embolic agents, per explicit
+        // request - reads whichever agent is currently selected on the
+        // shared m_emboli (EmbolicAgentSpec::colour/opacity, the exact
+        // same fields the embolic cast material above uses), rather than
+        // the coil's own separate platinum-grey appearance. Falls back to
+        // Onyx's own colour/opacity if no liquid agent is active/available
+        // (a coil can genuinely be deployed on its own, with no liquid
+        // agent selected at all) - Onyx being the first/default entry in
+        // the Embolic Agent combo, the same implicit default that combo
+        // itself opens on.
+        // m_coilBatch.elementCount alone is the correct, complete check now
+        // - see the identical fix and its own comment a little above this
+        // one in the Fluoro material branch.
+        if (!fluoro && m_coils && m_coilBatch.elementCount > 0) {
+            const cn::EmbolicAgentSpec &spec = (m_emboli && m_emboli->anyActive())
+                ? cn::embolicAgentSpec(m_emboli->agent())
+                : cn::embolicAgentSpec(cn::EmbolicAgent::Onyx);
+            Material coilMat;
+            coilMat.colour = QVector4D(spec.colour[0], spec.colour[1], spec.colour[2], spec.opacity);
+            coilMat.sheen = QVector3D(spec.colour[0], spec.colour[1], spec.colour[2]);
+            coilMat.specular = 0.25f;
+            coilMat.shininess = 20.f;
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
+            drawBatch(m_coilBatch, GL_TRIANGLES, coilMat, true);
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
         }
@@ -3102,12 +4032,11 @@ void VesselView::paintOverlay() {
     // the value is what is read, the label only says which value it is.
     const QColor dim(150, 156, 164);
     QFont mono("Titillium Web", 9);
-    // Two sizes: a small label over a larger value, matching the C-arm console.
-    QFont labelFont("Titillium Web", 8);
-    labelFont.setStyleHint(QFont::SansSerif);
+    // A single size for the nav-hint box below (was previously also used
+    // for the Fluoroscopy HUD's larger value text before that HUD was
+    // removed - see that block's own comment).
     QFont valueFont("Titillium Web", 11, QFont::Bold);
     valueFont.setStyleHint(QFont::SansSerif);
-    const QFontMetrics fm2(labelFont), fmVal(valueFont);
     mono.setStyleHint(QFont::SansSerif);
     p.setFont(mono);
 
@@ -3156,113 +4085,40 @@ void VesselView::paintOverlay() {
                    tr("DISTAL VESSEL — no further advance"));
     }
 
-    // Shared row-spacing constants — pad/blockH/rowGap are also used by the
-    // Fluoroscopy HUD block just below, which is why these stay even though
-    // the telemetry column that used to be drawn here (ACCESS/DEVICE/BRANCH/
-    // TURNS/DEPTH/LUMEN Ø/DEVICE Ø/CLEAR) is gone: that data is already
-    // shown in full in the sidebar's Procedure Info/Device Status cards, so
-    // drawing it a second time, directly on top of the anatomy, was a
-    // genuine duplicate rather than something this view uniquely needed to
-    // show.
-    const int pad     = 10;
-    const int lineH   = fm2.height();          // label line
-    const int valueH  = fmVal.height();        // value line
-    const int rowGap  = 7;                     // between one parameter and the next
-    const int blockH  = lineH + valueH + rowGap;
+    // pad is also used by the WALL CONTACT warning text below - kept for
+    // that. fm2/fmVal/lineH/valueH/blockH/rowGap were kept for the
+    // Fluoroscopy HUD's own row spacing, which is now removed (see that
+    // block's own comment) - they have no other consumer left, so they are
+    // removed here too rather than left as dead declarations.
+    const int pad = 10;
 
-    // ── Fluoroscopy HUD (FLUOROSCOPY header, LAO/CRAN/SID/MAG/FOV/FRAME,
-    // kVp/mA/DAP/TIME, H/R/L/F orientation indicator) ───────────────────────
-    // Shown in every palette now (3D/Fluoro/Mesh/DSA alike) - not gated to
-    // Fluoro specifically any more, per the explicit request for one
-    // standardized clinical overlay across every view rather than this HUD
-    // only ever appearing in one of them. Still hidden during an
-    // endoluminal fly-through, which is a first-person catheter view this
-    // external console HUD has no place in.
-    //
-    // Deliberately reuses labelFont/valueFont/amber/pale/dim exactly as
-    // already defined above rather than constructing anything new - every
-    // piece of text in this whole overlay, old and new, therefore shares
-    // the same font family, which is the actual point: a HUD reading as one
-    // instrument, not several mismatched labels pasted together.
-    //
-    // LAO/CRAN are the console's real, live C-arm angle state (m_carmLAO/
-    // m_carmCRAN — the exact values setCarmAngles() keeps synchronized
-    // across every view). SID/MAG are now likewise real, live state
-    // (m_hudSidCm/m_hudMagCm, set from CarmView's own sid()/magnification()
-    // — see setDetectorInfo()) rather than a separately-hardcoded guess.
-    // FOV/FRAME and kVp/mA/DAP are still fixed console defaults: this build
-    // has no interactive field-of-view/generator model to draw real numbers
-    // from for those specifically, so they are shown as typical clinical
-    // values rather than invented ones that would imply a live reading that
-    // does not exist. TIME is genuinely live, off this view's own
-    // construction-time clock.
+    // ── Fluoroscopy HUD — REMOVED per explicit request ──────────────────────
+    // Used to show a "FLUOROSCOPY" header pill plus LAO/CRAN/SID/MAG/FOV/
+    // FRAME and kVp/mA/DAP/TIME readouts here, in every palette (3D/Fluoro/
+    // Mesh/DSA alike). The I/J/K/L keyboard-navigation hint box just below
+    // was part of the same overall overlay but was NOT part of this removal
+    // request, so it still renders on its own. The underlying live-data
+    // members this HUD read (m_carmLAO/m_carmCRAN/m_hudSidCm/m_hudMagCm/
+    // m_hudFrameFps/m_hudKvp/m_hudMa/m_hudDapGyCm2) and their setters
+    // (setCarmAngles(), setDetectorInfo(), setGeneratorInfo()) are left
+    // completely intact elsewhere in this class - only the drawing code
+    // itself is gone, so the card could be reinstated cheaply if wanted
+    // back later.
     if (m_mode != Mode::Endoluminal) {
         const QColor hudBg(0, 0, 0, 210);
         const QColor green(46, 204, 113);
 
-        // "● FLUOROSCOPY" header pill, top-left.
-        {
-            const QString title = tr("FLUOROSCOPY");
-            const QFontMetrics fmTitle(valueFont);
-            const int titleW = fmTitle.horizontalAdvance(title) + 34;
-            const int titleH = fmTitle.height() + 10;
-            p.fillRect(QRect(0, 0, titleW, titleH), hudBg);
-            p.setBrush(green);
-            p.setPen(Qt::NoPen);
-            p.drawEllipse(QPointF(14, titleH / 2.0), 4.0, 4.0);
-            p.setFont(valueFont);
-            p.setPen(pale);
-            p.drawText(QRect(24, 0, titleW - 24, titleH), Qt::AlignVCenter, title);
-        }
-
-        // LAO/CRAN/SID/MAG/FOV/FRAME — label left, value right after, same
-        // stacked block shape the ACCESS/DEVICE/... column already uses,
-        // just left-aligned instead of right-aligned.
-        {
-            struct HudRow { QString label, value; };
-            const QVector<HudRow> hud = {
-                                          {tr("LAO"),   tr("%1°").arg(m_carmLAO, 0, 'f', 0)},
-                                          {tr("CRAN"),  tr("%1°").arg(m_carmCRAN, 0, 'f', 0)},
-                                          {tr("SID"),   tr("%1 cm").arg(m_hudSidCm, 0, 'f', 0)},
-                                          {tr("MAG"),   tr("%1 cm").arg(m_hudMagCm, 0, 'f', 0)},
-                                          {tr("FOV"),   tr("25 cm")},
-                                          {tr("FRAME"), tr("%1 fps").arg(m_hudFrameFps)},
-                                          };
-            const int labelW = 56;   // fixed column so every value lines up
-            int hy = 34 + fm2.ascent();
-            for (const auto &row : hud) {
-                p.setFont(labelFont);
-                p.setPen(pale);
-                p.drawText(8, hy, row.label);
-                p.setFont(valueFont);
-                p.setPen(amber);
-                p.drawText(8 + labelW, hy, row.value);
-                hy += blockH;
-            }
-        }
-
-        // kVp/mA/DAP/TIME — bottom-left, same label/value shape again.
-        {
-            const qint64 s = m_fluoroClock.isValid() ? m_fluoroClock.elapsed() / 1000 : 0;
-            struct HudRow { QString label, value; };
-            const QVector<HudRow> hud = {
-                                          {tr("kVp"),  tr("78")},
-                                          {tr("mA"),   tr("320")},
-                                          {tr("DAP"),  tr("12.4 Gy·cm²")},
-                                          {tr("TIME"), tr("%1:%2").arg(s / 60, 2, 10, QChar('0')).arg(s % 60, 2, 10, QChar('0'))},
-                                          };
-            const int labelW = 40;
-            int by = height() - pad - (blockH * hud.size() - rowGap) + fm2.ascent();
-            for (const auto &row : hud) {
-                p.setFont(labelFont);
-                p.setPen(pale);
-                p.drawText(8, by, row.label);
-                p.setFont(valueFont);
-                p.setPen(amber);
-                p.drawText(8 + labelW, by, row.value);
-                by += blockH;
-            }
-        }
+        // FLUOROSCOPY header pill + LAO/CRAN/SID/MAG/FOV/FRAME +
+        // kVp/mA/DAP/TIME readouts - REMOVED per explicit request. The
+        // I/J/K/L keyboard-navigation hint box below is UNCHANGED and
+        // still renders - it was not part of this removal request, and
+        // serves a genuinely different purpose (a control-scheme hint,
+        // not a clinical instrument reading). m_carmLAO/m_carmCRAN/
+        // m_hudSidCm/m_hudMagCm/m_hudFrameFps/m_hudKvp/m_hudMa/
+        // m_hudDapGyCm2 and their own live-data wiring (setCarmAngles(),
+        // setDetectorInfo(), setGeneratorInfo()) are left completely
+        // intact in case this card is wanted back - only the drawing
+        // itself is gone.
 
         // I/J/L/K keyboard-navigation hint — bottom-right, small bordered
         // box. Genuinely accurate, not a placeholder: I/K/J/L are this
@@ -3493,6 +4349,9 @@ void VesselView::setCarmAngles(float lao, float cran) {
     if (std::fabs(lao - m_carmLAO) < 1e-4f && std::fabs(cran - m_carmCRAN) < 1e-4f)
         return;
 
+    traceLog(QStringLiteral("[VV %1] setCarmAngles  LAO %2->%3  CRAN %4->%5")
+                 .arg(quintptr(this), 0, 16)
+                 .arg(m_carmLAO).arg(lao).arg(m_carmCRAN).arg(cran));
     m_carmLAO  = lao;
     m_carmCRAN = cran;
 

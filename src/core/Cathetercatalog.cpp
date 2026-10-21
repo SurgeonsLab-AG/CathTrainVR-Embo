@@ -1,4 +1,5 @@
 #include "CatheterCatalog.h"
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -138,11 +139,15 @@ const CatheterSpec kCatalog[] = {
      "0.0165\" lumen — among the smallest that still takes a coil." },
 
     { "Synchro-14", "Stryker", DeviceClass::Guidewire,
-     { { "0.014\"", 1.08f, 0.00f, 0.36f, 200.f },
-      { "0.014\" 300", 1.08f, 0.00f, 0.36f, 300.f } }, 2, 0,
+     // Sized 3/4/5 Fr per explicit request - innerDiaMm stays 0 (a wire has
+     // no lumen, the same convention every other guidewire entry already
+     // uses), outerDiaMm follows the standard Fr = OD(mm) x 3 conversion.
+     { { "3 Fr", 3.00f, 0.00f, 1.00f, 200.f },
+      { "4 Fr", 4.00f, 0.00f, 1.33f, 200.f },
+      { "5 Fr", 5.00f, 0.00f, 1.665f, 200.f } }, 3, 0,
      /*prox*/ 0.f, /*curve*/ 30.f, /*maxDefl*/ 110.f, /*flexSeg*/ 24, /*segLen*/ 0.5f, /*stiff*/ 0.35f,
      false, 0.f, 0.f,
-     "0.014\" neuro wire, shapeable tip." },
+     "Shapeable-tip neuro guidewire, 3-5 Fr." },
 
     { "Traxcess-14", "MicroVention", DeviceClass::Guidewire,
      { { "0.014\"", 1.08f, 0.00f, 0.36f, 200.f } }, 1, 0,
@@ -224,6 +229,19 @@ CatheterModel::Params catheterParams(const CatheterSpec &spec, int sizeIndex,
     p.restingTipCurve  = spec.restingTipCurveDeg * kDegToRad;
     p.shaftStiffness   = spec.shaftStiffness;
 
+    // Torque transmission is a property of the SAME physical shaft that
+    // shaftStiffness already describes, not an independent number - a
+    // stiff braided guide turns almost like a rigid rod (roll reaches the
+    // tip in close to real time) while a soft flow-directed wire winds up
+    // and lags well behind the commanded angle. Deriving it from the
+    // catalogue's own shaftStiffness (rather than leaving every device at
+    // CatheterModel::Params' single default) is what makes torque
+    // response differ by device the same way bending and advancement
+    // resistance already do. 0.15..0.80 keeps even the softest wire
+    // visibly responsive over a few update() calls and even the stiffest
+    // guide short of instantaneous, so a commanded roll never snaps.
+    p.rollResponsiveness = 0.15f + 0.65f * std::clamp(spec.shaftStiffness, 0.f, 1.f);
+
     // Enough chain to span the device's own working length, so the shaft really
     // does reach back to the sheath instead of stopping short of it.
     const float lenModel = sz.workingLenCm * 10.f * u;
@@ -269,43 +287,43 @@ const TipShapeDef kTipShapes[] = {
  { { 0.85f, 0.f }, { 0.15f, 25.f } }, 2,
  /*flexSeg*/ 6, /*segLenMm*/ 1.4f },
 
-{ "SIM1",
- "Simmons 1: the smallest primary loop of the family, short secondary limb "
- "curving back off it - reaches the nearer arch vessels.",
- { { 0.55f, 0.f }, { 0.30f, 100.f }, { 0.15f, -40.f } }, 3,
- /*flexSeg*/ 10, /*segLenMm*/ 1.2f },
+    { "SIM1",
+     "Simmons 1: the smallest primary loop of the family, short secondary limb "
+     "curving back off it - reaches the nearer arch vessels.",
+     { { 0.55f, 0.f }, { 0.30f, 100.f }, { 0.15f, -40.f } }, 3,
+     /*flexSeg*/ 10, /*segLenMm*/ 1.2f },
 
-{ "SIM2",
- "Simmons 2: a wider primary loop and a longer secondary limb than SIM1 - "
- "the size most often reached for first.",
- { { 0.45f, 0.f }, { 0.35f, 140.f }, { 0.20f, -45.f } }, 3,
- /*flexSeg*/ 12, /*segLenMm*/ 1.1f },
+    { "SIM2",
+     "Simmons 2: a wider primary loop and a longer secondary limb than SIM1 - "
+     "the size most often reached for first.",
+     { { 0.45f, 0.f }, { 0.35f, 140.f }, { 0.20f, -45.f } }, 3,
+     /*flexSeg*/ 12, /*segLenMm*/ 1.1f },
 
-{ "SIM3",
- "Simmons 3: the largest primary loop, almost a full turn, with the longest "
- "reach past its own secondary bend - for a wide or unfolded arch.",
- { { 0.35f, 0.f }, { 0.40f, 180.f }, { 0.25f, -50.f } }, 3,
- /*flexSeg*/ 14, /*segLenMm*/ 1.0f },
+    { "SIM3",
+     "Simmons 3: the largest primary loop, almost a full turn, with the longest "
+     "reach past its own secondary bend - for a wide or unfolded arch.",
+     { { 0.35f, 0.f }, { 0.40f, 180.f }, { 0.25f, -50.f } }, 3,
+     /*flexSeg*/ 14, /*segLenMm*/ 1.0f },
 
-{ "Newt",
- "Newton: a tight double-kink concentrated right at the tip rather than a "
- "loop set back along the shaft - compact, for a sharply angled origin.",
- { { 0.80f, 0.f }, { 0.10f, 120.f }, { 0.10f, -90.f } }, 3,
- /*flexSeg*/ 10, /*segLenMm*/ 0.9f },
+    { "Newt",
+     "Newton: a tight double-kink concentrated right at the tip rather than a "
+     "loop set back along the shaft - compact, for a sharply angled origin.",
+     { { 0.80f, 0.f }, { 0.10f, 120.f }, { 0.10f, -90.f } }, 3,
+     /*flexSeg*/ 10, /*segLenMm*/ 0.9f },
 
-{ "CK1",
- "Cobra-shape: one smooth reverse curve, no secondary bend - the classic "
- "hook that catches an ostium a straight tip slides past.",
- { { 0.55f, 0.f }, { 0.45f, 120.f } }, 2,
- /*flexSeg*/ 8, /*segLenMm*/ 1.3f },
+    { "CK1",
+     "Cobra-shape: one smooth reverse curve, no secondary bend - the classic "
+     "hook that catches an ostium a straight tip slides past.",
+     { { 0.55f, 0.f }, { 0.45f, 120.f } }, 2,
+     /*flexSeg*/ 8, /*segLenMm*/ 1.3f },
 
-{ "H1",
- "Headhunter: a single curve, wider and less hooked than the Cobra shape - "
- "gentler engagement, longer effective reach.",
- { { 0.50f, 0.f }, { 0.50f, 80.f } }, 2,
- /*flexSeg*/ 8, /*segLenMm*/ 1.4f },
+    { "H1",
+     "Headhunter: a single curve, wider and less hooked than the Cobra shape - "
+     "gentler engagement, longer effective reach.",
+     { { 0.50f, 0.f }, { 0.50f, 80.f } }, 2,
+     /*flexSeg*/ 8, /*segLenMm*/ 1.4f },
 
-};
+    };
 
 constexpr float kDegToRadShape = 3.14159265358979f / 180.f;
 

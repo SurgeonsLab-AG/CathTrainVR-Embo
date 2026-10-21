@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <sstream>
 
 namespace cn {
 
@@ -100,7 +101,18 @@ void CatheterModel::update() {
     // camera already uses (VesselView::m_camEase), not a true torque
     // simulation.
     {
-        const float resp = std::clamp(m_params.rollResponsiveness, 0.f, 1.f);
+        // A longer run of shaft exposed PAST every reinforcing coaxial
+        // neighbour (see Support) has more of its own torsional wind-up to
+        // take up before commanded torque actually reaches the tip - a
+        // wire poking 15 cm past its microcatheter's own tip lags a turn
+        // noticeably more than the same wire sitting fully sleeved inside
+        // it. windup is expressed in segment lengths so it scales with the
+        // device's own model-unit convention rather than a fixed constant.
+        float supportedTo = 0.f;
+        for (const Support &s : m_supports) supportedTo = std::max(supportedTo, s.depthLimit);
+        const float exposed = std::max(0.f, depth - supportedTo);
+        const float windup = std::max(m_params.segmentLength * 40.f, 1e-6f);
+        const float resp = std::clamp(m_params.rollResponsiveness / (1.f + exposed / windup), 0.f, 1.f);
         float d = m_state.rollAngle - m_state.rollAngleRealized;
         // Shortest angular path, so a roll command near +/-pi does not wind
         // the long way around.
@@ -209,6 +221,8 @@ void CatheterModel::update() {
     m_state.contactSeverity =
         std::clamp(-m_state.minWallClearance / std::max(m_params.deviceRadius, 1e-9f), 0.f, 1.f);
     m_state.oversized = m_params.deviceRadius >= m_state.lumenRadiusAtTip;
+
+    updateMechanicalState();
 }
 
 namespace {
@@ -319,11 +333,29 @@ void CatheterModel::applyTipArticulation(std::vector<Vec3> &nodes) {
 // which matters here because every view renders this one CatheterModel
 // instance and must never compute a different answer from it.
 // ─────────────────────────────────────────────────────────────────────────────
+float CatheterModel::effectiveStiffnessAt(float arc) const {
+    float s = std::clamp(m_params.shaftStiffness, 0.f, 1.f);
+    if (m_supports.empty()) return s;
+
+    // Taper the boost across a few segment lengths either side of the
+    // support's own tip, rather than cutting it off exactly there - an
+    // abrupt stiffness step reads as a kink in the rendered shaft right at
+    // the coaxial neighbour's tip, which is not how a real reinforced
+    // length behaves.
+    const float blend = std::max(m_params.segmentLength * 6.f, 1e-6f);
+    for (const Support &sup : m_supports) {
+        const float supStiff = std::clamp(sup.stiffness, 0.f, 1.f);
+        if (supStiff <= s) continue;   // a softer neighbour cannot stiffen this device
+        const float t = std::clamp(0.5f + (sup.depthLimit - arc) / (2.f * blend), 0.f, 1.f);
+        s = std::max(s, s + (supStiff - s) * t);
+    }
+    return std::clamp(s, 0.f, 1.f);
+}
+
 void CatheterModel::relaxChain(const std::vector<Vec3> &target) {
     const size_t n = m_state.nodes.size();
     if (n < 3 || target.size() != n) return;
 
-    const float stiff  = std::clamp(m_params.shaftStiffness, 0.f, 1.f);
     const float segLen = std::max(m_params.segmentLength, 1e-6f);
     const int   iters   = std::max(1, m_params.relaxIterations);
 
@@ -334,7 +366,17 @@ void CatheterModel::relaxChain(const std::vector<Vec3> &target) {
     // can hold the chain off-axis through an actual bend).
     constexpr float kPullFloor = 0.35f;
     constexpr float kPullSpan  = 0.50f;
-    const float pull = kPullFloor + (1.f - stiff) * kPullSpan;
+
+    // Per-node effective stiffness, blending in whatever coaxial Support
+    // reaches this far out - see effectiveStiffnessAt(). Computed once per
+    // call (m_nodeArc does not change across the iterations below), not
+    // once per pass.
+    std::vector<float> stiffAt(n);
+    bool anyStiff = false;
+    for (size_t i = 0; i < n; ++i) {
+        stiffAt[i] = effectiveStiffnessAt(i < m_nodeArc.size() ? m_nodeArc[i] : 0.f);
+        if (stiffAt[i] > 1e-4f) anyStiff = true;
+    }
 
     for (int pass = 0; pass < iters; ++pass) {
         for (size_t i = 0; i + 1 < n; ++i) {
@@ -349,16 +391,18 @@ void CatheterModel::relaxChain(const std::vector<Vec3> &target) {
             b -= corr;
         }
 
-        if (stiff > 1e-4f) {
+        if (anyStiff) {
             for (size_t i = 1; i + 1 < n; ++i) {
+                if (stiffAt[i] <= 1e-4f) continue;
                 const Vec3 straight = (m_state.nodes[i - 1] + m_state.nodes[i + 1]) * 0.5f;
-                m_state.nodes[i] += (straight - m_state.nodes[i]) * (stiff * 0.65f);
+                m_state.nodes[i] += (straight - m_state.nodes[i]) * (stiffAt[i] * 0.65f);
             }
         }
 
-        if (pull > 1e-4f)
-            for (size_t i = 0; i < n; ++i)
-                m_state.nodes[i] += (target[i] - m_state.nodes[i]) * pull;
+        for (size_t i = 0; i < n; ++i) {
+            const float pull = kPullFloor + (1.f - stiffAt[i]) * kPullSpan;
+            m_state.nodes[i] += (target[i] - m_state.nodes[i]) * pull;
+        }
     }
 }
 
@@ -580,6 +624,142 @@ void CatheterModel::buildBalloonMesh(int rings, int sides,
             indicesOut.insert(indicesOut.end(), {p0, p2, p1, p1, p2, p3});
         }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mechanical state - force/contact/torsion read-out for a training overlay.
+// Every field below is derived from a quantity update() already computed for
+// its own containment/response purposes; nothing here invents a new force
+// constant. See MechanicalState's own comment in the header for the full
+// rationale.
+// ─────────────────────────────────────────────────────────────────────────────
+void CatheterModel::updateMechanicalState() {
+    MechanicalState m;
+    m.wallContactAmount = m_state.contactSeverity;
+    m.contactLocation    = m_state.contactPoint;
+    m.contactNode        = m_state.contactNode;
+
+    const float depth = m_state.insertionDepth;
+    const float baseStiff = std::clamp(m_params.shaftStiffness, 0.f, 1.f);
+    const float tipEffStiff = effectiveStiffnessAt(depth);
+
+    // --- support: how much of shaftStiffness's own headroom to 1.0 a
+    // coaxial Support is currently filling at the tip. -----------------
+    const float headroom = std::max(1.f - baseStiff, 1e-4f);
+    m.effectiveSupport = std::clamp((tipEffStiff - baseStiff) / headroom, 0.f, 1.f);
+
+    // --- curvature / bending resistance ---------------------------------
+    // Angle the centerline itself turns through over the device's own tip
+    // flex zone, normalised against maxTipDeflection - the device's own
+    // catalogue-defined steering range, not an invented constant: a device
+    // rated for less deflection reads "tight" at a gentler turn than one
+    // built to bend further.
+    float curvatureAngle = 0.f;
+    if (!m_path.empty()) {
+        const float back = std::max(
+            m_params.segmentLength * static_cast<float>(std::max(m_params.tipFlexSegments, 1)), 1e-6f);
+        const float s0 = std::max(0.f, depth - back);
+        const Vec3 t0 = m_path.tangentAt(s0);
+        const Vec3 t1 = m_path.tangentAt(depth);
+        curvatureAngle = std::acos(std::clamp(t0.dot(t1), -1.f, 1.f));
+    }
+    const float normCurvature =
+        std::clamp(curvatureAngle / std::max(m_params.maxTipDeflection, 1e-3f), 0.f, 1.f);
+    // A stiff/supported device resists a given turn much more than a soft
+    // one, which simply conforms - so bending resistance is the turn
+    // scaled by how stiff the device currently is AT the tip, not the turn
+    // alone.
+    m.bendingResistance = std::clamp(tipEffStiff * normCurvature, 0.f, 1.f);
+
+    // --- wall contact: reaction force and advancement resistance --------
+    float contactEffStiff = tipEffStiff;
+    if (m.contactNode >= 0 && static_cast<size_t>(m.contactNode) < m_nodeArc.size() && !m_path.empty()) {
+        const float arc = m_nodeArc[static_cast<size_t>(m.contactNode)];
+        contactEffStiff = effectiveStiffnessAt(arc);
+        const Vec3 axis = m_path.pointAt(arc);
+        const Vec3 tangent = m_path.tangentAt(arc);
+        Vec3 off = m_state.contactPoint - axis;
+        off -= tangent * off.dot(tangent);   // cross-vessel component only
+        const float offLen = off.length();
+        if (offLen > 1e-6f) m.forceDirection = off / offLen;
+    }
+    // A stiffer/supported device transmits more of a given wall engagement
+    // as reaction force; a soft one just deflects instead of pushing back.
+    m.forceMagnitude = std::clamp(m.wallContactAmount * contactEffStiff, 0.f, 1.f);
+    // Same reasoning as MainWindow's own advance-speed penalty (kept in
+    // sync here as the canonical definition): a stiff/supported device
+    // shoulders through a given contact severity with much less speed
+    // lost than a soft, unsupported one does.
+    const float wallPenalty = m.wallContactAmount * (0.85f - 0.50f * contactEffStiff);
+    // Tight curvature resists advancement even before the wall is actually
+    // touched - a stiff device fighting a sharp bend feels harder to push
+    // well short of clearance running out. Combined with wallPenalty as
+    // independent resistances (1-(1-a)(1-b)) rather than added, so the two
+    // do not double-penalise once both are present near a bend's outer wall.
+    const float bendPenalty = m.bendingResistance * 0.6f;
+    m.advancementResistance =
+        std::clamp(1.f - (1.f - wallPenalty) * (1.f - bendPenalty), 0.f, 1.f);
+
+    // --- torsion: commanded roll not yet realised at the tip -------------
+    float rollGap = m_state.rollAngle - m_state.rollAngleRealized;
+    while (rollGap > 3.14159265f)  rollGap -= 6.28318531f;
+    while (rollGap < -3.14159265f) rollGap += 6.28318531f;
+    m.torsionMagnitude = std::fabs(rollGap);
+    m.torsionalResistance = std::clamp(m.torsionMagnitude / 3.14159265f, 0.f, 1.f);
+
+    // --- regime, most specific/severe first -------------------------------
+    float supportedTo = 0.f;
+    for (const Support &s : m_supports) supportedTo = std::max(supportedTo, s.depthLimit);
+    const float exposed = std::max(0.f, depth - supportedTo);
+    const float exposedFraction = depth > 1e-6f ? exposed / depth : 0.f;
+    m.unsupportedExposureFraction = exposedFraction;
+
+    if (m.wallContactAmount >= 0.85f)
+        m.regime = MechanicalState::Regime::ExcessiveAdvancement;
+    else if (m.wallContactAmount >= 0.4f)
+        m.regime = MechanicalState::Regime::SignificantContact;
+    else if (m.bendingResistance >= 0.5f)
+        m.regime = MechanicalState::Regime::TightCurvature;
+    else if (m.effectiveSupport < 0.05f && exposedFraction > 0.5f && baseStiff < 0.4f)
+        m.regime = MechanicalState::Regime::Unsupported;
+    else if (m.wallContactAmount >= 0.15f)
+        m.regime = MechanicalState::Regime::MildContact;
+    else
+        m.regime = MechanicalState::Regime::Free;
+
+    m_mech = m;
+}
+
+std::string CatheterModel::debugSummary() const {
+    std::ostringstream os;
+    os << "regime=" << mechanicalRegimeName(m_mech.regime)
+       << " depth=" << m_state.insertionDepth
+       << " contactNode=" << m_mech.contactNode
+       << " contactAt=(" << m_mech.contactLocation.x << "," << m_mech.contactLocation.y << ","
+       << m_mech.contactLocation.z << ")"
+       << " wallContact=" << m_mech.wallContactAmount
+       << " advResist=" << m_mech.advancementResistance
+       << " bendResist=" << m_mech.bendingResistance
+       << " torsResist=" << m_mech.torsionalResistance
+       << " support=" << m_mech.effectiveSupport
+       << " exposure=" << m_mech.unsupportedExposureFraction
+       << " force=" << m_mech.forceMagnitude
+       << " forceDir=(" << m_mech.forceDirection.x << "," << m_mech.forceDirection.y << ","
+       << m_mech.forceDirection.z << ")"
+       << " torsion=" << m_mech.torsionMagnitude;
+    return os.str();
+}
+
+const char *mechanicalRegimeName(CatheterModel::MechanicalState::Regime r) {
+    switch (r) {
+    case CatheterModel::MechanicalState::Regime::Free:                 return "Free";
+    case CatheterModel::MechanicalState::Regime::MildContact:          return "MildContact";
+    case CatheterModel::MechanicalState::Regime::SignificantContact:   return "SignificantContact";
+    case CatheterModel::MechanicalState::Regime::TightCurvature:       return "TightCurvature";
+    case CatheterModel::MechanicalState::Regime::ExcessiveAdvancement: return "ExcessiveAdvancement";
+    case CatheterModel::MechanicalState::Regime::Unsupported:          return "Unsupported";
+    }
+    return "?";
 }
 
 } // namespace cn

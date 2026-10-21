@@ -11,12 +11,15 @@
 #include "core/SheathManager.h"
 #include "core/CatheterModel.h"
 #include "core/CatheterCatalog.h"
+#include "core/MechanicalEvents.h"
 #include "core/CardiacCycle.h"
+#include "core/DoseModel.h"
 #include "core/CenterlineExtractor.h"
 #include "core/CenterlineGraph.h"
 #include "core/NavigationController.h"
 #include "core/StlMesh.h"
 #include "core/EmbolizationModel.h"
+#include "core/CoilEmbolizationModel.h"
 #include "core/ContrastInjectionModel.h"
 
 #include "ui/VesselView.h"
@@ -31,6 +34,7 @@ class QActionGroup;
 class QCheckBox;
 class QComboBox;
 class QDialog;
+class QImage;
 class QDoubleSpinBox;
 class QHBoxLayout;
 class QLabel;
@@ -119,6 +123,19 @@ private:
 
     // Navigation
     void restartFromCurrentSite(bool focusCamera);
+
+    /// Fixed, reasoned C-arm bed-fraction for each access-site TYPE -
+    /// confirmed correct by actual manual testing against the real model,
+    /// replacing an earlier geometric approach that proved unreliable
+    /// across all four site types. Shared between sheath placement and
+    /// catheter selection (both reposition the C-arm/table to the site's
+    /// own anatomical region), so there is exactly one place these numbers
+    /// live rather than two copies that could drift apart if one is
+    /// updated later and the other forgotten. 0.f (the head end) for any
+    /// AccessSite not covered below - there should not be one, but this
+    /// avoids an uninitialized read rather than relying on every call site
+    /// to already validate its own input.
+    float carmFractionForSite(cn::AccessSite site) const;
     void onVesselSurfacePicked(const QVector3D &worldPt);
     void updateSheathActor();
     void syncDevices();
@@ -207,6 +224,146 @@ private:
     void setNavTileActive(QPushButton *tile, bool active);
     /// Depth in the coaxial stack; larger is further inside the patient.
     static int deviceStackLevel(cn::DeviceClass c);
+
+    // ── Per-device pause/deactivate ──────────────────────────────────────
+    // Matches the manual's own "Active guide catheter"/"Active catheter"/
+    // "Active guide wire" toggles: lets a trainee freeze one device once
+    // it is positioned and focus purely on the next step (e.g. park the
+    // guide catheter at the ECA, then work only on the microcatheter
+    // without risking accidentally moving the guide). Three explicit slots
+    // (not a generic per-device-class map) - a real procedure genuinely
+    // only ever has these three device ROLES in play at once, matching
+    // the manual's own three-field device display (Figure 1.3.a).
+    bool m_pauseGuideCatheter = false;
+    bool m_pauseMicroCatheter = false;
+    bool m_pauseWire          = false;
+    QCheckBox *m_activeGuideCatheterBox = nullptr;
+    QCheckBox *m_activeMicroCatheterBox = nullptr;
+    QCheckBox *m_activeWireBox          = nullptr;
+    QPushButton *m_btnSavePosition = nullptr;
+    QPushButton *m_btnLoadPosition = nullptr;
+    /// Which pause flag applies to the CURRENTLY selected device, based on
+    /// m_deviceSpec.catheterType's own catalogue entry - or nullptr if the
+    /// current device does not map to any of the three slots (e.g. a
+    /// sheath, which is not one of the three pausable roles).
+    bool *activeDevicePauseFlag();
+    void onToggleDevicePause(cn::DeviceClass slot);
+    void updateDevicePauseUi();
+
+    // ── Save/load device position ────────────────────────────────────────
+    // One device's own saved state - either a parked one or the active
+    // one. Both need exactly the same fields (identity + exact route +
+    // depth + roll), so this is shared between SavedDevicePosition's
+    // `parkedStack` and `active` below rather than duplicating the fields
+    // in two places.
+    struct SavedDeviceState {
+        QString deviceName;        ///< catalogue name, e.g. "Sofia 6F (distal access)"
+        QString deviceSizeLabel;   ///< e.g. "6 Fr"
+        /// Only meaningful for DeviceClass::BaseGuide - the diagnostic
+        /// catheter's heat-set tip shape active at save time. Empty for
+        /// every other device class.
+        QString tipShapeName;
+        float insertionDepth = 0.f;
+        float rollAngle = 0.f;
+        /// Exact node-id sequence from cn::NavigationController::route() -
+        /// replayed via replayRouteIntoNav() to restore the precise path
+        /// taken, not just a depth along an assumed-default route.
+        std::vector<int32_t> route;
+    };
+    struct SavedDevicePosition {
+        QString name;
+        /// Every PARKED device in the coaxial stack at save time, outermost
+        /// (introduced first - normally the guide catheter) to innermost,
+        /// same order m_parkedDevices itself already uses. A save made
+        /// with a microcatheter active through a parked guide catheter
+        /// captures BOTH devices here - without this, loading such a save
+        /// silently dropped the guide catheter entirely and left only the
+        /// microcatheter's own position restored, with no host device
+        /// underneath it at all.
+        std::vector<SavedDeviceState> parkedStack;
+        /// The device actually engaged at save time - the one Advance/
+        /// Retract drove then, and the one they drive again immediately
+        /// after this position is loaded.
+        SavedDeviceState active;
+        /// Reserved for a future "Init State" (auto-load on new case) -
+        /// not wired to any UI yet in this pass; named Save/Load already
+        /// delivers the core training value (repeat drills from a fixed
+        /// point) without it. Kept declared rather than added later, the
+        /// same "documents the intended extension point" reasoning other
+        /// currently-unused fields elsewhere in this codebase already use.
+        bool isInitState = false;
+    };
+    QVector<SavedDevicePosition> m_savedPositions;
+    void onSavePosition();
+    void onLoadPosition();
+    /// Actually captures/restores state - split out from the two dialog-
+    /// driving slots above so a future "auto-load Init State on new case"
+    /// path can call restoreSavedPosition() directly without going through
+    /// a menu.
+    SavedDevicePosition captureSavedPosition(const QString &name) const;
+    void restoreSavedPosition(const SavedDevicePosition &pos);
+    /// Replays `route` (a saved node-id sequence) into m_nav via its own
+    /// public API (startFrom()+chooseOption()), then advances to `depth`.
+    /// Shared by restoreSavedPosition() (for every device in a saved
+    /// stack) and applyCatheterSpec()'s own "reverting to a shallower
+    /// device" branch - previously each had its own separately-written
+    /// copy of this exact replay loop, which is exactly the kind of
+    /// duplication that lets one copy get fixed and the other not.
+    /// Returns false (not a fatal error - the caller decides what that
+    /// means) if the saved route stopped matching available options
+    /// partway through, e.g. because the vessel model changed since it
+    /// was recorded.
+    bool replayRouteIntoNav(const std::vector<int32_t> &route, float depth);
+    /// Builds CatheterModel::Params for `st`'s own catalogue entry (device
+    /// name + size +, for a BaseGuide, its tip shape) - the same lookup
+    /// applyCatheterSpec() does for a live selection, factored out so
+    /// restoreSavedPosition() can rebuild a device's exact physical
+    /// parameters without going through applyCatheterSpec()'s own
+    /// telescoping/view-sync side effects, which assume a fresh live
+    /// selection rather than a saved stack being replayed wholesale.
+    /// Returns false if `st.deviceName` is no longer in the catalogue.
+    bool buildParamsForState(const SavedDeviceState &st, cn::CatheterModel::Params &outParams,
+                             const cn::CatheterSpec *&outSpec) const;
+
+    // ── Angle exercise minigame ───────────────────────────────────────────
+    // Matches the manual's own angle-exercise training function: a
+    // reference projection is shown, the trainee has to find and set the
+    // matching LAO/CRAN on the live C-arm, then check their answer. This
+    // build has no archive of real recorded case images to freeze a
+    // reference from (the manual's own version pulls from a patient case
+    // library this simulator does not have) - instead, a RANDOM target
+    // angle is picked and the reference "image" is a genuine live capture
+    // of this session's own vessel model rendered at that angle, which is
+    // actually a more honest reference than a canned image would be: the
+    // trainee is learning to read THIS patient's own anatomy at an unknown
+    // angle, the same task a real angle exercise is teaching, just sourced
+    // from the live model instead of an archive.
+    struct AngleExerciseState {
+        bool active = false;
+        double targetLao = 0.0;
+        double targetCran = 0.0;
+        /// Session-level tally, not reset between exercises - shown in the
+        /// dialog so a trainee can see genuine progress across a training
+        /// session rather than a single isolated check-and-reveal with no
+        /// memory of anything before it.
+        int attemptCount = 0;
+        int passCount = 0;
+        /// Whether the CURRENT exercise has already been counted as a pass
+        /// - Check Angle can be clicked more than once while adjusting
+        /// toward the target, and a repeated correct check on the SAME
+        /// exercise must not inflate passCount a second time.
+        bool currentPassed = false;
+    };
+    AngleExerciseState m_angleExercise;
+    QDialog *m_angleExerciseDialog       = nullptr;
+    QLabel  *m_angleExerciseImageLabel   = nullptr;
+    QLabel  *m_angleExerciseResultLabel  = nullptr;
+    QLabel  *m_angleExerciseScoreLabel   = nullptr;
+    void onStartAngleExercise();
+    void showAngleExerciseDialog(const QImage &snapshot);
+    void onCheckAngleExercise();
+    void onShowCorrectAngle();
+    void updateAngleExerciseScoreLabel();
     /// The X-Ray Calibration dialog's 28 spin boxes (m_xraySpins) and
     /// VesselView::XrayTuning's 28 fields, converted between each other
     /// positionally — one fixed order, used by "Save / Apply" (spins ->
@@ -220,6 +377,32 @@ private:
     void onCatheterFrenchChanged(int index);
     void log(const QString &line);
     QString mm(float modelUnits, int decimals = 1) const;
+    /// Dumps m_catheter.mechanics() to the log, tagged with `context` (e.g.
+    /// "advance", "branch", "device switch") - a FULL state dump, called
+    /// unconditionally at a few discrete, already-rare events (device
+    /// switch, branch choice, position restore) regardless of whether the
+    /// mechanical regime actually changed. For the continuous case
+    /// (advance/retract/rotate), see reportMechanicalEvents() instead -
+    /// that one only ever logs on an actual transition.
+    void logMechanicalState(const QString &context);
+    /// Feeds m_catheter.mechanics() through m_mechEvents and logs a short
+    /// line for each MechanicalEvent it reports (usually none - see
+    /// MechanicalEventDetector's own comment on why this does not flood
+    /// the log). This is the single call site for the training-event
+    /// feed: syncDevices() calls it once, so advance/retract/branch/device
+    /// switch/position-restore all go through it automatically; rotate
+    /// calls it directly since it does not go through syncDevices(). Also
+    /// refreshes the (normally hidden) mechanics debug overlay - see
+    /// toggleMechanicsDebugOverlay().
+    void reportMechanicalEvents(const QString &context);
+    /// Ctrl+Shift+M - shows/hides a small always-on-top diagnostic window
+    /// (regime, contact, the three resistances, support/exposure, force,
+    /// torsion). Entirely separate from the production HUD/Overlay VesselView
+    /// already draws: this is a standalone floating QLabel, off by default,
+    /// and deleting this method plus m_mechDebugWindow removes the hook
+    /// completely with no effect on anything else.
+    void toggleMechanicsDebugOverlay();
+    void updateMechanicsDebugOverlay();
 
     // ── Embolisation Module ──────────────────────────────────────────────
     void showEmbolizationDialog();
@@ -228,6 +411,12 @@ private:
     void onResetEmbolization();
     void updateEmboliReadout();
     void refreshEmboliViews();
+    // ── Coil deployment: Advance pushes AND commits a coil in one call,
+    // Retract undoes the most recently committed one. ─────────────────────
+    void onAdvanceCoil();
+    void onRetractCoil();
+    void onResetCoils();
+    void updateCoilReadout();
     /// The graph neighbor of `tipNode` that lies back toward the access
     /// site — i.e. the vessel segment the catheter's own body currently
     /// occupies, immediately proximal to its tip. Passed to
@@ -264,9 +453,18 @@ private:
     /// Embolisation Module's shared cast-growth model — one instance, handed
     /// to every VesselView exactly the way m_catheter already is.
     cn::EmbolizationModel           m_emboli;
+    /// Discrete coil deployment - deliberately a separate model from
+    /// m_emboli, not folded into it: see CoilEmbolizationModel's own class
+    /// comment for why a coil nest and a liquid-agent flood fill are
+    /// mechanistically different things. Wired into m_contrastModel
+    /// alongside m_emboli so either one - or both together, proximal
+    /// protection coil + distal liquid agent is a real MMA technique -
+    /// can block a post-embolization angiogram.
+    cn::CoilEmbolizationModel       m_coils;
     /// Contrast Injection's shared temporary-flow model. Wired to m_emboli
-    /// (setEmbolization) so it can see - and be genuinely blocked by -
-    /// whatever the embolic cast currently occludes.
+    /// and m_coils (setEmbolization/setCoils) so it can see - and be
+    /// genuinely blocked by - whatever either embolic model currently
+    /// occludes.
     cn::ContrastInjectionModel      m_contrastModel;
     std::vector<cn::AccessPoint>    m_sites;
     std::vector<int32_t>             m_vtpLeafNodes;
@@ -288,12 +486,29 @@ private:
     /// Devices already placed and left in the patient, outermost first. A
     /// microcatheter telescoped through a guide does not make the guide vanish.
     std::vector<std::unique_ptr<cn::CatheterModel>> m_parkedDevices;
+    /// Parallel to m_parkedDevices, same index - the catalogue identity
+    /// (name/size/tip-shape) of each parked device, which a raw
+    /// CatheterModel snapshot does not carry on its own. Needed so
+    /// reverting to a shallower device (see applyCatheterSpec()'s own
+    /// "reverting" branch) can call applyCatheterSpec() again on the
+    /// correct parked device instead of leaving whatever deeper device
+    /// superseded it still selected.
+    QVector<QString> m_parkedDeviceNames;
+    QVector<QString> m_parkedDeviceSizes;
+    QVector<QString> m_parkedDeviceTipShapes;
     /// Insertion depth the active device was introduced at; it cannot retract
     /// behind this, because that is inside the host catheter's lumen.
     float m_coaxialBaseDepth = 0.f;
     double m_mmPerUnit    = 100.0;
     double m_pendingMm    = 0.0;
     bool   m_wasInContact = false;
+    /// Watches m_catheter.mechanics() for state TRANSITIONS (see
+    /// MechanicalEventDetector) - the training-event feed. reset() at
+    /// every device switch/position restore so a fresh device's own
+    /// starting regime is never misreported as an event.
+    cn::MechanicalEventDetector m_mechEvents;
+    /// See toggleMechanicsDebugOverlay() - null until first shown.
+    QLabel *m_mechDebugWindow = nullptr;
 
     // ── State ───────────────────────────────────────────────────────────────
     double  m_carmLAO  = 0.0;
@@ -322,16 +537,31 @@ private:
     // ── Views ───────────────────────────────────────────────────────────────
     CarmView        *m_carmWidget = nullptr;   // left column — standalone CarmView
     CarmController  *m_carmCtrl  = nullptr;   // owns rig state, routes camera increments
+    // Anchor for the table's per-tick real-world tracking in syncDevices():
+    // the validated carmFractionForSite() value and the vessel-graph world
+    // Z it was set at, captured at sheath placement. syncDevices() tracks
+    // the table as this anchor plus the REAL distance (via m_mmPerUnit)
+    // the tip has since travelled, as a fraction of the table's own real
+    // length (CarmView::bedSpanMetres()) - not an absolute fraction of the
+    // whole vessel graph's own bounding box, which has no necessary
+    // relationship to the table's real length or to Vessel View's own
+    // (unnormalized, real-world) tip tracking. Anchoring to the tuned
+    // fraction rather than recomputing one from scratch also avoids a jump
+    // away from the validated rest position on the very first advance tick.
+    float m_carmTrackBaseFraction = 0.f;
+    float m_carmTrackBaseZ        = 0.f;
     QuadPanel  *m_quad       = nullptr;   // right centre — stacked vessel views
     VesselView *m_view       = nullptr;   // alias → m_quad->view3D()
     ECGWidget  *m_ecgWidget  = nullptr;
 
     // ── Bottom tile navigation bar (replaces the old menu-bar view actions) ──
-    // 3D VIEW / FLUORO / DSA are mutually exclusive (m_viewTileGroup); index
-    // 2 (Mesh) is deliberately left null - the reference design this bar
-    // matches has no Mesh tile, so Mesh view is no longer reachable from the
-    // main UI (onViewModeChanged(2)/checkViewAction(2) remain harmless no-ops
-    // rather than removed outright, in case Mesh access needs to come back).
+    // 3D VIEW / FLUORO / MESH / DSA are mutually exclusive (m_viewTileGroup).
+    // Mesh (index 2) was previously removed to match a reference design that
+    // had no Mesh tile, then re-added per explicit request - the underlying
+    // wireframe rendering (VesselView::setWireframe(), QuadPanel::
+    // showPane(Pane::Mesh)) and onViewModeChanged(2)/checkViewAction(2) were
+    // deliberately left working the whole time specifically so restoring
+    // access only ever needed the tile itself, nothing else.
     // Road Map / Cine / Contrast / Embolisation are independent action tiles,
     // not part of the exclusive group.
     QButtonGroup *m_viewTileGroup = nullptr;
@@ -390,6 +620,20 @@ private:
     /// EmbolizationModel::inject()'s own unit note); scaled to the model's
     /// injection step when INJECT is actually pressed.
     float m_quickEmboVolumeMl = 0.10f;
+
+    /// Coil section of the Embolisation Module dialog (m_emboDialog) - see
+    /// showEmbolizationDialog(). Simplified to two actions per explicit
+    /// request: Advance pushes a whole coil out AND commits it immediately
+    /// (CoilEmbolizationModel::deployWholeCoil()), Retract undoes the most
+    /// recently committed one (CoilEmbolizationModel::undoLastCoil()) - no
+    /// separate review-before-commit step in between. m_coilRetractBtn is
+    /// only enabled while there is a committed coil to undo - see
+    /// updateCoilReadout(), which manages both buttons' enabled state
+    /// together every time coil state changes.
+    QComboBox   *m_coilBox         = nullptr;
+    QLabel      *m_coilStatusLabel = nullptr;
+    QPushButton *m_coilAdvanceBtn  = nullptr;
+    QPushButton *m_coilRetractBtn  = nullptr;
 
     /// Contrast Injection dialog — same non-modal pattern. No agent combo of
     /// its own: the three phase buttons themselves are the workflow.
@@ -493,6 +737,14 @@ private:
     cn::CardiacCycle m_cardiac;
     QTimer          *m_heart = nullptr;
     QElapsedTimer    m_heartClock;
+
+    // ── Dose/generator model ─────────────────────────────────────────────
+    // Replaces the previously fixed console-default kVp/mA/DAP/air-kerma/
+    // patient-physician-dose display with a genuinely time-integrated one -
+    // see DoseModel's own class comment. Ticked once a second from the same
+    // procedure timer that already refreshes TOTAL FLUORO TIME, using
+    // CarmView's own live fluoroActive()/magnification()/lao()/cran().
+    cn::DoseModel m_dose;
     QSpinBox        *m_bpmSpin    = nullptr;
     QCheckBox       *m_pulseCheck = nullptr;
 
@@ -527,13 +779,14 @@ private:
     QElapsedTimer m_procedureClock;
 
     // ── Bottom system status bar (QMainWindow::statusBar()) ─────────────────
-    // DOSE and AIR KERMA are fixed console defaults - same disclosed reason
-    // as the Fluoroscopy HUD's kVp/mA/DAP (VesselView::paintOverlay()): no
-    // real generator/dosimetry model exists in this build to draw live
-    // numbers from. TOTAL FLUORO TIME is genuinely live (CarmView already
-    // tracks real fluoro-active seconds via setFluoroActive()/
-    // fluoroSeconds() - this just reads it). LAST IMAGE and the clock are
-    // both genuinely live too.
+    // DOSE and AIR KERMA are now genuinely live - driven by the shared
+    // cn::DoseModel (m_dose, ticked once a second from m_procedureTimer's
+    // own callback) rather than the fixed console defaults they used to
+    // be. The Fluoroscopy HUD's kVp/mA/DAP (VesselView::setGeneratorInfo())
+    // read the exact same model. TOTAL FLUORO TIME is genuinely live too
+    // (CarmView already tracks real fluoro-active seconds via
+    // setFluoroActive()/fluoroSeconds() - this just reads it). LAST IMAGE
+    // and the clock are both genuinely live as well.
     QLabel *m_sbDose        = nullptr;
     QLabel *m_sbAirKerma    = nullptr;
     QLabel *m_sbFluoroTime  = nullptr;

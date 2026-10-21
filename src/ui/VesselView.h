@@ -12,6 +12,7 @@
 #include <QString>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -21,6 +22,7 @@
 #include "core/CardiacCycle.h"
 #include "core/StlMesh.h"
 #include "core/EmbolizationModel.h"
+#include "core/CoilEmbolizationModel.h"
 #include "core/ContrastInjectionModel.h"
 
 class QOpenGLShaderProgram;
@@ -98,6 +100,15 @@ public:
     /// colour dimension for device TYPE was not asked for there and would
     /// compete with the existing active/host colour convention.
     void setDeviceIsMicrocatheter(bool v) { m_deviceIsMicrocatheter = v; update(); }
+    /// True when the active device is a guidewire (CatheterSpec::devClass
+    /// == cn::DeviceClass::Guidewire). Unlike the microcatheter flag above,
+    /// this genuinely changes the TIP GEOMETRY, not just colour/opacity:
+    /// a real guidewire's distal tip is a tightly wound platinum spring
+    /// coil, not a smooth tapered tube with a marker band painted onto it
+    /// - see buildSpringTipMesh()'s own comment. Marks the device batches
+    /// dirty so the tip is rebuilt with (or back out of) that geometry the
+    /// next time it changes.
+    void setDeviceIsGuidewire(bool v) { m_deviceIsGuidewire = v; m_deviceDirty = true; update(); }
     /// The active device's 3D View display colour (CatheterSpec::colour),
     /// used to tint the shaft/tip in the non-Fluoro palette - Fluoro is
     /// unaffected, it always renders every device in its own grayscale/
@@ -128,6 +139,16 @@ public:
         m_hudSidCm = sidCm; m_hudMagCm = magCm; m_hudFrameFps = frameFps; update();
     }
 
+    /// Real kVp/mA/DAP, read from the shared cn::DoseModel rather than the
+    /// Fluoroscopy HUD's own previously-hardcoded "78"/"320"/"12.4 Gy·cm²"
+    /// - see DoseModel's own class comment for why kVp stays constant while
+    /// mA genuinely responds to magnification and DAP genuinely
+    /// accumulates over real beam-on time. Same "single shared source of
+    /// truth" reasoning setDetectorInfo() above already established.
+    void setGeneratorInfo(float kvp, float ma, float dapGyCm2) {
+        m_hudKvp = kvp; m_hudMa = ma; m_hudDapGyCm2 = dapGyCm2; update();
+    }
+
     /// Same shared-instance pattern as setDevice(): the caller owns one
     /// EmbolizationModel and hands the same pointer to every VesselView, so
     /// whatever cast is visible in one view is exactly what every other view
@@ -137,6 +158,17 @@ public:
     /// Call after every begin()/inject()/reset() on the shared model, the
     /// same way refreshDevice() is called after the catheter moves.
     void refreshEmbolization();
+
+    /// Same shared-instance pattern, for the separate coil-deployment
+    /// model - see CoilEmbolizationModel's own class comment for why a
+    /// coil nest and a liquid-agent cast are mechanistically different
+    /// things and therefore two models, not one, even though they end up
+    /// rendered by the same tube-builder underneath.
+    void setCoils(const cn::CoilEmbolizationModel *coils);
+    /// Call after every beginAt()/advanceCoil()/finishCoil()/reset() on the
+    /// shared model, the same way refreshEmbolization() is called after
+    /// the liquid-agent cast changes.
+    void refreshCoils();
 
     /// Same shared-instance pattern for the Contrast Injection module.
     void setContrastInjection(const cn::ContrastInjectionModel *contrast);
@@ -217,6 +249,18 @@ public:
     /// mesh and graph have been set.
     QVector3D heartCentre() const { return m_heartCentre; }
 
+    /// Forces m_heartCentre to be computed RIGHT NOW from whatever graph is
+    /// currently set, rather than waiting for the next lazy paintGL()-
+    /// driven mesh rebuild to get around to it. A caller that wants to call
+    /// focusRibCage() (or read heartCentre() for any other reason)
+    /// immediately after setGraph(), before this widget has ever actually
+    /// painted, needs this - otherwise m_heartCentre is still sitting at
+    /// its uninitialized (0,0,0) default, and framing on that produces
+    /// whatever this model's own coordinate origin happens to be near
+    /// (confirmed from an actual recording: the foot end), not the real
+    /// heart. No GL context required - this only ever needed m_graph.
+    void ensureHeartCentreReady();
+
     /// Devices already placed and left in the patient, outermost first — the
     /// guide a microcatheter was telescoped through, and so on. They are drawn
     /// desaturated behind the active device. Coaxial technique means the
@@ -229,13 +273,15 @@ public:
     void setCameraTrack(const cn::CenterlinePath *path, float arc);
     void setCameraFollows(bool v);
     /// Changes only the orbit azimuth - target position and zoom distance
-    /// are left completely untouched. Needed because showHeadSagittal()
-    /// sets azimuth=90 deg (its own comment: "patient's left lateral" - a
-    /// side view, not a front one), and that angle otherwise persists
-    /// through sheath/catheter selection with nothing to switch it to a
-    /// front-facing view instead, without triggering a full camera
-    /// reset/refocus that would also move target/zoom (which must stay
-    /// exactly where the operator left them, per explicit requirement).
+    /// are left completely untouched. Was intended to switch away from
+    /// showHeadFrontal()'s own azimuth after sheath/catheter selection
+    /// back when that function defaulted to a sagittal (side, azimuth=90)
+    /// view - but was never actually wired to any call site, and
+    /// showHeadFrontal() now defaults to the front-facing (azimuth=180)
+    /// view directly, which is what this existed to switch TO. Left
+    /// declared as a general "rotate around without moving target/zoom"
+    /// primitive in case a future view mode needs exactly that, rather
+    /// than removed outright.
     void setAzimuthOnly(float azimuthDeg) { m_azimuth = azimuthDeg; update(); emit cameraChanged(); }
     bool cameraFollows() const { return m_cameraFollows; }
 
@@ -249,6 +295,22 @@ public:
     void setShowCenterline(bool v) { m_showCenterline = v; update(); }
     bool showCenterline() const { return m_showCenterline; }
     void setWallOpacity(float v) { m_wallOpacity = v; update(); }
+
+    /// Resolution the DRR accumulation buffer (ensureXrayFbo) renders the
+    /// Fluoro pass at, as a fraction of the pane's actual on-screen
+    /// viewport size — 1.0 = full resolution, lower = a genuinely lower-
+    /// resolution buffer that then gets linearly upsampled back out,
+    /// reading as authentic detector softness rather than a crisp
+    /// diagnostic image. Real continuous low-dose fluoroscopy is visibly
+    /// softer/noisier than a high-dose cine acquisition; this is what lets
+    /// that difference actually show. Clamped well above zero so the
+    /// buffer never collapses to something too small to composite
+    /// sensibly, and marks the FBO for a resize on the next frame.
+    void setFluoroQuality(float scale) {
+        m_fluoroQualityScale = std::clamp(scale, 0.15f, 1.0f);
+        update();
+    }
+    float fluoroQuality() const { return m_fluoroQualityScale; }
 
     /// The circle-and-crosshair markers (with lumen/takeoff-angle labels) and
     /// the "BIFURCATION — LEFT/RIGHT" banner drawn at a pending branch
@@ -318,7 +380,12 @@ public:
         // default so a fresh session opens already looking like the tuned
         // result, rather than requiring the dialog to be re-run each time.
         // Nothing here is derived or re-justified — these are the numbers
-        // that were actually dialed in and confirmed to look right.
+        // that were actually dialed in and confirmed to look right, matched
+        // to the shader's real per-fragment crossing-count units (mode 1
+        // writes ~1.0 per overlapping fragment; Opacity below is the
+        // attenuation coefficient per crossing, combined through a true
+        // Beer-Lambert exponential exactly once in mode 2 - see that
+        // transfer function's own comment).
         QVector3D backgroundColor{0.09f, 0.09f, 0.09f};
 
         QVector3D boneColor{0.90f, 0.88f, 0.82f};
@@ -337,8 +404,6 @@ public:
         /// per-material shape/colour is resolved — the same order a photo
         /// editor applies them: gamma, then contrast (pivoted at 0.5, so it
         /// can't shift the black point), then a final brightness multiply.
-        /// Brightness set to 0.80 per explicit request — an overall dimming
-        /// of the whole Fluoro image, down from the previous 1.08.
         float gamma      = 1.03f;
         float contrast   = 0.75f;
         float brightness = 0.80f;
@@ -438,16 +503,52 @@ public:
     // the old project's frameOnFace() + parallel-scale zoom.
     void showFluoroDefault();
 
-    /// Close sagittal (lateral) view of the head and cerebral vasculature.
+    /// Close frontal (AP) view of the head and cerebral vasculature -
+    /// changed from the previous close sagittal (lateral, azimuth=90)
+    /// framing per explicit request, since the console's whole default
+    /// startup view (and every C-arm-driven Fluoro/DSA/Mesh view derived
+    /// from it) needs to read as a standard frontal projection, not a
+    /// head-turned side view.
     ///
-    /// Looks along the patient's X axis rather than the AP direction the other
-    /// framings use, so the circle of Willis, the carotid siphon and the
-    /// vertebrobasilar system separate instead of overlapping each other.
+    /// Trade-off worth knowing about: azimuth=180 (AP) is what every OTHER
+    /// framing function in this file already uses, but it DOES superimpose
+    /// the left and right cerebral circulations on top of each other -
+    /// the earlier sagittal choice existed specifically so the circle of
+    /// Willis, the carotid siphon and the vertebrobasilar system would
+    /// separate rather than overlap. That anatomical clarity is genuinely
+    /// traded away here for a standard-looking frontal default; a lateral
+    /// view is still reachable on demand (nothing about the ORBIT itself
+    /// changed, only what this specific framing sets it to).
     ///
     /// The crop is taken from the model: above Z = 1401 mm the tree narrows to
     /// +/-103 mm in X and holds two thirds of the mesh's vertices, which is the
     /// cerebral region proper.
-    void showHeadSagittal();
+    void showHeadFrontal();
+
+    /// Animated pan of the camera's own target point along the body's Z
+    /// axis toward `f` (0..1, 0=head end, 1=foot end - same convention
+    /// CarmView::setBedBodyFraction() uses), so this view's own camera
+    /// tracks the same repositioning the C-arm/table animation goes
+    /// through when a sheath is placed, per explicit request that the two
+    /// move the same way. Applied as an INCREMENTAL pan on top of
+    /// whatever framing/zoom/rotation is already set (see
+    /// onBodyFocusTick()'s own comment) - this nudges the existing view
+    /// along Z, it does not re-frame or re-zoom outright, so it does not
+    /// fight or discard whatever the operator already has set up.
+    void setBodyFocusFraction(float f);
+
+    /// Sets how many real seconds a FULL 0..1 body-focus pan should take -
+    /// see m_bodyFocusSpeedFracPerSec's own comment for why this is set
+    /// explicitly rather than hardcoded, and CarmView::
+    /// bedFullTraversalSeconds() for the value a caller should actually
+    /// pass in to keep this view's own pan visually synchronized with the
+    /// table's real animation. No-op (keeps the previous speed) if
+    /// `seconds` is not positive - a caller that has not yet loaded the
+    /// C-arm parts (bedFullTraversalSeconds() returns 0 before that) should
+    /// not accidentally set an infinite-speed pan.
+    void setBodyFocusDurationSeconds(float seconds) {
+        if (seconds > 1e-4f) m_bodyFocusSpeedFracPerSec = 1.f / seconds;
+    }
 
     /// Copy camera state from another VesselView so all views share the same position.
     void syncCameraFrom(const VesselView &other);
@@ -463,6 +564,16 @@ public:
     /// Used when an access site is selected so the view opens on the puncture
     /// rather than on the whole tree.
     void focusOn(const QVector3D &position, float lumenRadius);
+
+    /// Seeds the follow-target/distance from the CURRENT static camera
+    /// (m_target/m_distance) rather than the device's tip. Call this before
+    /// handing a freshly-attached device to setCameraFollows(true) so that
+    /// engaging follow mode does not itself move the camera - m_followTarget/
+    /// m_followDistance default to zero and would otherwise snap the view to
+    /// the origin (or wherever they were last left) the instant m_device
+    /// stops being null. The device is still tracked normally from here on;
+    /// only this one activation moment is a no-op.
+    void beginFollowWithoutJump();
 
     /// Recompute the camera from the device *now* rather than at the next
     /// paint - the navigator sorts branches by screen position and one frame of
@@ -564,10 +675,40 @@ private:
     void drawBatch(Batch &b, GLenum mode, const Material &m, bool shaded,
                    bool pulsatile = false);
 
+    /// The standalone, GL-independent piece of rebuildMeshBatch() - see
+    /// ensureHeartCentreReady()'s own comment for why this needs to be
+    /// callable on its own, separately from the full (GL-dependent) batch
+    /// rebuild.
+    void computeHeartCentre();
     void rebuildMeshBatch();
     void rebuildCenterlineBatch();
     void rebuildDeviceBatches();
-    void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, float hideBehindDepth = 0.f);
+    /// `isGuidewire` is an explicit parameter, not read from
+    /// m_deviceIsGuidewire directly - this function also builds parked HOST
+    /// devices (see rebuildDeviceBatches()), which can be a completely
+    /// different device type from the currently active one; reading the
+    /// class member unconditionally would have wrongly given a parked guide
+    /// catheter a spring-coil tip whenever the ACTIVE device happened to be
+    /// a wire. Host devices always pass false - a parked "host" in this
+    /// console's own coaxial model is the outer device a wire/microcatheter
+    /// was advanced THROUGH, essentially never a guidewire itself.
+    void buildDeviceInto(const cn::CatheterModel *dev, DeviceBatches &b, bool isGuidewire,
+                         float hideBehindDepth = 0.f);
+    /// Replaces the plain smooth tube a guidewire's tip would otherwise get
+    /// (nodes firstNode..lastNode of `dev`'s own chain, tip-first) with a
+    /// tightly wound helical spring-coil mesh - a real guidewire's distal
+    /// tip (0.035" diagnostic wires and 0.014" neuro wires alike) is a
+    /// wound platinum coil, not a smooth tapered rod with a marker band
+    /// painted onto it, and that wound-spring silhouette is the single
+    /// most recognizable "this is a guidewire, not a catheter" visual cue
+    /// on a real fluoroscopy frame. Only called when m_deviceIsGuidewire is
+    /// true (see buildDeviceInto()); every other device keeps the plain
+    /// tube unchanged. Resamples the (coarse - kTipEnd is only a handful of
+    /// nodes) input polyline into many fine steps first, since a smooth-
+    /// looking helix needs far more resolution along its own centreline
+    /// than the underlying kinematic chain carries.
+    void buildSpringTipMesh(const cn::CatheterModel *dev, int firstNode, int lastNode,
+                            std::vector<float> &out, std::vector<uint32_t> &idx) const;
     /// One from/to graph-node pair with a 0..1 fill fraction along it -
     /// the common shape both EmbolizationModel::CastLink and
     /// ContrastInjectionModel::ContrastLink reduce to for rendering
@@ -593,8 +734,41 @@ private:
     void buildTubesFromSpans(const cn::CenterlineGraph *graph,
                              const std::vector<CastSpan> &spans, Batch &out,
                              float irregularity = 0.f);
-    /// Extracts spans from the shared EmbolizationModel and builds them.
+    /// Core geometry-building logic factored out of buildTubesFromSpans() -
+    /// appends into CALLER-PROVIDED vertex/index buffers instead of
+    /// uploading its own batch, so buildEmboliInto() can accumulate several
+    /// targets' spans (each with its own irregularity) into ONE combined
+    /// buffer before uploading once. buildTubesFromSpans() itself is now a
+    /// thin single-call wrapper over this for every other existing caller.
+    void appendTubesFromSpans(const cn::CenterlineGraph *graph,
+                              const std::vector<CastSpan> &spans, float irregularity,
+                              std::vector<float> &verts, std::vector<uint32_t> &idx) const;
+    /// Extracts spans from EVERY target the shared EmbolizationModel holds
+    /// (not just whichever one is currently "active") and builds them all
+    /// into one combined pair of batches - see appendTubesFromSpans()'s own
+    /// comment for how multiple targets end up in one upload.
     void buildEmboliInto(const cn::EmbolizationModel *emb, Batch &outSet, Batch &outGrowing);
+    /// Extracts spans from the shared CoilEmbolizationModel and builds
+    /// them. Unlike buildEmboliInto() (a per-link tube reusing
+    /// buildTubesFromSpans), this does NOT draw a filled tube along the
+    /// vessel: a real coil mass sits as a single tangled, roughly
+    /// spherical ball AT the deployment site, not a smooth column filling
+    /// the lumen along its length. Iterates EVERY target the shared
+    /// CoilEmbolizationModel holds (not just whichever is "active") and
+    /// appends each one's own ball into one combined batch via
+    /// appendCoilBallInto() - see that function's own comment.
+    void buildCoilsInto(const cn::CoilEmbolizationModel *coils, Batch &out);
+    /// Core per-target ball-building logic factored out of buildCoilsInto()
+    /// so it can be called once per target, each with its OWN committed
+    /// nest/staging/release position, accumulating into shared vertex/
+    /// index buffers uploaded once by the caller. Builds a procedural
+    /// "yarn ball" of wandering closed loops, one per deployed coil, sized
+    /// from the local vessel calibre and how many coils have been placed.
+    void appendCoilBallInto(const cn::CoilEmbolizationModel::State &state,
+                            const std::vector<cn::CoilEmbolizationModel::CoiledLink> &stagingLinks,
+                            bool hasPending, const cn::Vec3 &pendingPos,
+                            const cn::CenterlineGraph &g,
+                            std::vector<float> &verts, std::vector<uint32_t> &idx) const;
     /// Extracts spans from the shared ContrastInjectionModel and builds them
     /// into kContrastBuckets separate batches, one per concentration tier
     /// (ContrastInjectionModel::ContrastLink::level, already 0..1 per link -
@@ -604,7 +778,17 @@ private:
     /// bolus; the 3D view draws every bucket with the SAME single colour it
     /// always used, so splitting the geometry this way changes nothing
     /// about its appearance.
-    static constexpr int kContrastBuckets = 5;
+    ///
+    /// Raised from 5 to 24: five buckets meant five visible, discrete
+    /// brightness STEPS along the column - real contrast never shows sharp
+    /// bands, it fades continuously as it dilutes, and coarse banding reads
+    /// as fake/artificial no matter how well the colour or grain on top of
+    /// it is tuned. 24 steps across the 0..1 concentration range is well
+    /// past where a human eye can distinguish one step from its neighbour,
+    /// which is what actually turns the gradient smooth rather than merely
+    /// less obviously stepped. Extra draw calls (24 vs. 5) are still cheap
+    /// at this scale - nowhere near a real frame-budget concern.
+    static constexpr int kContrastBuckets = 24;
     void buildContrastInto(const cn::ContrastInjectionModel *contrast,
                            Batch (&buckets)[kContrastBuckets]);
     void rebuildBodyMeshBatch(const QString &path, Batch &batch, const BodyAlign &align);
@@ -639,6 +823,8 @@ private:
     const cn::CatheterModel *m_device = nullptr;
     /// See setDeviceIsMicrocatheter() - Fluoro colour only.
     bool m_deviceIsMicrocatheter = false;
+    /// See setDeviceIsGuidewire()'s own comment.
+    bool m_deviceIsGuidewire = false;
     /// See setDeviceColor() - 3D View only. Default matches
     /// CatheterSpec::colour's own default (0.36, 0.72, 0.94).
     QVector3D m_deviceColor{0.36f, 0.72f, 0.94f};
@@ -650,6 +836,12 @@ private:
     float m_hudSidCm = 100.f;
     float m_hudMagCm = 32.f;
     int   m_hudFrameFps = 15;   ///< Same value Cine acquisition captures at - see setDetectorInfo()'s own comment.
+    /// See setGeneratorInfo(). Defaults match DoseModel::Params' own
+    /// baselines, so an early paint before the first real tick still shows
+    /// a sensible value rather than 0.
+    float m_hudKvp = 78.f;
+    float m_hudMa  = 320.f;
+    float m_hudDapGyCm2 = 0.f;   ///< genuinely starts at 0 - no dose has accumulated before the first tick
     const cn::EmbolizationModel *m_emboli = nullptr;
     // Split rather than one batch: lets the still-filling leading edge (the
     // active precipitation front) render with a different density than the
@@ -658,6 +850,9 @@ private:
     Batch m_emboliBatchSet;      ///< fillFraction >= kEmboliSetThreshold - fully formed
     Batch m_emboliBatchGrowing;  ///< still actively filling - the growing tip
     bool  m_emboliDirty = true;
+    const cn::CoilEmbolizationModel *m_coils = nullptr;
+    Batch m_coilBatch;
+    bool  m_coilsDirty = true;
     const cn::ContrastInjectionModel *m_contrast = nullptr;
     Batch m_contrastBatches[kContrastBuckets];
     bool  m_contrastDirty = true;
@@ -694,6 +889,10 @@ private:
     QVector3D m_followTarget, m_followTargetGoal;
     float m_followDistance = 0.f, m_followDistanceGoal = 0.f;
     float m_followZoom = 1.f;
+    // Set by beginFollowWithoutJump(), consumed by the next showEvent() (or
+    // self-clears on the next event-loop turn if no showEvent follows) - see
+    // both functions' own comments.
+    bool m_followTargetSeeded = false;
 
     // endoluminal camera
     QVector3D m_endoEye, m_endoForward{0, 0, 1}, m_endoUp{0, 1, 0};
@@ -707,14 +906,49 @@ private:
     // on the viewer's right.
     float m_azimuth = 180.f, m_elevation = 0.f, m_distance = 3.f;
     bool m_frontalLock = false;  // orbit enabled in all views by default
-    float m_carmLAO = 0.f;   /// degrees, drives azimuth offset
-    float m_carmCRAN = 0.f;  /// degrees, drives elevation offset
+    float m_carmLAO = 0.f;   /// degrees, drives elevation offset (negated - see cameraPosition())
+    float m_carmCRAN = 0.f;  /// degrees, drives azimuth offset
     /// Backs the Fluoroscopy HUD's TIME read-out (paintOverlay()) - started
     /// once in the constructor, so it is genuinely live elapsed time, not a
     /// static placeholder like the HUD's other fixed-default fields.
     QElapsedTimer m_fluoroClock;
     QVector3D m_target;
     QPoint m_lastMouse;
+
+    // ── Animated body-focus pan ──────────────────────────────────────────
+    // See setBodyFocusFraction()'s own comment. 0..1 along the SAME Z axis
+    // the camera's own "long axis is Z" convention above already uses -
+    // matches CarmView::setBedBodyFraction()'s identical 0=head/1=foot
+    // convention exactly, so a caller can drive both with the same
+    // fraction and have the table and this view's own camera move in
+    // visual sync, per explicit request.
+    //
+    // No "current fraction" member here deliberately - onBodyFocusTick()
+    // derives it fresh from m_target.z() every tick instead of tracking a
+    // separate variable, which is what a real bug traced to an actual
+    // recording turned out to be: a tracked fraction that started at 0
+    // and was never synced to wherever the camera's OWN startup framing
+    // (focusRibCage(), unrelated to this system) had actually left it,
+    // producing a wildly wrong pan distance on the very first real call.
+    float m_bodyFocusTargetFraction = 0.f;
+    /// Fraction-per-second, not a real-world distance/speed - deliberately
+    /// scale-independent (this view's own Z units and CarmView's separate
+    /// scene units are completely different systems). Was a hardcoded
+    /// guess (1/3.5, "assume CarmView's own full traversal takes about
+    /// 3.5s") - confirmed wrong from an actual side-by-side comparison,
+    /// the camera pan visibly finishing faster than the table. That guess
+    /// and CarmView's OWN real, measured speed (kBedMoveSpeedMPerSec
+    /// applied over its own real bed length) had no way to actually agree
+    /// with each other, being two independent numbers. Now set explicitly
+    /// via setBodyFocusDurationSeconds(), driven by CarmView::
+    /// bedFullTraversalSeconds() - the two are mathematically guaranteed
+    /// to move in sync since one is now DERIVED from the other's own real
+    /// value, not separately guessed. Default here is only a fallback for
+    /// before that setter is ever called.
+    float m_bodyFocusSpeedFracPerSec = 1.f / 3.5f;
+    QElapsedTimer m_bodyFocusClock;
+    QTimer        m_bodyFocusTimer;   ///< only runs WHILE actually panning
+    void onBodyFocusTick();
 
     /// How much larger than a tight fit the anatomy is framed. One constant for
     /// every view, so Muscular / Skeletal / Vessel appear at the SAME size in
@@ -783,6 +1017,19 @@ private:
     BodyAlign m_skeletalAlign;
     bool  m_bodyAutoFit    = false;  // legacy per-axis bbox stretch, off
     float m_wallOpacity = 0.68f;
+    /// See setFluoroQuality()'s own comment. Raised twice now (0.35 →
+    /// 0.50 → 0.65): at the original low default, individual Skeletal.stl
+    /// triangles — and each additional overlapping rib/vertebra crossing
+    /// another one in projection — were large enough relative to a texel
+    /// to read as visible blocky/voxel steps, and the compositing pass's
+    /// own bone blur (mode 2, boneSmooth) couldn't manufacture resolution
+    /// that was never captured in the first place; a blur can only soften
+    /// blockiness that's already small enough for it to reach. 0.65 gives
+    /// that blur enough real source detail to resolve into smooth curves
+    /// instead of a smoothed staircase, while staying well short of the
+    /// diagnostic-crisp full-resolution the 3D/Mesh/DSA views use — the
+    /// Fluoro image is still deliberately softer than those.
+    float m_fluoroQualityScale = 0.75f;
     float m_modelScale = 1.f;
 
     // ── Picking ───────────────────────────────────────────────────────────

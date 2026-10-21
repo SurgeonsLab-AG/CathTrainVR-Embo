@@ -90,11 +90,19 @@ void QuadPanel::showPane(Pane p) {
         break;
 
     case Pane::Mesh:
-        // Wireframe toggle on the 3D view — no separate renderer
+        // Wireframe toggle on the 3D view — no separate renderer.
+        // Own, more transparent default opacity than View3D's 0.30 - per
+        // explicit request. The whole point of switching to a wireframe
+        // view is usually to see THROUGH the vessel wall to whatever is
+        // inside it (catheter, coils, embolic cast) while the wireframe
+        // lines still carry the vessel's own shape; a solid-feeling 0.30
+        // wall fought against that, reading almost as opaque as View3D
+        // itself with lines drawn on top rather than a genuinely see-
+        // through mesh.
         m_view3d->setDSAActive(false);
         m_view3d->setWireframe(true);   // SetRepresentationToWireframe()
         m_view3d->setPalette(VesselView::Palette::Arterial);
-        m_view3d->setWallOpacity(0.30f);
+        m_view3d->setWallOpacity(0.14f);
         stack->setCurrentIndex(0);
         break;
 

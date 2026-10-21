@@ -38,10 +38,15 @@ add_library(embonav_core STATIC
     src/core/CatheterModel.h
     src/core/CardiacCycle.cpp
     src/core/CardiacCycle.h
+    src/core/DoseModel.h
     src/core/CatheterCatalog.cpp
     src/core/CatheterCatalog.h
+    src/core/MechanicalEvents.cpp
+    src/core/MechanicalEvents.h
     src/core/EmbolizationModel.cpp
     src/core/EmbolizationModel.h
+    src/core/CoilEmbolizationModel.cpp
+    src/core/CoilEmbolizationModel.h
     src/core/ContrastInjectionModel.cpp
     src/core/ContrastInjectionModel.h
 )
@@ -61,6 +66,30 @@ endif()
 if(BUILD_CLI)
     add_executable(embonav_cli tools/centerline_cli.cpp)
     target_link_libraries(embonav_cli PRIVATE embonav_core)
+
+    # Small pass/fail correctness checks (not a formal test framework, same
+    # informational-stdout convention centerline_cli.cpp already uses) -
+    # place new ones alongside these two in tools/.
+    add_executable(test_coil tools/test_coil.cpp)
+    target_link_libraries(test_coil PRIVATE embonav_core)
+
+    add_executable(test_reflux tools/test_reflux.cpp)
+    target_link_libraries(test_reflux PRIVATE embonav_core)
+
+    add_executable(test_coil_staging tools/test_coil_staging.cpp)
+    target_link_libraries(test_coil_staging PRIVATE embonav_core)
+
+    add_executable(test_coil_sizing tools/test_coil_sizing.cpp)
+    target_link_libraries(test_coil_sizing PRIVATE embonav_core)
+
+    add_executable(test_coil_undo tools/test_coil_undo.cpp)
+    target_link_libraries(test_coil_undo PRIVATE embonav_core)
+
+    add_executable(test_dose tools/test_dose.cpp)
+    target_link_libraries(test_dose PRIVATE embonav_core)
+
+    add_executable(test_catheter_mechanics tools/test_catheter_mechanics.cpp)
+    target_link_libraries(test_catheter_mechanics PRIVATE embonav_core)
 endif()
 
 # ---------------------------------------------------------------------------

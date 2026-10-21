@@ -1,6 +1,7 @@
 #pragma once
 #include "CenterlineGraph.h"
 #include "Vec3.h"
+#include <string>
 #include <vector>
 
 namespace cn {
@@ -180,11 +181,90 @@ public:
         bool  balloonInflated = false;
     };
 
+    /// A coaxial neighbour that mechanically reinforces this device over the
+    /// portion of its shaft it shares with it - a stiff guide catheter
+    /// straightening whatever tracks inside it, or a guidewire threaded
+    /// through a microcatheter's own lumen stiffening that length of the
+    /// microcatheter. `depthLimit` is the neighbour's own tip insertion
+    /// depth (arc length): the shared/reinforced span runs from the access
+    /// site out to there, since that is as far as the neighbour physically
+    /// reaches. A softer neighbour (lower `stiffness`) never loosens this
+    /// device - see effectiveStiffnessAt() - it just does not add anything.
+    struct Support {
+        float depthLimit = 0.f;
+        float stiffness  = 0.f;
+    };
+
+    /// Derived, read-only mechanical picture of the device against the
+    /// vessel - the stable core-level feedback API a training/visualization
+    /// layer reads (regime, contact, force, the three resistances, support
+    /// and exposure). Nothing here is a measured or invented force
+    /// constant: every field is a normalised (0..1, or a unit direction)
+    /// combination of values update() already computes for its own
+    /// containment/response purposes (lumen clearance, per-node effective
+    /// stiffness, local centerline curvature, roll wind-up) - re-exposed as
+    /// its own read-out rather than left folded silently into rendering or
+    /// motion. Force/torque are dimensionless model units, not physical
+    /// Newtons/N*m: this is a kinematic reduced model with no mass or
+    /// friction coefficients to derive real units from (see the class
+    /// comment above). Field NAMES and MEANINGS are meant to stay stable
+    /// across implementation changes underneath - a future training UI, or
+    /// MechanicalEventDetector (MechanicalEvents.h), reads this struct and
+    /// nothing else.
+    struct MechanicalState {
+        enum class Regime {
+            Free,                 ///< no meaningful contact or curvature engagement
+            MildContact,          ///< touching the wall, well inside tolerance
+            SignificantContact,   ///< heavy wall engagement
+            TightCurvature,       ///< resisted by bending stiffness through a bend, not necessarily at the wall
+            ExcessiveAdvancement, ///< contact severity saturated - further push only grinds against the wall
+            Unsupported,          ///< long exposed run past any coaxial Support, riding on bare stiffness alone
+        };
+
+        // --- contact -------------------------------------------------------
+        float wallContactAmount = 0.f;   ///< == State::contactSeverity
+        Vec3  contactLocation;           ///< == State::contactPoint
+        int   contactNode = -1;          ///< == State::contactNode
+
+        // --- resistances (0 = free, 1 = maximally resisted) ----------------
+        float advancementResistance = 0.f;
+        float bendingResistance     = 0.f;
+        float torsionalResistance   = 0.f;
+
+        // --- support ---------------------------------------------------------
+        /// 0..1: how much of shaftStiffness's own headroom up to 1.0 is
+        /// currently filled by a coaxial Support at the tip's own depth.
+        float effectiveSupport = 0.f;
+        /// 0..1: the device's exposure/support relationship - how much of
+        /// its OWN insertion depth lies beyond the furthest coaxial
+        /// Support's reach (0 = fully sleeved its whole length, 1 = no
+        /// Support at all reaches any of it). Distinct from
+        /// effectiveSupport, which is a stiffness reading at the tip alone:
+        /// this is the proximal-to-distal picture a training overlay needs
+        /// to explain WHY a device is behaving unsupported (a long exposed
+        /// run) rather than just THAT it currently is (low tip stiffness).
+        float unsupportedExposureFraction = 0.f;
+
+        // --- force / torque --------------------------------------------------
+        float forceMagnitude    = 0.f;
+        Vec3  forceDirection;             ///< unit vector, centerline axis -> wall at the contact point
+        float torsionMagnitude  = 0.f;    ///< radians of commanded roll not yet realised at the tip
+
+        Regime regime = Regime::Free;
+    };
+
     CatheterModel() = default;
     explicit CatheterModel(const Params &p) : m_params(p) {}
 
     void setParams(const Params &p) { m_params = p; }
     const Params &params() const { return m_params; }
+
+    /// Coaxial neighbours currently reinforcing this device - see Support.
+    /// Recomputed by the caller (MainWindow, from the parked host stack)
+    /// whenever it changes; empty means "riding unsupported on its own
+    /// stiffness alone", the previous, only behaviour.
+    void setSupports(std::vector<Support> supports) { m_supports = std::move(supports); }
+    const std::vector<Support> &supports() const { return m_supports; }
 
     /// Install the route. `keepDepth` preserves insertion depth, which is what
     /// you want when the route is *extended* mid-procedure after a branch
@@ -206,6 +286,17 @@ public:
     void update();
 
     const State &state() const { return m_state; }
+
+    /// Force/contact/torsion read-out, recomputed at the end of every
+    /// update() - see MechanicalState. Always current with state(); there
+    /// is no separate call needed to refresh it.
+    const MechanicalState &mechanics() const { return m_mech; }
+
+    /// One-line diagnostic dump of mechanics() plus enough of state() to
+    /// locate it (depth, contact node) - for logging at a call site that
+    /// wants to validate contact/resistance/force/torsion/support numbers
+    /// without hand-formatting every field itself.
+    std::string debugSummary() const;
 
     /// The narrowest lumen between the tip and the target - what tells you a
     /// device will not pass before you push it there.
@@ -254,7 +345,19 @@ private:
     /// comment above for the reasoning.
     void relaxChain(const std::vector<Vec3> &target);
 
+    /// Blends Params::shaftStiffness with whichever active Support reaches
+    /// this far out (see Support), tapered smoothly across the support's own
+    /// tip rather than cut off there, so the shaft does not kink at the exact
+    /// point a reinforcing neighbour ends.
+    float effectiveStiffnessAt(float arc) const;
+
     void constrainToLumen();
+
+    /// Fills m_mech from state()/params()/m_supports as they stand at the
+    /// end of update() - see MechanicalState's own comment for exactly how
+    /// each field is derived. Called last, once the lumen constraint and
+    /// all telemetry above it are final for this call.
+    void updateMechanicalState();
 
     /// Arc length of the centerline point closest to `p`, searched in a window
     /// around `guess`. Nodes move away from the sample they were assigned -
@@ -269,6 +372,8 @@ private:
     CenterlinePath m_path;
     State m_state;
     std::vector<float> m_nodeArc;   ///< arc length assigned to each chain node
+    std::vector<Support> m_supports;
+    MechanicalState m_mech;
 
     /// True once the chain has a real relaxed shape to carry forward. False
     /// right after construction or a plain setPath(path) (keepDepth=false —
@@ -279,5 +384,9 @@ private:
     /// comment on why the chain is not reseeded to target every frame.
     bool m_seeded = false;
 };
+
+/// Display name for a MechanicalState::Regime value, e.g. for logging or a
+/// future training-UI read-out.
+const char *mechanicalRegimeName(CatheterModel::MechanicalState::Regime r);
 
 } // namespace cn

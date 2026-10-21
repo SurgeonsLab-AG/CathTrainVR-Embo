@@ -1,4 +1,5 @@
 #include "CarmView.h"
+#include "TraceLog.h"
 
 #include <QMouseEvent>
 #include <QOpenGLShaderProgram>
@@ -97,6 +98,13 @@ CarmView::CarmView(QWidget *parent) : QOpenGLWidget(parent) {
     m_fluoroClock.start();
     connect(&m_hudTimer, &QTimer::timeout, this, [this]{ if (m_fluoroActive) update(); });
     m_hudTimer.start(1000);
+
+    // Patient table longitudinal travel - real-elapsed-time-driven (same
+    // QElapsedTimer-based reasoning as m_fluoroClock just above: a timer
+    // that fires late under load must not silently run the travel slow),
+    // and only running WHILE actually moving - see setBedBodyFraction().
+    m_bedMoveClock.start();
+    connect(&m_bedMoveTimer, &QTimer::timeout, this, &CarmView::onBedMoveTick);
 }
 
 CarmView::~CarmView() {
@@ -107,6 +115,63 @@ CarmView::~CarmView() {
 }
 
 // ── loadPart ──────────────────────────────────────────────────────────────────
+void CarmView::recomputeCameraFromBounds() {
+    float lo[3] = { 1e9f,  1e9f,  1e9f};
+    float hi[3] = {-1e9f, -1e9f, -1e9f};
+    bool any = false;
+    for (int pi = 0; pi < kNumParts; ++pi) {
+        if (!m_parts[pi].loaded) continue;
+        const cn::Box3 &b2 = m_parts[pi].mesh.bounds();
+        if (!b2.valid()) continue;
+        lo[0]=std::min(lo[0],b2.lo.x); lo[1]=std::min(lo[1],b2.lo.y); lo[2]=std::min(lo[2],b2.lo.z);
+        hi[0]=std::max(hi[0],b2.hi.x); hi[1]=std::max(hi[1],b2.hi.y); hi[2]=std::max(hi[2],b2.hi.z);
+        any = true;
+    }
+    if (!any) return;
+
+    // Extend the X range to cover PART of the bed's own full travel, not
+    // just wherever it happens to be sitting at load time (its unshifted
+    // rest position) - see setBedBodyFraction()'s own comment: the table
+    // slides by up to the full (m_bedFootX - m_bedHeadX) distance to reach
+    // a far access site (e.g. popliteal/foot), and framing only for its
+    // resting position is what let the bed - and the patient on it -
+    // slide clean off the edge of this small preview panel once a distant
+    // access site was chosen, confirmed from an actual recording.
+    //
+    // Only HALF the full travel, not the full amount, and this is a
+    // deliberate trade-off, not an oversight: extending by the complete
+    // travel on both sides very nearly doubled the effective diagonal,
+    // which directly fights against wanting this view zoomed in for its
+    // own default/resting appearance (confirmed from an actual follow-up -
+    // reducing zoomFactor alone could not overcome how much bigger that
+    // made the frame). Half the travel still gives real protection against
+    // the worst-case clipping while leaving the resting view's own zoom
+    // level meaningfully tighter.
+    if (m_bedFootX != m_bedHeadX) {
+        const float travel = std::fabs(m_bedFootX - m_bedHeadX) * 0.5f;
+        lo[0] -= travel;
+        hi[0] += travel;
+    }
+
+    const float cx = (lo[0]+hi[0])*.5f;
+    const float cy = (lo[1]+hi[1])*.5f;
+    const float cz = (lo[2]+hi[2])*.5f;
+    const float dx = hi[0]-lo[0], dy = hi[1]-lo[1], dz = hi[2]-lo[2];
+    const float diag = std::sqrt(dx*dx + dy*dy + dz*dz);
+
+    // m_vFrameBias shifts the AIM point's Z, not the eye - since the camera
+    // sits level with the target (eye's own Z offset is 0) and ViewUp is
+    // (0,0,1), whatever Z the aim point sits at renders at screen-centre.
+    // Aiming HIGHER than the scene's true centre (positive bias) pushes the
+    // whole rig, bed included, toward the BOTTOM of the frame - which is
+    // "move the bed down" without touching the auto-computed distance/zoom
+    // math at all. See setVerticalFrameBias()'s own comment.
+    m_target   = QVector3D(cx + diag * m_hFrameBias, cy, cz + diag * m_vFrameBias);
+    const QVector3D eyeOffset = QVector3D(-diag*0.20f, -diag*1.6f, 0.f) * m_zoomFactor;
+    m_eye      = m_target + eyeOffset;   // zoomed out (offset was diag*1.2 before m_zoomFactor existed)
+    m_distance = (m_eye - m_target).length();
+}
+
 bool CarmView::loadPart(const QString &path, int idx) {
     if (idx < 0 || idx >= kNumParts) return false;
     Part &p = m_parts[idx];
@@ -123,6 +188,30 @@ bool CarmView::loadPart(const QString &path, int idx) {
         m_headCenter = QVector3D(b.center().x, b.center().y, b.center().z);
     }
 
+    // Cache the bed's own two ends along X, so the table's own longitudinal
+    // target (setBedBodyFraction()) can be derived purely from the bed's
+    // own real geometry - the SAME coordinate space every C-arm part
+    // already shares - rather than guessing a sign/direction convention
+    // against the vessel graph's own, separate coordinate space. Two
+    // earlier attempts at that guess both moved things the wrong way
+    // (away from the bed, then still wrong after a sign flip);
+    // deriving the target from where the bed actually IS cannot have that
+    // failure mode, since the target is always somewhere along the bed's
+    // own physical length by construction.
+    if (idx == kPartBed) {
+        const cn::Box3 b = p.mesh.bounds();
+        // Whichever end sits closer to X=0 - the C-arm assembly's own
+        // rest/default position, which by this console's convention
+        // already correctly images the head - IS the head end.
+        if (std::abs(b.lo.x) < std::abs(b.hi.x)) {
+            m_bedHeadX = b.lo.x;
+            m_bedFootX = b.hi.x;
+        } else {
+            m_bedHeadX = b.hi.x;
+            m_bedFootX = b.lo.x;
+        }
+    }
+
     // Recompute camera from combined bounds of all loaded parts.
     // Replicates old project setupVTK():
     //   m_carmRenderer->ComputeVisiblePropBounds(bounds);
@@ -131,38 +220,16 @@ bool CarmView::loadPart(const QString &path, int idx) {
     //   eye = (cx - diagLen*0.20,  cy - diagLen*1.2,  cz + 0)
     //   focal = (cx, cy, cz)
     //   ViewUp = (0, 0, 1)
-    {
-        float lo[3] = { 1e9f,  1e9f,  1e9f};
-        float hi[3] = {-1e9f, -1e9f, -1e9f};
-        bool any = false;
-        for (int pi = 0; pi < kNumParts; ++pi) {
-            if (!m_parts[pi].loaded) continue;
-            const cn::Box3 &b2 = m_parts[pi].mesh.bounds();
-            if (!b2.valid()) continue;
-            lo[0]=std::min(lo[0],b2.lo.x); lo[1]=std::min(lo[1],b2.lo.y); lo[2]=std::min(lo[2],b2.lo.z);
-            hi[0]=std::max(hi[0],b2.hi.x); hi[1]=std::max(hi[1],b2.hi.y); hi[2]=std::max(hi[2],b2.hi.z);
-            any = true;
-        }
-        if (any) {
-            const float cx = (lo[0]+hi[0])*.5f;
-            const float cy = (lo[1]+hi[1])*.5f;
-            const float cz = (lo[2]+hi[2])*.5f;
-            const float dx = hi[0]-lo[0], dy = hi[1]-lo[1], dz = hi[2]-lo[2];
-            const float diag = std::sqrt(dx*dx + dy*dy + dz*dz);
-
-            m_target   = QVector3D(cx, cy, cz);
-            const QVector3D eyeOffset = QVector3D(-diag*0.20f, -diag*1.6f, 0.f) * m_zoomFactor;
-            m_eye      = m_target + eyeOffset;   // zoomed out (offset was diag*1.2 before m_zoomFactor existed)
-            m_distance = (m_eye - m_target).length();
-        }
-    }
+    recomputeCameraFromBounds();
 
     if (isValid()) { makeCurrent(); uploadPart(p); doneCurrent(); update(); }
     return true;
 }
 
-// ── setAngles / setBedPosition ────────────────────────────────────────────────
+// ── setAngles / setBedBodyFraction ────────────────────────────────────────────
 void CarmView::setAngles(float lao, float cran) {
+    traceLog(QStringLiteral("[CARM] CarmView::setAngles  LAO %1 -> %2  CRAN %3 -> %4")
+                 .arg(m_lao).arg(lao).arg(m_cran).arg(cran));
     m_lao  = std::clamp(lao,  -90.f,  90.f);
     m_cran = std::clamp(cran, -45.f,  45.f);
     update();
@@ -195,8 +262,39 @@ void CarmView::resetFluoroTime() {
     update();
 }
 
-void CarmView::setBedPosition(float mm) {
-    m_bedPos = mm;
+void CarmView::setBedBodyFraction(float f) {
+    traceLog(QStringLiteral("[CARM] CarmView::setBedBodyFraction(%1)  bedLongPos=%2 bedLongTarget(before)=%3")
+                 .arg(f).arg(m_bedLongPos).arg(m_bedLongTarget));
+    f = std::clamp(f, 0.f, 1.f);
+    // NEGATED relative to the earlier "C-arm moves" version's own formula -
+    // this is a genuine physics inversion, not just a sign preference. When
+    // the C-ARM moved to reach a fixed point on the bed, the target was
+    // directly that point's own local coordinate. Now the BED moves so a
+    // point on IT reaches the fixed C-arm instead - shifting the bed by
+    // +X moves that same point by +X too, which is backwards: to bring a
+    // point sitting at local coordinate (m_bedHeadX + f*span) back into
+    // alignment with the C-arm's own fixed position (which already lines
+    // up with m_bedHeadX at rest, f=0, by construction), the bed has to
+    // move by the NEGATIVE of how far that point sits from the head end -
+    // hence the leading minus sign. Confirmed wrong the first time from an
+    // actual screenshot of the table moving the wrong direction.
+    m_bedLongTarget = -f * (m_bedFootX - m_bedHeadX);
+    if (!m_bedMoveTimer.isActive()) {
+        m_bedMoveClock.restart();   // don't count whatever time passed since the LAST move as part of THIS one
+        m_bedMoveTimer.start(16);   // ~60fps while actually moving
+    }
+}
+
+void CarmView::onBedMoveTick() {
+    const qint64 elapsedMs = m_bedMoveClock.restart();
+    const float step = m_bedMoveSpeedMPerSec * (static_cast<float>(elapsedMs) / 1000.f);
+    const float remaining = m_bedLongTarget - m_bedLongPos;
+    if (std::abs(remaining) <= step) {
+        m_bedLongPos = m_bedLongTarget;
+        m_bedMoveTimer.stop();   // arrived - stop asking for repaints until the next move
+    } else {
+        m_bedLongPos += (remaining > 0.f ? step : -step);
+    }
     update();
 }
 
@@ -353,15 +451,85 @@ void CarmView::paintGL() {
         // about the arc's own centre, so the cone keeps its relative position to
         // the head exactly — no separate offset to maintain and none to drift.
         //
-        // carm_stand is bolted to the floor. carm_bed keeps only its own
-        // bed-position translation, which is a separate control and not one of
-        // the movement keys.
-        if (i == kPartHead || i == kPartXray) {
+        // carm_stand, carm_head and carm_xray stay at IDENTITY/rotation-only -
+        // a real C-arm gantry does not travel far along the table to
+        // reposition between the access site and the imaging target, the
+        // PATIENT does, via the table sliding underneath a relatively fixed
+        // gantry - per explicit correction. carm_bed is the one that carries
+        // the longitudinal travel (m_bedLongPos, see setBedBodyFraction()),
+        // not the assembly - an earlier version had this backwards (moved
+        // the assembly, kept the bed fixed), which is what this replaces.
+        //
+        // X, not Z, is the table's own long axis in THIS scene - confirmed by
+        // the camera setup just above this function (ViewUp = (0,0,1) makes Z
+        // the screen-VERTICAL axis; the camera looks roughly along Y), so the
+        // remaining axis, X, is what reads as side-to-side on screen.
+        //
+        // Translation is applied OUTSIDE headTransform() (constructed first,
+        // multiplied in after) so the head/xray still rotate about the arc's
+        // own pivot for LAO/CRAN exactly as before - head/xray no longer
+        // carry any longitudinal shift at all, but keep this ordering for
+        // when a future need for combining the two arises.
+        //
+        // No *0.001f here - m_bedLongPos is already in this scene's own
+        // native (metre) units, derived directly from the bed's own real
+        // bounds (see setBedBodyFraction()).
+        if (i == kPartHead) {
             model = headTransform();
+        } else if (i == kPartXray) {
+            // Real bug in the previous version, confirmed from an actual
+            // screenshot: rotating 180 degrees with NO pivot correction
+            // rotates around whatever centre headTransform() itself pivots
+            // around (the arc's shared centre) - since the beam cone hangs
+            // some real distance BELOW that pivot, not AT it, a 180-degree
+            // turn swung the whole cone across to the OPPOSITE side of
+            // that pivot entirely, which is what made it vanish (ended up
+            // somewhere overlapping/behind the solid head housing instead
+            // of merely upside-down in place).
+            //
+            // Fixed the same way setBedScale() already handles this same
+            // class of problem: rotate around the XRAY PART'S OWN LOCAL
+            // CENTRE first (translate to it, rotate, translate back), so
+            // the cone flips its own orientation in place without moving
+            // to a different position - THEN headTransform()'s shared
+            // rotation carries the whole, now-correctly-oriented cone
+            // along with the head for LAO/CRAN, same as before.
+            //
+            // Axis (1,0,0) confirmed correct against an actual screenshot -
+            // the cone is visible again and correctly oriented, tapering
+            // down toward the bed.
+            const cn::Vec3 xc = m_parts[kPartXray].mesh.bounds().center();
+            model = headTransform();
+            model.translate(xc.x, xc.y, xc.z);
+            model.rotate(180.f, 1.f, 0.f, 0.f);
+            // Closes a small visible gap between the cone's own wide/top
+            // end and the head housing's bottom edge, per explicit
+            // follow-up - "fit the xray coming from the stand" - a purely
+            // positional nudge, the orientation itself is already correct.
+            // Z is this scene's established vertical axis (ViewUp=(0,0,1),
+            // same convention every other framing/bias calc in this file
+            // already uses). Expressed as a fraction of the xray part's
+            // own size (scale-independent, matching every other tunable
+            // constant in this class) rather than an absolute distance.
+            model.translate(0.f, 0.f, m_xrayVerticalNudge * m_parts[kPartXray].mesh.bounds().diagonal());
+            model.translate(-xc.x, -xc.y, -xc.z);
         } else if (i == kPartBed) {
-            model.translate(0.f, 0.f, m_bedPos * 0.001f);
+            // Scale AROUND THE BED'S OWN LOCAL CENTRE, not the world
+            // origin - scaling around the origin would also shift the
+            // bed's own position (everything is multiplied outward from
+            // (0,0,0)), which is not what "make the bed look smaller" is
+            // asking for. Composed so the slide (m_bedLongPos) still
+            // applies to the ALREADY-SCALED bed afterward, not the other
+            // way around - the bed shrinks in its own local space first,
+            // then that shrunk bed slides to wherever setBedBodyFraction()
+            // has it heading, exactly the same as before this existed.
+            const cn::Vec3 bc = m_parts[kPartBed].mesh.bounds().center();
+            model.translate(m_bedLongPos, 0.f, 0.f);
+            model.translate(bc.x, bc.y, bc.z);
+            model.scale(m_bedScale);
+            model.translate(-bc.x, -bc.y, -bc.z);
         }
-        // kPartStand: identity, always.
+        // kPartStand: identity, always - bolted to the floor, does not move.
 
         const PartStyle &st = kStyles[i];
         const bool blended = st.colour.w() < 1.0f;
